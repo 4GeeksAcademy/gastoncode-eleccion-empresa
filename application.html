@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formulario de Interés | Brasaland</title>
+    <meta
+      name="description"
+      content="Formulario de contacto para clientes interesados en conocer ofertas y novedades de Brasaland."
+    />
+    <meta name="robots" content="index, follow" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Brasaland",
+        "description": "Cadena de restaurantes de cocina a la brasa en Colombia y Estados Unidos.",
+        "url": "https://brasaland.example",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "contacto@brasaland.com",
+          "availableLanguage": ["es", "en"]
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="min-h-screen bg-stone-950 text-stone-100 antialiased">
+    <a
+      href="#formulario"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-amber-300 focus:px-3 focus:py-2 focus:text-sm focus:font-bold focus:text-stone-950"
+      >Saltar al formulario</a
+    >
+    <main id="contenido-principal" class="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-12">
+      <a href="index.html" aria-label="Inicio Brasaland" class="mb-6 inline-block rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100">
+        <img src="logo-brasaland.svg" alt="Brasaland" class="h-10 w-auto" />
+      </a>
+      <a
+        href="index.html"
+        class="mb-8 inline-block rounded-full border border-stone-500 px-4 py-2 text-sm font-semibold transition hover:border-amber-300 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100"
+        >Volver al inicio</a
+      >
+
+      <section id="formulario" class="rounded-2xl border border-stone-800 bg-stone-900/70 p-5 sm:p-6 md:p-8">
+        <h1 class="text-2xl font-black text-white sm:text-3xl">Formulario de interesados</h1>
+        <p class="mt-3 text-sm text-stone-300">
+          Déjanos tus datos y te contactaremos con información sobre ofertas, novedades y oportunidades.
+        </p>
+
+        <div
+          id="form-alert"
+          class="mt-6 hidden rounded-xl border px-4 py-3 text-sm"
+          role="status"
+          aria-live="polite"
+          tabindex="-1"
+        ></div>
+
+        <form
+          id="application-form"
+          class="mt-8 space-y-5"
+          aria-label="Formulario de contacto para clientes interesados"
+          novalidate
+        >
+          <div>
+            <label for="nombre" class="mb-2 block text-sm font-semibold">Nombre completo *</label>
+            <input
+              id="nombre"
+              name="nombre"
+              type="text"
+              required
+              aria-describedby="nombre-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            />
+            <p id="nombre-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="email" class="mb-2 block text-sm font-semibold">Correo electrónico *</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              aria-describedby="email-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            />
+            <p id="email-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="telefono" class="mb-2 block text-sm font-semibold">Teléfono con código de país *</label>
+            <input
+              id="telefono"
+              name="telefono"
+              type="tel"
+              required
+              placeholder="+57 3001234567"
+              aria-describedby="telefono-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            />
+            <p id="telefono-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="pais" class="mb-2 block text-sm font-semibold">País *</label>
+            <select
+              id="pais"
+              name="pais"
+              aria-describedby="pais-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="Colombia">Colombia</option>
+              <option value="Estados Unidos">Estados Unidos</option>
+              <option value="Otro">Otro</option>
+            </select>
+            <p id="pais-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="ciudad" class="mb-2 block text-sm font-semibold">Ciudad *</label>
+            <input
+              id="ciudad"
+              name="ciudad"
+              type="text"
+              required
+              aria-describedby="ciudad-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            />
+            <p id="ciudad-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="interes" class="mb-2 block text-sm font-semibold">Me interesa recibir *</label>
+            <select
+              id="interes"
+              name="interes"
+              aria-describedby="interes-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="novedades">Novedades de la marca</option>
+              <option value="ofertas">Ofertas y promociones</option>
+              <option value="alianzas">Alianzas y oportunidades comerciales</option>
+            </select>
+            <p id="interes-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="area" class="mb-2 block text-sm font-semibold">Área de interés dentro de Brasaland *</label>
+            <select
+              id="area"
+              name="area"
+              aria-describedby="area-error"
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="operaciones">Operaciones de restaurante</option>
+              <option value="compras">Compras y proveedores</option>
+              <option value="marketing">Marketing y experiencia digital</option>
+              <option value="rrhh">Personas y cultura</option>
+              <option value="calidad">Formación y estándares de calidad</option>
+              <option value="tecnologia">Tecnología</option>
+            </select>
+            <p id="area-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div>
+            <label for="mensaje" class="mb-2 block text-sm font-semibold">¿Qué te gustaría conocer de Brasaland? *</label>
+            <textarea
+              id="mensaje"
+              name="mensaje"
+              rows="4"
+              required
+              aria-describedby="mensaje-error"
+              placeholder="Cuéntanos brevemente qué información necesitas."
+              class="w-full rounded-xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/30"
+            ></textarea>
+            <p id="mensaje-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+          </div>
+
+          <div class="flex items-start gap-3 rounded-xl border border-stone-700 bg-stone-950/60 p-4">
+            <input
+              id="consentimiento"
+              name="consentimiento"
+              type="checkbox"
+              aria-describedby="consentimiento-error"
+              class="mt-1 h-4 w-4 rounded border-stone-500 bg-stone-900 text-amber-400 focus:ring-amber-300"
+            />
+            <label for="consentimiento" class="text-sm text-stone-200">
+              Acepto ser contactado por Brasaland para recibir información sobre ofertas y novedades. *
+            </label>
+          </div>
+          <p id="consentimiento-error" class="mt-1 min-h-5 text-sm text-red-300" role="alert"></p>
+
+          <button
+            type="submit"
+            class="w-full rounded-full bg-amber-400 px-6 py-3 text-sm font-bold text-stone-950 transition hover:bg-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100"
+          >
+            Enviar aplicación
+          </button>
+          <button
+            type="button"
+            id="reset-form-btn"
+            class="w-full mt-3 rounded-full border border-stone-500 bg-stone-900 px-6 py-3 text-sm font-semibold text-stone-200 transition hover:border-amber-300 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100"
+          >
+            Borrar selección
+          </button>
+        </form>
+      </section>
+    </main>
+    <script src="validation.js" defer></script>
+  </body>
+</html>

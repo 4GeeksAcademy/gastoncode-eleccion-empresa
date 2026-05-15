@@ -43,25 +43,4 @@ El reto de automatización que elegiría sería el del sistema de gestión de in
 ## Mi idea de Agente de IA
 
 
-El Agente de IA propuesto deberá automatizar las acciones de formación del personal de la empresa. 
-
-
-
-
-
-- [Frase 1: motivo principal]
-- [Frase 2: problema interesante del perfil]
-- [Frase 3: datos o flujos de trabajo que llaman la atención]
-- [Frase 4 opcional: conexión con el portfolio o entrevistas]
-
-## Departamentos que me interesan
-- Departamento 1: [problema que encontré y por qué me interesa]
-- Departamento 2: [problema que encontré y por qué me interesa]
-
-## Reto de automatización elegido
-[Reto del milestone map que quiero construir]
-
-## Mi idea de Agente de IA
-- Qué haría: [acción principal del agente]
-- Qué información necesitaría: [datos, documentos, inputs, historial, etc.]
-- Qué produciría o dispararía: [reporte, alerta, ticket, email, actualización, etc.]
+El Agente de IA propuesto deberá automatizar las acciones de gestión y formación del personal. Deberá ser capaz de realizar un seguimiento del personal y realizar las gestiones necesarias para su normal desempeño, incluyendo su capacitación para los distintos departamentos de la empresa.

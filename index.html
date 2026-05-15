@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Brasaland | Cocina a la Brasa con Innovación Digital</title>
+		<meta
+			name="description"
+			content="Brasaland es una cadena de 14 restaurantes en Colombia y Florida. Descubre una experiencia de cocina a la brasa consistente, rápida y cálida en dos mercados."
+		/>
+		<meta name="robots" content="index, follow" />
+		<meta property="og:title" content="Brasaland" />
+		<meta
+			property="og:description"
+			content="Sabor consistente, servicio cálido y operaciones modernas para una experiencia gastronómica superior."
+		/>
+		<meta property="og:type" content="website" />
+		<meta
+			property="og:image"
+			content="https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=1400&q=80"
+		/>
+		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<style>
+			html {
+				scroll-behavior: auto;
+				scroll-snap-type: none;
+			}
+
+			@media (min-width: 1024px) {
+				html {
+					scroll-behavior: smooth;
+					scroll-snap-type: y mandatory;
+				}
+			}
+
+			@media (prefers-reduced-motion: reduce) {
+				html {
+					scroll-behavior: auto;
+					scroll-snap-type: none;
+				}
+			}
+		</style>
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "Restaurant",
+				"name": "Brasaland",
+				"description": "Cadena de restaurantes de cocina a la brasa con presencia en Colombia y Estados Unidos.",
+				"foundingDate": "2008",
+				"numberOfEmployees": "115",
+				"areaServed": ["CO", "US"],
+				"address": [
+					{
+						"@type": "PostalAddress",
+						"addressLocality": "Medellín",
+						"addressCountry": "CO"
+					},
+					{
+						"@type": "PostalAddress",
+						"addressLocality": "Miami",
+						"addressRegion": "FL",
+						"addressCountry": "US"
+					}
+				],
+				"url": "https://brasaland.example"
+			}
+		</script>
+	</head>
+	<body class="min-h-screen bg-stone-950 text-stone-100 antialiased">
+		<a
+			href="#inicio"
+			class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-amber-300 focus:px-3 focus:py-2 focus:text-sm focus:font-bold focus:text-stone-950"
+			>Saltar al contenido principal</a
+		>
+		<header class="sticky top-0 z-20 border-b border-amber-400/30 bg-stone-950/95 backdrop-blur">
+			<nav class="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6" aria-label="Navegación principal">
+				<a href="#inicio" aria-label="Inicio Brasaland" class="shrink-0">
+					<img src="logo-brasaland.svg" alt="Brasaland" class="h-9 w-auto sm:h-10 md:h-11" />
+				</a>
+				<ul class="hidden items-center gap-6 text-sm font-semibold md:flex">
+					<li><a href="#nosotros" class="transition hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">Nosotros</a></li>
+					<li><a href="#beneficios" class="transition hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">Beneficios</a></li>
+					<li><a href="#contacto" class="transition hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">Contacto</a></li>
+				</ul>
+				<a
+					href="application.html"
+					class="hidden shrink-0 rounded-full bg-amber-400 px-3 py-2 text-xs font-bold text-stone-950 transition hover:bg-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100 sm:px-4 sm:text-sm md:inline-block"
+					>Quiero información</a
+				>
+				<button
+					id="menu-toggle"
+					type="button"
+					class="inline-flex items-center justify-center rounded-md border border-stone-600 p-2 text-stone-100 transition hover:border-amber-300 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 md:hidden"
+					aria-controls="mobile-menu"
+					aria-expanded="false"
+					aria-label="Abrir menú de navegación"
+				>
+					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<line x1="3" y1="6" x2="21" y2="6"></line>
+						<line x1="3" y1="12" x2="21" y2="12"></line>
+						<line x1="3" y1="18" x2="21" y2="18"></line>
+					</svg>
+				</button>
+			</nav>
+			<div id="mobile-menu" class="mx-auto hidden w-full max-w-6xl px-4 pb-4 sm:px-6 md:hidden" aria-label="Navegación móvil">
+				<div class="space-y-2 rounded-xl border border-stone-700 bg-stone-900/80 p-3">
+					<a href="#nosotros" class="block rounded-lg px-3 py-2 text-sm font-semibold text-stone-200 transition hover:bg-stone-800 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">Nosotros</a>
+					<a href="#beneficios" class="block rounded-lg px-3 py-2 text-sm font-semibold text-stone-200 transition hover:bg-stone-800 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">Beneficios</a>
+					<a href="#contacto" class="block rounded-lg px-3 py-2 text-sm font-semibold text-stone-200 transition hover:bg-stone-800 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">Contacto</a>
+					<a href="application.html" class="mt-2 block rounded-lg bg-amber-400 px-3 py-2 text-center text-sm font-bold text-stone-950 transition hover:bg-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100">Quiero información</a>
+				</div>
+			</div>
+		</header>
+
+		<main id="inicio">
+			<section id="nosotros" class="relative overflow-hidden border-b border-stone-800 snap-center snap-always scroll-mt-24">
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.22),_transparent_46%),radial-gradient(circle_at_80%_20%,_rgba(248,113,113,0.15),_transparent_42%)]"></div>
+				<div class="relative mx-auto grid w-full max-w-6xl items-center gap-8 px-6 py-10 md:min-h-[calc(92svh-5rem)] md:grid-cols-2 md:gap-10 md:py-14">
+					<div>
+						<p class="mb-4 inline-block rounded-full border border-amber-400/50 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-amber-300">
+							Desde 2008 en Medellín y Florida
+						</p>
+						<h1 class="text-3xl font-black leading-tight text-white md:text-5xl">
+							Cocina a la brasa con
+							<span class="text-amber-400">consistencia, calidez y velocidad</span>
+						</h1>
+						<p class="mt-6 max-w-xl text-base leading-relaxed text-stone-300 md:text-lg">
+							Brasaland opera 14 restaurantes propios y combina experiencia operativa con evolución digital para ofrecer la misma calidad en cada visita, sin importar el país.
+						</p>
+						<div class="mt-8 flex flex-wrap gap-4">
+							<a
+								href="application.html"
+								class="rounded-full bg-amber-400 px-6 py-3 text-sm font-bold text-stone-950 transition hover:bg-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100"
+								>Recibir novedades</a
+							>
+							<a
+								href="#beneficios"
+								class="rounded-full border border-stone-500 px-6 py-3 text-sm font-semibold transition hover:border-amber-300 hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100"
+								>Ver por qué elegirnos</a
+							>
+						</div>
+					</div>
+					<figure class="rounded-2xl border border-amber-400/20 bg-stone-900/60 p-3 shadow-2xl shadow-amber-950/40">
+						<img
+							src="https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=80"
+							alt="Hamburguesa gourmet a la parrilla servida en mesa de madera"
+							class="h-64 w-full rounded-xl object-cover md:h-[24rem]"
+						/>
+						<figcaption class="px-2 pt-3 text-sm text-stone-400">Hamburguesas y cortes a la brasa con sabor consistente en cada restaurante.</figcaption>
+					</figure>
+				</div>
+			</section>
+
+			<section id="beneficios" class="snap-center snap-always scroll-mt-24" aria-labelledby="beneficios-titulo">
+				<div class="mx-auto flex min-h-[calc(100svh-5rem)] w-full max-w-6xl flex-col justify-center px-6 py-12 md:py-16">
+				<div class="mb-10">
+					<h2 id="beneficios-titulo" class="text-3xl font-black text-white md:text-4xl">Beneficios clave de Brasaland</h2>
+					<p class="mt-3 max-w-3xl text-stone-300">
+						Nuestra experiencia operando una cadena multipaís nos permite convertir complejidad en servicio de alto nivel para cada cliente.
+					</p>
+				</div>
+				<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+					<article class="rounded-2xl border border-stone-800 bg-stone-900/70 p-5">
+						<h3 class="mb-2 text-lg font-bold text-amber-300">Calidad consistente</h3>
+						<p class="text-sm leading-relaxed text-stone-300">Procesos y estándares que garantizan la misma experiencia de sabor en Colombia y Estados Unidos.</p>
+					</article>
+					<article class="rounded-2xl border border-stone-800 bg-stone-900/70 p-5">
+						<h3 class="mb-2 text-lg font-bold text-amber-300">Servicio cercano</h3>
+						<p class="text-sm leading-relaxed text-stone-300">Cultura de atención cálida y eficiente, pensada para fidelizar a cada cliente en todos los canales.</p>
+					</article>
+					<article class="rounded-2xl border border-stone-800 bg-stone-900/70 p-5">
+						<h3 class="mb-2 text-lg font-bold text-amber-300">Escala operativa</h3>
+						<p class="text-sm leading-relaxed text-stone-300">14 locales, equipos especializados y capacidad de ejecución para sostener crecimiento ordenado.</p>
+					</article>
+					<article class="rounded-2xl border border-stone-800 bg-stone-900/70 p-5">
+						<h3 class="mb-2 text-lg font-bold text-amber-300">Innovación real</h3>
+						<p class="text-sm leading-relaxed text-stone-300">Digitalizamos procesos y decisiones con datos para responder mejor a clientes y tendencias del mercado.</p>
+					</article>
+				</div>
+				</div>
+			</section>
+
+			<section id="contacto" class="border-y border-stone-800 bg-stone-900/50 snap-center snap-always scroll-mt-24">
+				<div class="mx-auto grid min-h-[calc(100svh-5rem)] w-full max-w-6xl items-center gap-10 px-6 py-12 md:grid-cols-2 md:py-16">
+					<div>
+						<h2 class="text-3xl font-black text-white md:text-4xl">Conecta con Brasaland</h2>
+						<p class="mt-4 text-stone-300">
+							Si quieres conocer nuestras ofertas, novedades y oportunidades de colaboración, comparte tus datos en nuestro formulario de interesados.
+						</p>
+						<a
+							href="application.html"
+							class="mt-8 inline-block rounded-full bg-amber-400 px-6 py-3 text-sm font-bold text-stone-950 transition hover:bg-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-100"
+							>Ir al formulario de contacto</a
+						>
+						<p class="mt-6 text-sm text-stone-400">También puedes escribirnos a: contacto@brasaland.com</p>
+					</div>
+					<figure class="overflow-hidden rounded-2xl border border-amber-500/30">
+						<img
+							src="https://images.unsplash.com/photo-1550317138-10000687a72b?auto=format&fit=crop&w=1200&q=80"
+							alt="Corte de hamburguesas a la parrilla sobre fuego"
+							class="h-full w-full object-cover"
+						/>
+					</figure>
+				</div>
+			</section>
+		</main>
+
+		<footer id="pie-principal" class="border-t border-stone-800 bg-stone-950">
+			<div class="mx-auto grid w-full max-w-6xl gap-4 px-4 py-8 text-sm text-stone-400 sm:px-6 md:grid-cols-2 md:items-end">
+				<div class="space-y-1">
+					<p>© 2026 Brasaland. Todos los derechos reservados.</p>
+					<p>Sede principal: Medellín, Colombia | Operación USA: Miami, Florida</p>
+				</div>
+				<div class="space-y-1 break-words md:text-right">
+					<p><span class="text-stone-300">Correo:</span> contacto@brasaland.com</p>
+					<p><span class="text-stone-300">Teléfono:</span> +57 604 555 0198</p>
+					<p><span class="text-stone-300">Dirección:</span> Av. El Poblado 14-32, Medellín</p>
+				</div>
+			</div>
+		</footer>
+		<script>
+			const menuToggle = document.getElementById('menu-toggle');
+			const mobileMenu = document.getElementById('mobile-menu');
+			const mobileMenuLinks = mobileMenu ? mobileMenu.querySelectorAll('a') : [];
+
+			function closeMobileMenu() {
+				if (!menuToggle || !mobileMenu) return;
+				menuToggle.setAttribute('aria-expanded', 'false');
+				menuToggle.setAttribute('aria-label', 'Abrir menú de navegación');
+				mobileMenu.classList.add('hidden');
+			}
+
+			function openMobileMenu() {
+				if (!menuToggle || !mobileMenu) return;
+				menuToggle.setAttribute('aria-expanded', 'true');
+				menuToggle.setAttribute('aria-label', 'Cerrar menú de navegación');
+				mobileMenu.classList.remove('hidden');
+
+				if (mobileMenuLinks.length > 0) {
+					mobileMenuLinks[0].focus();
+				}
+			}
+
+			if (menuToggle && mobileMenu) {
+				menuToggle.addEventListener('click', () => {
+					const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+					if (isExpanded) {
+						closeMobileMenu();
+						menuToggle.focus();
+					} else {
+						openMobileMenu();
+					}
+				});
+
+				mobileMenuLinks.forEach((link) => {
+					link.addEventListener('click', () => {
+						closeMobileMenu();
+					});
+				});
+
+				window.addEventListener('keydown', (event) => {
+					const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+					if (event.key === 'Escape' && isExpanded) {
+						closeMobileMenu();
+						menuToggle.focus();
+					}
+				});
+			}
+		</script>
+	</body>
+</html>
