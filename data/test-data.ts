@@ -1,6 +1,7 @@
 import {MenuItem, Price, MenuCategory, MenuItemStatus, SaleTransaction, PaymentMethod, Location, LocationStatus, Country, WasteReason, WasteRecord} from "../src/types/models";
 import { filterActiveLocations, filterMenuItemsByCategory, filterSalesByLocation, sortLocationsByCapacity, sortMenuItemsByPrice } from "../src/utils/collections";
 import { findLocationById, findMenuItemByName } from "../src/utils/search";
+import { calculateDailyRevenue } from "../src/utils/transformations";
 
 const sampleMenuItems: MenuItem[] = [
   {
@@ -95,4 +96,3 @@ const sampleSales: SaleTransaction[] = [
 ];
 
 
-console.log(findMenuItemByName(sampleMenuItems, "paPas fritas"));
