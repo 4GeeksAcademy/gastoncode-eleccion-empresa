@@ -1,6 +1,6 @@
 //Ítem de menú
 
-interface MenuItem {
+export interface MenuItem {
   id: string; // ID del ítem (ej: "ITEM-PICANHA-250")
   name: string; // Nombre del ítem (ej: "Picanha 250g")
   category: MenuCategory; // Categoría de comida
@@ -13,18 +13,18 @@ interface MenuItem {
   status: MenuItemStatus;
 }
 
-interface Price {
+export interface Price {
   USD: number; // Precio en Dólares Estadounidenses
   COP: number; // Precio en Pesos Colombianos
 }
 
-type MenuCategory = "Meat" | "Side" | "Beverage" | "Dessert" | "Combo";
-type MenuItemStatus = "Active" | "Seasonal" | "Discontinued";
+export type MenuCategory = "Meat" | "Side" | "Beverage" | "Dessert" | "Combo";
+export type MenuItemStatus = "Active" | "Seasonal" | "Discontinued";
 
 
 // Transacción de venta
 
-interface SaleTransaction {
+export interface SaleTransaction {
   id: string; // ID de transacción (ej: "TXN-2024-15482")
   locationId: string; // Locación donde ocurrió la venta
   itemId: string; // Ítem de menú vendido
@@ -35,12 +35,12 @@ interface SaleTransaction {
   waiterName: string; // Miembro del personal que atendió
 }
 
-type PaymentMethod = "Cash" | "Credit card" | "Debit card" | "Digital wallet";
+export type PaymentMethod = "Cash" | "Credit card" | "Debit card" | "Digital wallet";
 
 
 // Locación
 
-interface Location {
+export interface Location {
   id: string; // ID de locación (ej: "LOC-MEDELLIN-01")
   name: string; // Nombre de la locación
   city: string; // Nombre de la ciudad
@@ -54,13 +54,13 @@ interface Location {
   status: LocationStatus;
 }
 
-type Country = "Colombia" | "USA";
-type LocationStatus = "Active" | "Temporarily closed" | "Under renovation";
+export type Country = "Colombia" | "USA";
+export type LocationStatus = "Active" | "Temporarily closed" | "Under renovation";
 
 
 // Desperdicio de comida
 
-interface WasteRecord {
+export interface WasteRecord {
   id: string; // ID de registro de desperdicio
   locationId: string; // Locación donde ocurrió el desperdicio
   itemId: string; // Ítem de menú desperdiciado
@@ -71,9 +71,17 @@ interface WasteRecord {
   reportedBy: string; // Miembro del personal que lo reportó
 }
 
-type WasteReason =
+export type WasteReason =
   | "Expired"
   | "Cooking error"
   | "Customer return"
   | "Damage"
   | "Other";
+
+
+export interface CountryMetrics {
+  totalLocations: number;
+  totalRevenue: Price;
+  averageRevenuePerLocation: Price;
+  totalSales: number;
+}

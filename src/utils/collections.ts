@@ -1,39 +1,57 @@
-import type { Venta } from "../types/models";
+import {MenuItem, Price, MenuCategory, MenuItemStatus, SaleTransaction, PaymentMethod, Location, LocationStatus, Country, WasteReason, WasteRecord} from "../types/models";
 
-const venta1:Venta = {
-    producto : "principal",
-    precio : 100,
-    sucursal : "sucursal1",
+// Filtrado de ventas por ubicación
+
+export function filterSalesByLocation(sales: SaleTransaction[], locationId: string): SaleTransaction[] {
+    const ventas = sales.filter(sale => sale.locationId === locationId);
+    return ventas; 
 }
 
-const venta2:Venta = {
-    producto : "postre",
-    precio : 50,
-    sucursal : "sucursal1",
+// Filtrado de ventas por fechas
+
+export function filterSalesByDateRange(sales: SaleTransaction[], startDate: Date, endDate: Date): SaleTransaction[] {
+    const ventas = sales.filter(sale => sale.timestamp >= startDate && sale.timestamp <= endDate);
+    return ventas; 
 }
 
-const venta3:Venta = {
-    producto : "bebida",
-    precio : 30,
-    sucursal : "sucursal1",
+// Filtrado de menú por categoría
+
+export function filterMenuItemsByCategory(items: MenuItem[], category: MenuCategory): MenuItem[] {
+    const itemsFiltrados = items.filter(item => item.category === category);
+    return itemsFiltrados; 
 }
 
-const venta4:Venta = {
-    producto : "principal",
-    precio : 100,
-    sucursal : "sucursal2",
+// Filtrado de locales activos
+
+export function filterActiveLocations(locations: Location[]): Location[] {
+    const locacionesActivas = locations.filter(location => location.status === "Active");
+    return locacionesActivas; 
 }
 
-const venta5:Venta = {
-    producto : "postre",
-    precio : 50,
-    sucursal : "sucursal2",
+// Ordenamiento de locales por capacidad de asientos
+
+export function sortLocationsByCapacity(locations: Location[], order: "asc" | "desc"): Location[] {
+    const sortedLocations = [...locations].sort((a, b) => {
+        if (order === "asc") {
+            return a.seatingCapacity - b.seatingCapacity;
+        } else {
+            return b.seatingCapacity - a.seatingCapacity;
+        }
+    });
+    return sortedLocations; 
 }
 
-const venta6:Venta = {
-    producto : "bebida",
-    precio : 30,
-    sucursal : "sucursal2",
-}
+// Ordenamiento de ítems del menú por precio
 
-const ventasDia = [venta1, venta2, venta3, venta4, venta5, venta6];
+export function sortMenuItemsByPrice(items: MenuItem[], currency: "USD" | "COP", order: "asc" | "desc"): MenuItem[] {
+    const sortedItems = [...items].sort((a, b) => {
+        const priceA = a.basePrice[currency];
+        const priceB = b.basePrice[currency];
+        if (order === "asc") {
+            return priceA - priceB;
+        } else {
+            return priceB - priceA;
+        }
+    });
+    return sortedItems; 
+}
