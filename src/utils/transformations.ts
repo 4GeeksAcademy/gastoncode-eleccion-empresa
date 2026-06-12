@@ -1,4 +1,4 @@
-import {MenuItem, Price, MenuCategory, MenuItemStatus, SaleTransaction, PaymentMethod, Location, LocationStatus, Country, WasteReason, WasteRecord, CountryMetrics} from "../types/models";
+import {MenuItem, SaleTransaction, PaymentMethod, Location, Country, WasteReason, WasteRecord, CountryMetrics} from "../types/models";
 
 
 // Cálculos financieros
