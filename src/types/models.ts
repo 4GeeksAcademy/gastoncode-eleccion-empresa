@@ -1,4 +1,4 @@
-//Ítem de menú
+//Interface Ítem de menú
 
 export interface MenuItem {
   id: string; // ID del ítem (ej: "ITEM-PICANHA-250")
@@ -13,16 +13,20 @@ export interface MenuItem {
   status: MenuItemStatus;
 }
 
+// Interface Precio
+
 export interface Price {
   USD: number; // Precio en Dólares Estadounidenses
   COP: number; // Precio en Pesos Colombianos
 }
 
+// Tipo de categoría de menú y estado del ítem
+
 export type MenuCategory = "Meat" | "Side" | "Beverage" | "Dessert" | "Combo";
 export type MenuItemStatus = "Active" | "Seasonal" | "Discontinued";
 
 
-// Transacción de venta
+// Interface de Transacción de venta
 
 export interface SaleTransaction {
   id: string; // ID de transacción (ej: "TXN-2024-15482")
@@ -35,10 +39,12 @@ export interface SaleTransaction {
   waiterName: string; // Miembro del personal que atendió
 }
 
+// Tipo de método de pago
+
 export type PaymentMethod = "Cash" | "Credit card" | "Debit card" | "Digital wallet";
 
 
-// Locación
+// Interface de Locación
 
 export interface Location {
   id: string; // ID de locación (ej: "LOC-MEDELLIN-01")
@@ -54,11 +60,13 @@ export interface Location {
   status: LocationStatus;
 }
 
+// Tipo de estado de la locación y país
+
 export type Country = "Colombia" | "USA";
 export type LocationStatus = "Active" | "Temporarily closed" | "Under renovation";
 
 
-// Desperdicio de comida
+// Interface de Desperdicio de comida
 
 export interface WasteRecord {
   id: string; // ID de registro de desperdicio
@@ -71,6 +79,8 @@ export interface WasteRecord {
   reportedBy: string; // Miembro del personal que lo reportó
 }
 
+// Tipo de razón de desperdicio
+
 export type WasteReason =
   | "Expired"
   | "Cooking error"
@@ -78,6 +88,7 @@ export type WasteReason =
   | "Damage"
   | "Other";
 
+// Interface de métricas por país
 
 export interface CountryMetrics {
   totalLocations: number;

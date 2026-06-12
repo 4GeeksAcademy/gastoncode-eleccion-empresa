@@ -142,3 +142,5 @@ export function validateLocation(location: Location): { valid: boolean, errors: 
 
     return validation;
 }
+
+// Se puede verificar la ejecución de las funciones con los ejemplos de datos utilizando el comando npx tsx src/utils/validations.ts en la terminal. Esto permitirá ejecutar el archivo y ver los resultados de las funciones con los datos de ejemplo.

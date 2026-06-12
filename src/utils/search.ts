@@ -1,4 +1,4 @@
-import {MenuItem, Price, MenuCategory, MenuItemStatus, SaleTransaction, PaymentMethod, Location, LocationStatus, Country, WasteReason, WasteRecord} from "../types/models";
+import {MenuItem, Location,} from "../types/models";
 
 // Encontrar local por ID con búsqueda lineal
 
@@ -54,3 +54,5 @@ export function binarySearchLocationByCapacity(sortedLocations: Location[], targ
 
   return -1; // Not found
 }
+
+// Se puede verificar la ejecución de las funciones con los ejemplos de datos utilizando el comando npx tsx src/utils/search.ts en la terminal. Esto permitirá ejecutar el archivo y ver los resultados de las funciones con los datos de ejemplo.

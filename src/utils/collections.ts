@@ -1,4 +1,4 @@
-import {MenuItem, Price, MenuCategory, MenuItemStatus, SaleTransaction, PaymentMethod, Location, LocationStatus, Country, WasteReason, WasteRecord} from "../types/models";
+import {MenuItem, MenuCategory, SaleTransaction, Location} from "../types/models";
 
 // Filtrado de ventas por ubicación
 
@@ -55,3 +55,6 @@ export function sortMenuItemsByPrice(items: MenuItem[], currency: "USD" | "COP",
     });
     return sortedItems; 
 }
+
+// Se puede verificar la ejecución de las funciones con los ejemplos de datos utilizando el comando npx tsx src/utils/collections.ts en la terminal. Esto permitirá ejecutar el archivo y ver los resultados de las funciones con los datos de ejemplo.
+

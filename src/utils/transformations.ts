@@ -217,3 +217,4 @@ export function calculateCountryComparison(sales: SaleTransaction[], locations: 
     };
 }
 
+// Se puede verificar la ejecución de las funciones con los ejemplos de datos utilizando el comando npx tsx src/utils/transformations.ts en la terminal. Esto permitirá ejecutar el archivo y ver los resultados de las funciones con los datos de ejemplo.
