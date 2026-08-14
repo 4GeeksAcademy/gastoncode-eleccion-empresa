@@ -1,10 +1,10 @@
 "use client";
 
 import { FormEvent } from "react";
-import { stageOptions, statusOptions } from "./types";
-import { toLabel } from "./labels";
-import { useQueryUpdater } from "./query-updater";
-import { chipClass } from "./chip-class";
+import { stageOptions, statusOptions } from "@/types/candidates";
+import { toLabel } from "@/components/candidates/labels";
+import { useQueryUpdater } from "@/components/candidates/query-updater";
+import { chipClass } from "@/components/candidates/chip-class";
 
 type FilterBarProps = {
   stage: string;

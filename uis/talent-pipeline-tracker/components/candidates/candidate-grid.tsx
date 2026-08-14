@@ -1,5 +1,5 @@
 import { CandidateCard } from "./candidate-card";
-import { Candidate } from "./types";
+import { Candidate } from "@/types/candidates";
 
 type CandidateGridProps = {
   data: Candidate[];

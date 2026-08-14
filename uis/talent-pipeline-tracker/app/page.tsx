@@ -1,9 +1,9 @@
 import { CandidateGrid } from "@/components/candidates/candidate-grid";
-import { FilterBar } from "@/components/candidates/filter-bar";
 import { PageHeader } from "@/components/candidates/page-header";
-import { Pagination } from "@/components/candidates/pagination";
 import { TopBar } from "@/components/candidates/top-bar";
-import { RecordsResponse } from "@/components/candidates/types";
+import { RecordsResponse } from "@/types/candidates";
+import { FilterBar } from "@/utils/candidates/filter-bar";
+import { Pagination } from "@/utils/candidates/pagination";
 
 type SearchParams = {
   status?: string;
