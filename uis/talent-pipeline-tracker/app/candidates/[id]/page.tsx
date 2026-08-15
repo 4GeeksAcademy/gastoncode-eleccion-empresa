@@ -14,14 +14,14 @@ export default async function CandidateDetailPage({ params }: { params: Promise<
   const item = await getRecord(id);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#2a2a2a_0%,_#131313_55%,_#0e0e0e_100%)] pb-10">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--page-grad-start)_0%,_var(--page-grad-mid)_55%,_var(--page-grad-end)_100%)] pb-10">
       <DetailTopBar brand="BRASALAND" />
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6">
         <HeroCard item={item} />
         <GeneralInfo item={item} />
         <ProcessInfo item={item} />
-        <NotesSection item={item} />
-        <ActionsCard />
+        <NotesSection recordId={item.id} />
+        <ActionsCard id={item.id} status={item.status} stage={item.stage} />
       </main>
     </div>
   );
@@ -32,6 +32,10 @@ async function getRecord(id: string): Promise<CandidateDetail> {
     cache: "no-store",
   });
 
-  if (!response.ok) notFound();
+  if (response.status === 404) notFound();
+  if (!response.ok) {
+    throw new Error("No se pudo cargar la candidatura. Intenta nuevamente.");
+  }
+
   return (await response.json()) as CandidateDetail;
 }

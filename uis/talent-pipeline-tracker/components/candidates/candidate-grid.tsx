@@ -8,7 +8,7 @@ type CandidateGridProps = {
 export function CandidateGrid({ data }: CandidateGridProps) {
   if (!data.length) {
     return (
-      <section className="rounded-xl border border-dashed border-[#564334] bg-[#1b1c1c] p-8 text-center text-sm text-[#ddc1ae]">
+      <section className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-1)] p-8 text-center text-sm text-[var(--text-muted)]">
         No hay candidaturas para los filtros seleccionados.
       </section>
     );

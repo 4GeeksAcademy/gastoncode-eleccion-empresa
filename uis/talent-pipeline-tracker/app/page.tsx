@@ -1,4 +1,5 @@
 import { CandidateGrid } from "@/components/candidates/candidate-grid";
+import { NewCandidateSection } from "@/components/candidates/new-candidate-section";
 import { PageHeader } from "@/components/candidates/page-header";
 import { TopBar } from "@/components/candidates/top-bar";
 import { RecordsResponse } from "@/types/candidates";
@@ -39,10 +40,11 @@ export default async function Home({
   const data = await getRecords({ status, stage, search, email, page, limit });
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#393939_0%,_#131313_50%,_#0e0e0e_100%)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--page-grad-start)_0%,_var(--page-grad-mid)_50%,_var(--page-grad-end)_100%)]">
       <TopBar />
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <PageHeader total={data.total} />
+        <NewCandidateSection />
         <FilterBar stage={stage} status={status} search={search} email={email} limitValue={limitValue} />
         <CandidateGrid data={data.data} />
         <Pagination
@@ -72,7 +74,7 @@ async function getRecords(params: QueryParams) {
   });
 
   if (!res.ok) {
-    return { total: 0, page: params.page, limit: params.limit, data: [] };
+    throw new Error("No se pudo obtener la lista de candidaturas. Intenta recargar la página.");
   }
 
   return (await res.json()) as RecordsResponse;

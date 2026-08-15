@@ -34,28 +34,28 @@ export function FilterBar({ stage, status, search, email, limitValue }: FilterBa
           name="search"
           defaultValue={search}
           placeholder="Buscar por nombre o puesto"
-          className="w-full rounded-md border border-[#564334] bg-[#0e0e0e] px-3 py-2 text-sm text-[#e4e2e1] outline-none ring-[#ff8c00] placeholder:text-[#a48c7a] focus:ring-2"
+          className="w-full rounded-md border border-[var(--border-strong)] bg-[var(--surface-input)] px-3 py-2 text-sm text-[var(--foreground)] outline-none ring-[var(--accent)] placeholder:text-[var(--placeholder)] focus:ring-2"
         />
         <input
           type="email"
           name="email"
           defaultValue={email}
           placeholder="Filtrar por email"
-          className="w-full rounded-md border border-[#564334] bg-[#0e0e0e] px-3 py-2 text-sm text-[#e4e2e1] outline-none ring-[#ff8c00] placeholder:text-[#a48c7a] focus:ring-2"
+          className="w-full rounded-md border border-[var(--border-strong)] bg-[var(--surface-input)] px-3 py-2 text-sm text-[var(--foreground)] outline-none ring-[var(--accent)] placeholder:text-[var(--placeholder)] focus:ring-2"
         />
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <select
           name="status"
           defaultValue={status}
-          className="rounded-md border border-[#564334] bg-[#1b1c1c] px-3 py-2 text-sm text-[#ddc1ae]"
+          className="rounded-md border border-[var(--border-strong)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-muted)]"
         >
           <option value="">Todos los estados</option>
           {statusOptions.map((item) => (
             <option key={item} value={item}>{toLabel(item)}</option>
           ))}
         </select>
-        <button className="rounded-md bg-[#ff8c00] px-4 py-2 text-sm font-semibold text-[#4d2600]">
+        <button className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent-contrast)]">
           Aplicar filtros
         </button>
       </div>

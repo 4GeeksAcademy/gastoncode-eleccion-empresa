@@ -11,8 +11,8 @@ export type CandidateDetail = {
   email: string;
   phone: string;
   position: string;
-  linkedin_url: string;
-  cv_url: string;
+  linkedin_url: string | null;
+  cv_url: string | null;
   status: string;
   stage: string;
   experience_years: number;

@@ -1,12 +1,13 @@
 const dictionary: Record<string, string> = {
   pending: "Pendiente",
   review: "Revisión",
-  interview: "Entrevista",
-  offer: "Oferta",
-  hired: "Contratado",
+  personal_interview: "Entrevista personal",
+  technical_interview: "Entrevista técnica",
+  offer_presented: "Oferta presentada",
   received: "Recibida",
   in_progress: "En proceso",
-  rejected: "Rechazada",
+  selected: "Seleccionada",
+  discarded: "Descartada",
 };
 
 export function toLabel(value: string): string {

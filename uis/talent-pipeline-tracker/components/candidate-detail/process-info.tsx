@@ -21,8 +21,8 @@ export function ProcessInfo({ item }: ProcessInfoProps) {
       <div className="space-y-4">
         {rows.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between rounded-md px-1 py-1.5">
-            <span className="text-xs uppercase tracking-[0.08em] text-[#ddc1ae]">{label}</span>
-            <span className="text-base text-[#e4e2e1]">{value}</span>
+            <span className="text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">{label}</span>
+            <span className="text-base text-[var(--foreground)]">{value}</span>
           </div>
         ))}
       </div>

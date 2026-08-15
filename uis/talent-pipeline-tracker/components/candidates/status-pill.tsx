@@ -8,8 +8,8 @@ type StatusPillProps = {
 export function StatusPill({ value, tone = "neutral" }: StatusPillProps) {
   const toneClass =
     tone === "primary"
-      ? "border-[#ff8c00]/50 bg-[#ff8c00]/15 text-[#ffb77d]"
-      : "border-[#564334] bg-[#2a2a2a] text-[#ddc1ae]";
+      ? "border-[color-mix(in_srgb,var(--accent)_50%,transparent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--text-accent)]"
+      : "border-[var(--border-strong)] bg-[var(--surface-pill)] text-[var(--text-muted)]";
 
   return (
     <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] ${toneClass}`}>

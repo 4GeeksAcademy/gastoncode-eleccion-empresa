@@ -15,5 +15,5 @@ export type RecordsResponse = {
   data: Candidate[];
 };
 
-export const stageOptions = ["pending", "review", "interview", "offer", "hired"];
-export const statusOptions = ["received", "in_progress", "rejected", "hired"];
+export const stageOptions = ["pending", "review", "personal_interview", "technical_interview", "offer_presented"];
+export const statusOptions = ["received", "in_progress", "selected", "discarded"];
