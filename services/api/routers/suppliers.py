@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from tinydb import Query
 
 from database import suppliers_table
-from models import SupplierCreate, SupplierUpdate
+from models import SupplierCreate, SupplierRateUpdate, SupplierStatusUpdate
 from datetime import datetime
 
 
@@ -80,7 +80,7 @@ def search_suppliers(
 @router.get("/{supplier_id}")
 def get_supplier(supplier_id: int):
 
-    document = supplier_table.get(
+    document = suppliers_table.get(
         doc_id=supplier_id
     )
 
@@ -113,19 +113,19 @@ def update_supplier_rate(
         exclude_unset=True
     )
 
-    if supplier_rate <= 0:
+    if supplier_rate.rate_per_unit <= 0:
         raise HTTPException(
             status_code=422,
             detail="New rate should be bigger than 0"
         )
 
-    if changes & supplier_rate > 0:
+    if changes and supplier_rate.rate_per_unit > 0:
         suppliers_table.update(
             changes,
             doc_ids=[supplier_id]
         )
         suppliers_table.update(
-            {"updated_at" = datetime},
+            {"updated_at": datetime.now()},
             doc_ids=[supplier_id]
         )
 
@@ -154,17 +154,17 @@ def update_supplier_status(
             detail="Supplier not found"
         )
 
-    changes = supplier_status.model_dump(
-        exclude_unset=True
-    )
-
-    if changes is not "active" or "suspended":
+    if supplier_status.status not in ["active", "suspended"]:
         raise HTTPException(
             status_code=422,
             detail="Supplier status must be 'active' or 'suspended'"
         )
 
-    if changes & (changes == "active" | changes == "suspended"):
+    changes = supplier_status.model_dump(
+        exclude_unset=True
+    )
+
+    if changes:
         suppliers_table.update(
             changes,
             doc_ids=[supplier_id]

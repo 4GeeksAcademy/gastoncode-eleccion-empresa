@@ -1,5 +1,5 @@
 from database import suppliers_table
-from models import ContactCreate
+from models import SupplierCreate
 
 
 seed_data = [
