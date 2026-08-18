@@ -6,7 +6,7 @@ class SupplierCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str
-    country: str
+    country: ["Colombia", "USA"]
     categories: [
     "carne",
     "verduras_y_hortalizas",
@@ -18,15 +18,19 @@ class SupplierCreate(BaseModel):
     "carbon_y_combustible"
 ]
     rate_per_unit: float
-    currency: str
+    currency: ["COP", "USD"]
     updated_at: datetime
     status: ["active", "suspended"]
     contact_email: str | None = None
     notes: str | None = None
 
 
-class SupplierUpdate(BaseModel):
+class SupplierRateUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    rate_per_unit: float | None = None
-    status: ["active", "suspended"] | None = None
+    rate_per_unit: float
+
+class SupplierStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: ["active", "suspended"]
