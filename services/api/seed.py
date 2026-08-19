@@ -1,5 +1,5 @@
 from database import suppliers_table
-from models import SupplierCreate
+from models import SupplierCreateInput
 
 
 seed_data = [
@@ -152,18 +152,16 @@ seed_data = [
 
 
 validated_suppliers = [
-    SupplierCreate(**item).model_dump()
+    SupplierCreateInput(**item).model_dump()
     for item in seed_data
 ]
 
-
-suppliers_table.truncate()
-
-suppliers_table.insert_multiple(
-    validated_suppliers
-)
-
-
-print(
+if len(suppliers_table) != 0:
+    print("Suppliers table is not empty. Skipping seeding.")
+else:
+    for supplier in validated_suppliers:
+        suppliers_table.insert(supplier)
+    print(
     f"Inserted {len(validated_suppliers)} suppliers"
-)
+    )
+

@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 from tinydb import Query
 
 from database import suppliers_table
-from models import SupplierCreate, SupplierRateUpdate, SupplierStatusUpdate
-from datetime import datetime
+from models import SupplierCreateInput, SupplierRateUpdate, SupplierStatusUpdate, SupplierResponse
+from datetime import datetime, timezone
 
 
 router = APIRouter(
@@ -18,21 +18,22 @@ def serialize_document(document):
         **document
     }
 
-@router.post("")
+@router.post("", response_model=SupplierResponse)
 
-def create_supplier(supplier: SupplierCreate):
+def create_supplier(supplier: SupplierCreateInput):
 
     supplier_data = supplier.model_dump()
+    supplier_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     doc_id = suppliers_table.insert(supplier_data)
 
-    return {
+    return SupplierResponse.model_validate({
         "id": doc_id,
         **supplier_data
-    }
+    })
 
 
-@router.get("")
+@router.get("", response_model=list[SupplierResponse])
 def get_suppliers():
 
     documents = suppliers_table.all()
@@ -43,22 +44,24 @@ def get_suppliers():
     ]
 
 
-@router.get("/search")
+@router.get("/search", response_model=list[SupplierResponse])
 def search_suppliers(
-    country: str,
-    categories: str
+    country: str | None = None,
+    categories: str | None = None
 ):
 
-    ContactQuery = Query()
+    country = country.strip() if country is not None else None
+    categories = categories.strip() if categories is not None else None
+
+    SupplierQuery = Query()
 
     condition = None
 
-    if country is not None:
-        condition = ContactQuery.country == country
+    if country is not None and country != "":
+        condition = SupplierQuery.country == country
 
-    if categories is not None:
-
-        categories_condition = ContactQuery.categories == categories
+    if categories is not None and categories != "":
+        categories_condition = SupplierQuery.categories.any(categories)
 
         condition = (
             categories_condition
@@ -77,7 +80,7 @@ def search_suppliers(
     ]
 
 
-@router.get("/{supplier_id}")
+@router.get("/{supplier_id}", response_model=SupplierResponse)
 def get_supplier(supplier_id: int):
 
     document = suppliers_table.get(
@@ -93,7 +96,7 @@ def get_supplier(supplier_id: int):
     return serialize_document(document)
 
 
-@router.patch("/{supplier_id}/rate")
+@router.patch("/{supplier_id}/rate", response_model=SupplierResponse)
 def update_supplier_rate(
     supplier_id: int,
     supplier_rate: SupplierRateUpdate
@@ -113,19 +116,13 @@ def update_supplier_rate(
         exclude_unset=True
     )
 
-    if supplier_rate.rate_per_unit <= 0:
-        raise HTTPException(
-            status_code=422,
-            detail="New rate should be bigger than 0"
-        )
-
-    if changes and supplier_rate.rate_per_unit > 0:
+    if changes:
         suppliers_table.update(
             changes,
             doc_ids=[supplier_id]
         )
         suppliers_table.update(
-            {"updated_at": datetime.now()},
+            {"updated_at": datetime.now(timezone.utc).isoformat()},
             doc_ids=[supplier_id]
         )
 
@@ -138,7 +135,7 @@ def update_supplier_rate(
     )
 
 
-@router.patch("/{supplier_id}/status")
+@router.patch("/{supplier_id}/status", response_model=SupplierResponse)
 def update_supplier_status(
     supplier_id: int,
     supplier_status: SupplierStatusUpdate
@@ -154,12 +151,6 @@ def update_supplier_status(
             detail="Supplier not found"
         )
 
-    if supplier_status.status not in ["active", "suspended"]:
-        raise HTTPException(
-            status_code=422,
-            detail="Supplier status must be 'active' or 'suspended'"
-        )
-
     changes = supplier_status.model_dump(
         exclude_unset=True
     )
@@ -167,6 +158,11 @@ def update_supplier_status(
     if changes:
         suppliers_table.update(
             changes,
+            doc_ids=[supplier_id]
+        )
+
+        suppliers_table.update(
+            {"updated_at": datetime.now(timezone.utc).isoformat()},
             doc_ids=[supplier_id]
         )
 
