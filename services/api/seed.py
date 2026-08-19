@@ -1,5 +1,5 @@
-from .database import suppliers_table
-from .models import SupplierCreateInput
+from database import suppliers_table
+from models import SupplierCreateInput
 
 
 seed_data = [
