@@ -1,0 +1,65 @@
+-----------------------
+OS / editor
+-----------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+-----------------------
+Logs
+-----------------------
+.log
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+-----------------------
+Node / frontend
+-----------------------
+node_modules/
+.npm/
+.pnpm-store/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+-----------------------
+Python
+-----------------------
+pycache/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.python-version
+
+Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+services/myenv/
+
+-----------------------
+Variables de entorno / secretos
+-----------------------
+.env
+.env.*
+!.env.example
+
+-----------------------
+Base de datos local / runtime
+-----------------------
+db.json
+services/api/db.local.json
