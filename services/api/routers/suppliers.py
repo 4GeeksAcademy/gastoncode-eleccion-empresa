@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from tinydb import Query
 
-from database import suppliers_table
-from models import SupplierCreateInput, SupplierRateUpdate, SupplierStatusUpdate, SupplierResponse
+from ..database import suppliers_table
+from ..models import SupplierCreateInput, SupplierRateUpdate, SupplierStatusUpdate, SupplierResponse
 from datetime import datetime, timezone
 
 
