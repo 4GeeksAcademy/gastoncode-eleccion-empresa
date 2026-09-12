@@ -62,4 +62,5 @@ Variables de entorno / secretos
 Base de datos local / runtime
 -----------------------
 db.json
-services/api/db.local.json
+services/api-suppliers/db.local.json
+results.csv

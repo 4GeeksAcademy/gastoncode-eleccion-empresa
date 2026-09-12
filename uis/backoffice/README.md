@@ -1,6 +1,6 @@
 # Brasaland — Backoffice de Proveedores (Frontend)
 
-Panel de administración de proveedores para **Brasaland**, cadena de restaurantes de parrilla con locales en Colombia y Estados Unidos. Consume la [Suppliers API](../../services/api/README.md) y permite gestionar el catálogo completo de proveedores desde una única vista.
+Panel de administración de proveedores para **Brasaland**, cadena de restaurantes de parrilla con locales en Colombia y Estados Unidos. Consume la [Suppliers API](../../services/api-suppliers/README.md) y permite gestionar el catálogo completo de proveedores desde una única vista.
 
 ---
 
@@ -79,7 +79,7 @@ uis/backoffice/
 ```bash
 # 1. Asegúrate de que la API esté corriendo en otro terminal
 cd /workspaces/gastoncode-eleccion-empresa
-python -m uvicorn services.api.main:app --reload
+python -m uvicorn services.api-suppliers.main:app --reload
 
 # 2. Inicia el frontend
 cd /workspaces/gastoncode-eleccion-empresa/uis/backoffice

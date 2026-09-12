@@ -61,7 +61,7 @@ El proyecto se ejecuta con **Python 3.12** y las siguientes librerías:
 
 ```bash
 # Desde la raíz del repositorio
-python -m uvicorn services.api.main:app --reload
+python -m uvicorn services.api-suppliers.main:app --reload
 
 # La API queda disponible en
 http://localhost:8000
@@ -70,7 +70,7 @@ http://localhost:8000
 http://localhost:8000/docs
 
 # Poblar base de datos con datos de base
-python -m services.api.seed
+python -m services.api-suppliers.seed
 ```
 
 ---
