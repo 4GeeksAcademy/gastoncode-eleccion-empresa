@@ -44,7 +44,7 @@ Panel de administración de proveedores para **Brasaland**, cadena de restaurant
 ## Estructura del proyecto
 
 ```
-uis/backoffice/
+uis/suppliers-backoffice/
 ├── next.config.ts          # Proxy /api/* → API REST
 ├── package.json
 ├── tsconfig.json
@@ -82,7 +82,7 @@ cd /workspaces/gastoncode-eleccion-empresa
 python -m uvicorn services.api-suppliers.main:app --reload
 
 # 2. Inicia el frontend
-cd /workspaces/gastoncode-eleccion-empresa/uis/backoffice
+cd /workspaces/gastoncode-eleccion-empresa/uis/suppliers-backoffice
 npm run dev
 ```
 
