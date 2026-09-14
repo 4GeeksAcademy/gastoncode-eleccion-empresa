@@ -1,0 +1,24 @@
+[project]
+name = "api-suppliers"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Gastón Rodríguez", email = "gastonrodriguez15@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.141.1",
+    "tinydb>=4.9.0",
+    "python-dotenv>=1.2.3",
+    "python-jose[cryptography]>=3.5.0",
+    "uvicorn>=0.52.4",
+    "pydantic[email]>=2.13.5",
+]
+
+[project.scripts]
+api-suppliers = "api_suppliers:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
