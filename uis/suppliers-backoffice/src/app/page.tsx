@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   fetchSuppliers,
   searchSuppliers,
@@ -11,6 +12,9 @@ import {
   type Supplier,
   type CreateSupplierInput,
 } from './components/api';
+import { UnauthorizedError } from './components/auth-api';
+import { useAuth } from './components/auth-context';
+import AuthGuard from './components/auth-guard';
 import SearchBar from './components/search-bar';
 import SupplierList from './components/supplier-list';
 import SupplierForm from './components/supplier-form';
@@ -18,6 +22,17 @@ import RateDialog from './components/rate-dialog';
 import DeleteDialog from './components/delete-dialog';
 
 export default function Home() {
+  return (
+    <AuthGuard>
+      <SuppliersDashboard />
+    </AuthGuard>
+  );
+}
+
+function SuppliersDashboard() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,18 +50,30 @@ export default function Home() {
   const [searching, setSearching] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const handleFailure = useCallback(
+    (err: unknown, fallback: string) => {
+      if (err instanceof UnauthorizedError) {
+        logout();
+        router.replace('/login');
+        return;
+      }
+      setError(err instanceof Error ? err.message : fallback);
+    },
+    [logout, router]
+  );
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await fetchSuppliers();
       setSuppliers(data);
-    } catch {
-      setError('No se pudo cargar la lista de proveedores.');
+    } catch (err) {
+      handleFailure(err, 'No se pudo cargar la lista de proveedores.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleFailure]);
 
   useEffect(() => {
     loadAll();
@@ -70,8 +97,8 @@ export default function Home() {
         );
         setSuppliers(data);
       }
-    } catch {
-      setError('Error al buscar proveedores.');
+    } catch (err) {
+      handleFailure(err, 'Error al buscar proveedores.');
     } finally {
       setSearching(false);
     }
@@ -83,8 +110,8 @@ export default function Home() {
       setShowForm(false);
       flash('Proveedor creado correctamente.');
       await loadAll();
-    } catch {
-      setError('Error al crear el proveedor.');
+    } catch (err) {
+      handleFailure(err, 'Error al crear el proveedor.');
     }
   }
 
@@ -93,8 +120,8 @@ export default function Home() {
       await updateRate(id, rate);
       flash('Tarifa actualizada.');
       await loadAll();
-    } catch {
-      setError('Error al actualizar la tarifa.');
+    } catch (err) {
+      handleFailure(err, 'Error al actualizar la tarifa.');
     }
   }
 
@@ -110,8 +137,8 @@ export default function Home() {
         next === 'active' ? 'Proveedor reactivado.' : 'Proveedor suspendido.'
       );
       await loadAll();
-    } catch {
-      setError('Error al cambiar el estado.');
+    } catch (err) {
+      handleFailure(err, 'Error al cambiar el estado.');
     }
   }
 
@@ -121,8 +148,8 @@ export default function Home() {
       flash('Proveedor eliminado.');
       setDeleteTarget(null);
       await loadAll();
-    } catch {
-      setError('Error al eliminar el proveedor.');
+    } catch (err) {
+      handleFailure(err, 'Error al eliminar el proveedor.');
     }
   }
 
@@ -140,13 +167,30 @@ export default function Home() {
               <p className="text-xs text-stone-500">Proveedores</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-amber-500 sm:px-4"
-          >
-            <span className="sm:hidden">+</span>
-            <span className="hidden sm:inline">+ Nuevo proveedor</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden text-xs text-stone-500 sm:inline">
+              {user?.email}
+              <span className="ml-2 rounded bg-stone-800 px-1.5 py-0.5 uppercase tracking-wide text-stone-400">
+                {user?.role}
+              </span>
+            </span>
+            <button
+              onClick={() => setShowForm(true)}
+              className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-amber-500 sm:px-4"
+            >
+              <span className="sm:hidden">+</span>
+              <span className="hidden sm:inline">+ Nuevo proveedor</span>
+            </button>
+            <button
+              onClick={() => {
+                logout();
+                router.replace('/login');
+              }}
+              className="rounded-lg border border-stone-700 px-3 py-2 text-sm font-medium text-stone-300 transition hover:bg-stone-800"
+            >
+              Salir
+            </button>
+          </div>
         </div>
       </header>
 

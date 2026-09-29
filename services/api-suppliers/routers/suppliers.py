@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from tinydb import Query
-
+from auth import get_current_user, require_roles
 from database import suppliers_table
 from models import SupplierCreateInput, SupplierRateUpdate, SupplierStatusUpdate, SupplierResponse
 from datetime import datetime, timezone
@@ -20,7 +20,7 @@ def serialize_document(document):
 
 @router.post("", response_model=SupplierResponse)
 
-def create_supplier(supplier: SupplierCreateInput):
+def create_supplier(supplier: SupplierCreateInput, current_user: dict = Depends(require_roles(["admin", "manager"]))):
 
     supplier_data = supplier.model_dump()
     supplier_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -34,7 +34,7 @@ def create_supplier(supplier: SupplierCreateInput):
 
 
 @router.get("", response_model=list[SupplierResponse])
-def get_suppliers():
+def get_suppliers(current_user: dict = Depends(get_current_user)):
 
     documents = suppliers_table.all()
 
@@ -47,7 +47,8 @@ def get_suppliers():
 @router.get("/search", response_model=list[SupplierResponse])
 def search_suppliers(
     country: str | None = None,
-    categories: str | None = None
+    categories: str | None = None,
+    current_user: dict = Depends(get_current_user)
 ):
 
     country = country.strip() if country is not None else None
@@ -81,7 +82,7 @@ def search_suppliers(
 
 
 @router.get("/{supplier_id}", response_model=SupplierResponse)
-def get_supplier(supplier_id: int):
+def get_supplier(supplier_id: int, current_user: dict = Depends(get_current_user)):
 
     document = suppliers_table.get(
         doc_id=supplier_id
@@ -99,7 +100,8 @@ def get_supplier(supplier_id: int):
 @router.patch("/{supplier_id}/rate", response_model=SupplierResponse)
 def update_supplier_rate(
     supplier_id: int,
-    supplier_rate: SupplierRateUpdate
+    supplier_rate: SupplierRateUpdate,
+    current_user: dict = Depends(require_roles(["admin", "manager"]))
 ):
 
     document = suppliers_table.get(
@@ -138,7 +140,8 @@ def update_supplier_rate(
 @router.patch("/{supplier_id}/status", response_model=SupplierResponse)
 def update_supplier_status(
     supplier_id: int,
-    supplier_status: SupplierStatusUpdate
+    supplier_status: SupplierStatusUpdate,
+    current_user: dict = Depends(require_roles(["admin", "manager"]))
 ):
 
     document = suppliers_table.get(
@@ -176,7 +179,7 @@ def update_supplier_status(
 
 
 @router.delete("/{supplier_id}")
-def delete_supplier(supplier_id: int):
+def delete_supplier(supplier_id: int, current_user: dict = Depends(require_roles(["admin", "manager"]))):
 
     document = suppliers_table.get(
         doc_id=supplier_id

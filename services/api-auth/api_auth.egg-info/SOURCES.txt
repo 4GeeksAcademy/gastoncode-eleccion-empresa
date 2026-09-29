@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+api_auth.egg-info/PKG-INFO
+api_auth.egg-info/SOURCES.txt
+api_auth.egg-info/dependency_links.txt
+api_auth.egg-info/requires.txt
+api_auth.egg-info/top_level.txt
