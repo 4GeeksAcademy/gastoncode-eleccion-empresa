@@ -1,0 +1,41 @@
+/* Puente entre los tokens de Brasaland y la escala de utilidades de Tailwind. */
+
+@import "./theme.css";
+
+@theme inline {
+  --color-brasa-50: var(--bl-brasa-50);
+  --color-brasa-100: var(--bl-brasa-100);
+  --color-brasa-200: var(--bl-brasa-200);
+  --color-brasa-300: var(--bl-brasa-300);
+  --color-brasa-400: var(--bl-brasa-400);
+  --color-brasa-500: var(--bl-brasa-500);
+  --color-brasa-600: var(--bl-brasa-600);
+  --color-brasa-700: var(--bl-brasa-700);
+  --color-brasa-800: var(--bl-brasa-800);
+  --color-brasa-900: var(--bl-brasa-900);
+
+  --color-background: var(--bl-bg);
+  --color-foreground: var(--bl-text);
+  --color-surface: var(--bl-surface);
+  --color-surface-2: var(--bl-surface-2);
+  --color-border-muted: var(--bl-border);
+  --color-border-strong: var(--bl-border-strong);
+  --color-text-muted: var(--bl-text-muted);
+  --color-text-subtle: var(--bl-text-subtle);
+  --color-accent: var(--bl-accent);
+}
+
+/* Resplandor de brasa para cabeceras y secciones destacadas. */
+@utility brasa-glow {
+  background-image:
+    radial-gradient(
+      60rem 24rem at 12% -20%,
+      color-mix(in oklab, var(--bl-brasa-500) 18%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      44rem 20rem at 92% 0%,
+      color-mix(in oklab, var(--bl-brasa-800) 22%, transparent),
+      transparent 55%
+    );
+}

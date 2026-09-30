@@ -16,7 +16,7 @@ Desde este directorio (`services/api-auth`):
 # Con uv, usando el lockfile del servicio
 uv sync
 export JWT_SECRET="cambia-esta-clave-en-desarrollo"
-uv run uvicorn main:app --reload
+uv run uvicorn main:app --port 8001 --reload
 ```
 
 Con un entorno virtual existente:
@@ -24,10 +24,10 @@ Con un entorno virtual existente:
 ```bash
 pip install -e .
 export JWT_SECRET="cambia-esta-clave-en-desarrollo"
-python -m uvicorn main:app --reload
+python -m uvicorn main:app --port 8001 --reload
 ```
 
-El servicio queda disponible en `http://localhost:8000`.
+El servicio queda disponible en `http://localhost:8001`.
 
 ### Configuración
 
