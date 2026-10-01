@@ -1,4 +1,21 @@
 {
+  "name": "brasaland-digital",
+  "private": true,
+  "workspaces": [
+    "uis/backoffice/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -c yellow,green,magenta,cyan \"npm:dev:*\"",
+    "dev:dashboard": "npm run dev -w dashboard-backoffice",
+    "dev:suppliers": "npm run dev -w suppliers-backoffice",
+    "dev:incidents": "npm run dev -w incidents-analyzer",
+    "dev:talent": "npm run dev -w talent-pipeline-tracker",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
   "dependencies": {
     "typescript": "^6.0.3",
     "uv": "^1.4.0"

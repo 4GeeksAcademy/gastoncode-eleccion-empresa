@@ -8,4 +8,4 @@ Desde la raíz del monorepo:
 
 ```bash
 source .venv/bin/activate
-python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8002 --reload
