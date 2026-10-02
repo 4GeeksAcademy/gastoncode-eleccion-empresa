@@ -42,35 +42,57 @@ La API permite al equipo de operaciones de Brasaland gestionar el catálogo comp
 
 El proyecto se ejecuta con **Python 3.12** y las siguientes librerías:
 
-| Librería                            | Versión | Propósito                                  |
-| ----------------------------------- | ------- | ------------------------------------------ |
-| `fastapi`                           | ≥0.141  | Framework web para construir la API REST   |
-| `uvicorn`                           | ≥0.52   | Servidor ASGI para servir la aplicación    |
-| `pydantic`                          | ≥2.13   | Validación de esquemas y modelos de datos  |
-| `pydantic_core`                     | ≥2.46   | Core de Pydantic (validaciones internas)   |
-| `starlette`                         | ≥1.6    | Base sobre la que corre FastAPI            |
-| `tinydb`                            | ≥4.9    | Base de datos NoSQL embebida (JSON)        |
-| `email_validator`                   | ≥2.3    | Validación de correos electrónicos         |
-| `idna`                              | ≥3.18   | Resolución de dominios IDN (email)         |
-| `typing_extensions`                 | ≥4.16   | Utilidades adicionales de tipado           |
+| Librería       | Versión | Propósito                                 |
+| -------------- | ------- | ----------------------------------------- |
+| `fastapi`      | ≥0.141  | Framework web para construir la API REST  |
+| `uvicorn`      | ≥0.52   | Servidor ASGI para servir la aplicación   |
+| `pydantic`     | ≥2.13   | Validación de esquemas y modelos de datos |
+| `tinydb`       | ≥4.9    | Base de datos NoSQL embebida (JSON)       |
+| `python-jose`  | ≥3.5    | Codificación y verificación de tokens JWT |
+| `python-dotenv`| ≥1.2    | Carga de variables de entorno desde .env  |
 
 
 ---
 
 ## Ejecución
 
+### 1. Iniciar el servidor
+
 ```bash
 # Desde la raíz del repositorio
 python -m uvicorn services.api-suppliers.main:app --reload
 
-# La API queda disponible en
-http://localhost:8000
+# O directamente desde services/api-suppliers
+cd services/api-suppliers
+uvicorn main:app --reload
+```
 
-# Documentación interactiva (OpenAPI / Swagger)
-http://localhost:8000/docs
+La API queda disponible en `http://localhost:8000`
+Documentación interactiva (Swagger): `http://localhost:8000/docs`
 
-# Poblar base de datos con datos de base
-python -m services.api-suppliers.seed
+### 2. Poblar la base de datos
+
+```bash
+# Desde el directorio services/api-suppliers
+cd services/api-suppliers
+python seed.py
+
+# O desde la raíz del repositorio
+python services/api-suppliers/seed.py
+```
+
+> **Nota:** La base de datos se crea automáticamente al iniciar el servidor. El seed solo es necesario la primera vez o para reiniciar los datos de ejemplo (15 proveedores). Si la tabla no está vacía, el seed la omite automáticamente.
+
+### 3. Variables de entorno
+
+Copia el archivo `.env` incluido o créalo con:
+
+```env
+JWT_SECRET=super-secret-key-cambiar-en-produccion
+AUTH_SERVICE_URL=http://localhost:8000
+```
+
+> El `.env` ya está en `.gitignore` para evitar commits accidentales.
 ```
 
 ---

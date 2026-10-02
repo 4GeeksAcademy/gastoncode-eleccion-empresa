@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Gastón Rodríguez", email = "gastonrodriguez15@gmail.com" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.141.1",
     "tinydb>=4.9.0",
@@ -15,9 +15,6 @@ dependencies = [
     "uvicorn>=0.52.4",
     "pydantic[email]>=2.13.5",
 ]
-
-[project.scripts]
-api-suppliers = "api_suppliers:main"
 
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]

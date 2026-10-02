@@ -6,9 +6,13 @@ from jose import JWTError, jwt
 
 load_dotenv()
 
-JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_SECRET = os.getenv("JWT_SECRET", "ClaveSecreta")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET no está configurado. Revisa el archivo .env")
 ALGORITHM = "HS256"
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+if not AUTH_SERVICE_URL:
+    raise RuntimeError("AUTH_SERVICE_URL no está configurado. Revisa el archivo .env")
 
 # Permite indicar la URL donde Swagger puede solicitar tokens
 oauth2_scheme = OAuth2PasswordBearer(
