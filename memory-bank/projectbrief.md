@@ -41,7 +41,7 @@ El repositorio organiza el trabajo en varias áreas, no en una única aplicació
 - `uis/backoffice/` reúne interfaces para el dashboard ejecutivo, la gestión de proveedores, el análisis de incidencias y el seguimiento de talento.
 - `services/` contiene servicios de API, incluidos los dominios de autenticación, incidencias y proveedores.
 - `packages/`, `src/` y `shared/` alojan tipos, utilidades y convenciones compartidas.
-- `data/`, `scripts/`, `skills/`, `agents/`, `mcps/` y `workflows/` proporcionan espacio para análisis de datos, automatización y capacidades de IA.
+- `data/`, `scripts/`, `skills/`, `agents/`, `mcps/` y `workflows/` proporcionan espacio para análisis de datos, automatización y capacidades de IA. Además, `.agents/skills/` contiene skills operativas con scripts y pruebas; entre ellas, un planificador determinista que sugiere reposición a partir de inventario validado.
 - `docs/` y `memory-bank/` documentan la arquitectura, el contexto y el avance del proyecto.
 
 Estos módulos reflejan las áreas de trabajo presentes en el repositorio; su existencia no implica por sí sola que todos los objetivos de negocio estén ya implementados o integrados. La evolución debe priorizar entregables verificables que reduzcan los problemas operativos de Brasaland y permitan ampliar la plataforma por etapas.
