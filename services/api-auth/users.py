@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from passlib.hash import bcrypt
 from pydantic import BaseModel
 
-from auth import get_current_user
+from auth import get_current_user, require_roles
 from services import (
     create_user,
     delete_user,
@@ -114,7 +114,7 @@ def register(data: UserCreate):
 
 @router.get("")
 def list_users(
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_roles(["admin", "manager"]))
 ):
     return [
         public_user(user)
@@ -186,6 +186,12 @@ def edit_user(
             )
 
         changes["role"] = changes["role"].value
+
+    if "is_active" in changes and current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Solo un admin puede cambiar el estado de la cuenta"
+        )
 
     user = update_user(
         user_id,
