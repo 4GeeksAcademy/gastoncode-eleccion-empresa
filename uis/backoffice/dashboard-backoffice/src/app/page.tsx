@@ -1,4 +1,5 @@
 import { ServiceCard } from "./components/service-card";
+import { AuthGuard } from "./components/auth-guard";
 import { SiteHeader } from "./components/site-header";
 import { StatCard } from "./components/stat-card";
 import { SectionHeading } from "./components/ui/section-heading";
@@ -8,7 +9,7 @@ const AREAS = new Set(SERVICES.map((service) => service.area));
 
 export default function Home() {
   return (
-    <>
+    <AuthGuard>
       <SiteHeader />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
@@ -58,6 +59,6 @@ export default function Home() {
           Brasaland · Cocina a la brasa desde 2008 — Medellín, Colombia
         </p>
       </footer>
-    </>
+    </AuthGuard>
   );
 }
