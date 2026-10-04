@@ -33,7 +33,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!initializing && user) router.replace(destination);
+    if (!initializing && user) {
+      if (destination === "/suppliers" || destination.startsWith("/suppliers/")) window.location.replace(destination);
+      else router.replace(destination);
+    }
   }, [initializing, user, destination, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

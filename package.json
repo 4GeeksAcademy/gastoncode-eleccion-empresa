@@ -5,6 +5,10 @@
     "uis/backoffice/*"
   ],
   "scripts": {
+    "backoffice:setup": "node scripts/backoffice.mjs setup",
+    "backoffice:dev": "node scripts/backoffice.mjs dev",
+    "backoffice:check": "node scripts/backoffice.mjs check",
+    "backoffice:admin": "node scripts/backoffice.mjs admin",
     "dev": "concurrently -c yellow,green,magenta,cyan \"npm:dev:*\"",
     "dev:dashboard": "npm run dev -w dashboard-backoffice",
     "dev:suppliers": "npm run dev -w suppliers-backoffice",

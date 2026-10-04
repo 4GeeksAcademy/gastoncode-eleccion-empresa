@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test, { beforeEach, afterEach } from "node:test";
 import ts from "typescript";
 
-const source = await readFile(new URL("../src/app/components/auth-api.ts", import.meta.url), "utf8");
+const source = await readFile(new URL("../../auth-shared/auth-api.ts", import.meta.url), "utf8");
 const { outputText } = ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
 });
@@ -167,14 +167,15 @@ test("auth rewrites cover collection and nested routes for all three resources",
     `data:text/javascript;base64,${Buffer.from(configCode).toString("base64")}`
   );
   const base = process.env.AUTH_API_URL ?? "http://localhost:8001";
-  assert.deepEqual(await config.rewrites(), ["auth", "users", "profiles"].flatMap((resource) => [
+  const rewrites = await config.rewrites();
+  assert.deepEqual(rewrites.filter((route) => /^\/api\/(auth|users|profiles)(\/|$)/.test(route.source)), ["auth", "users", "profiles"].flatMap((resource) => [
     { source: `/api/${resource}`, destination: `${base}/${resource}` },
     { source: `/api/${resource}/:path*`, destination: `${base}/${resource}/:path*` },
   ]));
 });
 
 test("auth destinations retain supported internal routes", () => {
-  for (const route of ["/", "/account", "/account/profile", "/?view=tools#services"]) {
+  for (const route of ["/", "/account", "/account/profile", "/suppliers", "/?view=tools#services"]) {
     assert.equal(safeAuthDestination(route), route);
   }
 });

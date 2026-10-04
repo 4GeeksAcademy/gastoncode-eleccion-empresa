@@ -2,6 +2,14 @@
 
 API de gestión de proveedores para **Brasaland**, cadena de restaurantes de parrilla con locales en Colombia y Estados Unidos.
 
+Para desarrollo integrado, usar `npm run backoffice:setup` y
+`npm run backoffice:dev` desde la raiz. Ver la
+[guia de integracion](../../docs/BACKOFFICE_INTEGRATION.es.md).
+El lanzador entrega la misma clave JWT a auth y suppliers; no hay clave por defecto.
+`AUTH_SERVICE_URL` apunta a auth en el puerto 8001. Suppliers reconsulta
+`/auth/me` antes de autorizar y devuelve 503 si no puede validar la identidad.
+`SUPPLIERS_DB_PATH` permite datos aislados; por defecto se conserva `db.json`.
+
 ---
 
 ## Índice
@@ -87,12 +95,9 @@ python services/api-suppliers/seed.py
 
 ### 3. Variables de entorno
 
-Copia el archivo `.env` incluido o créalo con:
-
-```env
-JWT_SECRET=super-secret-key-cambiar-en-produccion
-AUTH_SERVICE_URL=http://localhost:8000
-```
+Fuera del lanzador, define `JWT_SECRET` con la misma clave de auth y
+`AUTH_SERVICE_URL=http://localhost:8001`. No hay clave JWT predeterminada.
+El lanzador integrado configura ambos valores sin modificar archivos `.env`.
 
 > El `.env` ya está en `.gitignore` para evitar commits accidentales.
 
@@ -106,29 +111,14 @@ Todos los endpoints —excepto el health check (`GET /`)— requieren un token J
 Authorization: Bearer <token>
 ```
 
-### Generar un token de prueba
+### Tokens de prueba
 
-```bash
-# Usando python-jose (el mismo que usa la API)
-python -c "
-import os, time
-from dotenv import load_dotenv
-from jose import jwt
-load_dotenv()  # Carga JWT_SECRET del .env
-secret = os.getenv('JWT_SECRET', 'ClaveSecreta')
-payload = {
-    'sub': 'test-user-123',           # ID único del usuario
-    'email': 'admin@brasaland.co',    # Correo electrónico
-    'role': 'admin',                  # Rol del usuario
-    'iat': int(time.time()),          # Emitido ahora
-    'exp': int(time.time()) + 3600    # Expira en 1 hora
-}
-token = jwt.encode(payload, secret, algorithm='HS256')
-print(token)
-"
-```
+Obtener tokens desde `POST /auth/login` con una cuenta activa real de auth.
+Una firma JWT valida no basta: suppliers tambien verifica que la cuenta exista,
+este activa y conserve el rol necesario en `/auth/me`.
 
-> El token se codifica en **HS256** usando la clave definida en `JWT_SECRET`. Los campos `sub`, `email` y `role` se extraen del payload y quedan disponibles en el objeto `current_user` dentro de cada endpoint.
+El JWT se valida con **HS256** y la clave compartida. El rol y el estado
+efectivos se consultan en auth, no se toman como actuales por estar en el token.
 
 ---
 

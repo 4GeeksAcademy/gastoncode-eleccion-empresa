@@ -7,6 +7,10 @@ El `AuthProvider` esta conectado al layout raiz. Las vistas `/login` y `/registe
 estan implementadas y `/`, `/account` y `/account/profile` utilizan el guard.
 La cabecera muestra la identidad autenticada y permite cerrar sesion.
 
+Para levantar dashboard, proveedores y ambas APIs con un comando, consultar
+[integracion del backoffice](../../../docs/BACKOFFICE_INTEGRATION.es.md).
+`/suppliers` pertenece a una app independiente expuesta por el proxy del dashboard.
+
 El registro pide email, contrasena, confirmacion y nombre opcional. Tras crear
 la cuenta, redirige al login con una confirmacion, sin guardar token ni iniciar
 sesion automaticamente. Se valida email requerido y coincidencia de contrasenas;
@@ -34,7 +38,8 @@ configurados fuera del frontend. Esta integracion no modifica la API ni sus perm
 - El login envia un formulario OAuth2 con `username` igual al email.
 - `login` del cliente devuelve el token; `login` del contexto lo guarda y valida
   la identidad mediante `/auth/me` antes de resolver satisfactoriamente.
-- Solo el JWT se guarda en `localStorage`, bajo `brasaland.dashboard.token`.
+- Solo el JWT se guarda en `localStorage`, bajo `brasaland.backoffice.token`.
+- Cliente, contexto y guard viven en `../auth-shared`; ambas apps los reexportan.
 - Cada llamada protegida agrega `Authorization: Bearer <token>` y usa `no-store`.
 - Un `401` protegido elimina el token usado, notifica al proveedor y redirige a
   `/login`. Una respuesta tardia no elimina un token que ya fue reemplazado.
@@ -83,7 +88,7 @@ dashboard si la sesion ya esta validada. El guard oculta sus hijos
 durante la validacion y los errores de sesion; ofrece reintento y distingue
 usuario sin sesion de usuario sin permisos. La redireccion conserva el pathname
 en `/login?next=...`, sin parametros de consulta. Login valida `next` mediante
-una lista de rutas internas: `/`, `/account` y `/account/profile`. Descarta
+una lista de rutas internas: `/`, `/account`, `/account/profile` y `/suppliers`. Descarta
 URLs externas, rutas desconocidas y bucles hacia login/registro.
 
 El guard controla presentacion y navegacion, no protege Server Components,
@@ -122,7 +127,9 @@ de navegador simulada no sustituye la prueba manual contra el backend real.
 
 ## Limites
 
-El almacenamiento es por origen: no comparte sesion con las otras aplicaciones.
+El almacenamiento es por origen: dashboard y proveedores comparten sesion si
+se accede a ambos desde el origen del dashboard. Incidencias y talento no estan
+integrados en esta sesion. Entrar directamente por 3001 usa otro almacenamiento.
 El JWT es accesible a JavaScript y debe protegerse frente a XSS; nunca registrar
 tokens ni contrasenas. No hay refresh ni revocacion backend: el logout elimina
 la copia local, pero un token obtenido previamente puede seguir siendo valido.

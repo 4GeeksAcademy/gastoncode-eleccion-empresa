@@ -1,4 +1,4 @@
-import { authHeaders, clearToken, UnauthorizedError } from './auth-api';
+import { authHeaders, clearToken, getToken, SESSION_INVALIDATED_EVENT, UnauthorizedError } from './auth-api';
 
 export interface Supplier {
   id: number;
@@ -31,13 +31,17 @@ async function apiFetch(
   init: RequestInit = {},
   errorMessage = 'Request failed'
 ): Promise<Response> {
+  const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: { ...(init.headers ?? {}), ...authHeaders() },
   });
 
   if (res.status === 401) {
-    clearToken();
+    if (token === getToken()) {
+      clearToken();
+      window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT));
+    }
     throw new UnauthorizedError();
   }
   if (res.status === 403) {

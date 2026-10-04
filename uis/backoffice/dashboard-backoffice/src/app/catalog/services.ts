@@ -22,7 +22,7 @@ export const SERVICES: BackofficeService[] = [
       "Ficha de proveedores, historial de precios y compras consolidadas de Colombia y Florida.",
     icon: "🛒",
     path: "uis/backoffice/suppliers-management",
-    url: process.env.NEXT_PUBLIC_SUPPLIERS_UI_URL ?? "http://localhost:3001",
+    url: "/suppliers",
   },
   {
     id: "incidents-analyzer",

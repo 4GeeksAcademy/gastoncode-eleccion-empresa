@@ -4,6 +4,7 @@ import type { Supplier } from './api';
 import StatusBadge from './status-badge';
 
 interface Props {
+  canWrite: boolean;
   supplier: Supplier;
   onEditRate: (id: number, name: string) => void;
   onToggleStatus: (id: number, name: string, status: 'active' | 'suspended') => void;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function SupplierCard({
+  canWrite,
   supplier,
   onEditRate,
   onToggleStatus,
@@ -54,7 +56,7 @@ export default function SupplierCard({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-stone-800 pt-3">
+      {canWrite && <div className="flex flex-wrap gap-2 border-t border-stone-800 pt-3">
         <button
           onClick={() => onEditRate(supplier.id, supplier.name)}
           className="rounded-lg bg-amber-600/20 px-3 py-1.5 text-xs font-medium text-amber-400 transition hover:bg-amber-600/40"
@@ -75,7 +77,7 @@ export default function SupplierCard({
         >
           Eliminar
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

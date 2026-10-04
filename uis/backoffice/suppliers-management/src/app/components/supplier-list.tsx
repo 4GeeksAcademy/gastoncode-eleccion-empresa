@@ -4,6 +4,7 @@ import type { Supplier } from './api';
 import SupplierCard from './supplier-card';
 
 interface Props {
+  canWrite: boolean;
   suppliers: Supplier[];
   onEditRate: (id: number, name: string) => void;
   onToggleStatus: (id: number, name: string, status: 'active' | 'suspended') => void;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function SupplierList({
+  canWrite,
   suppliers,
   onEditRate,
   onToggleStatus,
@@ -28,6 +30,7 @@ export default function SupplierList({
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {suppliers.map((s) => (
         <SupplierCard
+          canWrite={canWrite}
           key={s.id}
           supplier={s}
           onEditRate={onEditRate}

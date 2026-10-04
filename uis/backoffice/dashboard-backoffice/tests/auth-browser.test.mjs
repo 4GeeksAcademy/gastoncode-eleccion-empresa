@@ -3,7 +3,7 @@ import test, { before, after, beforeEach, afterEach } from "node:test";
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const base = process.env.DASHBOARD_URL ?? "http://localhost:3000";
-const tokenKey = "brasaland.dashboard.token";
+const tokenKey = "brasaland.backoffice.token";
 const user = {
   id: "test-user", email: "person@example.com", role: "user",
   profile: { id: "profile-id", user_id: "test-user", name: "Ana Test", phone: null, address: null },
