@@ -62,8 +62,11 @@ def search_suppliers(
         condition = SupplierQuery.country == country
 
     if categories is not None and categories != "":
-        categories_condition = SupplierQuery.categories.any(categories)
-
+        category_list = [
+            c.strip() for c in categories.split(",") if c.strip()
+        ]  # ['carne', 'bebidas']
+    
+        categories_condition = SupplierQuery.categories.any(category_list)
         condition = (
             categories_condition
             if condition is None

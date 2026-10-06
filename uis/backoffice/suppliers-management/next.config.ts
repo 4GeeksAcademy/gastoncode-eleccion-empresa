@@ -5,6 +5,7 @@ const SUPPLIERS_API_URL =
   process.env.SUPPLIERS_API_URL ?? "http://localhost:8000";
 
 const nextConfig: NextConfig = {
+  assetPrefix: "/suppliers-static",
   async rewrites() {
     return [
       {

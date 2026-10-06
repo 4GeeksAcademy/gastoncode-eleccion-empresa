@@ -1,6 +1,12 @@
+import sys
+from pathlib import Path
+
+# Asegurar que el directorio actual esté en sys.path antes de imports locales
+sys.path.insert(0, str(Path(__file__).parent))
+
+import os
 from database import suppliers_table
 from models import SupplierCreateInput
-
 
 seed_data = [
     {

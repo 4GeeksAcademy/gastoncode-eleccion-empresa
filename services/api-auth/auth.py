@@ -24,6 +24,11 @@ router = APIRouter(
 
 
 JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET no está configurado. "
+        "Definilo en el entorno o en un archivo .env antes de iniciar."
+    )
 ALGORITHM = "HS256"
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(
@@ -75,6 +80,12 @@ def get_current_user(
                 detail="Usuario no válido"
             )
 
+        if not user.get("is_active", True):
+            raise HTTPException(
+                status_code=401,
+                detail="Cuenta desactivada"
+            )
+
         return user
 
     except JWTError:
@@ -116,6 +127,12 @@ def login(
         form.password,
         user["hashed_password"]
     ):
+        raise HTTPException(
+            status_code=401,
+            detail="Email o contraseña incorrectos"
+        )
+
+    if not user.get("is_active", True):
         raise HTTPException(
             status_code=401,
             detail="Email o contraseña incorrectos"

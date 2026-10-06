@@ -33,7 +33,7 @@ El servicio queda disponible en `http://localhost:8001`.
 
 | Variable | Obligatoria | Valor por defecto | Descripción |
 | --- | --- | --- | --- |
-| `JWT_SECRET` | Sí | Sin valor | Clave usada para firmar y validar los JWT. |
+| `JWT_SECRET` | Sí | Sin valor | Clave usada para firmar y validar los JWT. El servicio valida esta variable al arrancar y no inicia si falta. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `30` | Duración del token de acceso en minutos. |
 
 La aplicación carga también un archivo `.env` situado en el directorio de trabajo desde el que se ejecuta.
@@ -42,9 +42,9 @@ La aplicación carga también un archivo `.env` situado en el directorio de trab
 
 FastAPI expone automáticamente:
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-- Esquema OpenAPI: `http://localhost:8000/openapi.json`
+- Swagger UI: `http://localhost:8001/docs`
+- ReDoc: `http://localhost:8001/redoc`
+- Esquema OpenAPI: `http://localhost:8001/openapi.json`
 
 ## Persistencia
 
@@ -72,9 +72,10 @@ El JWT contiene `sub` (ID de usuario), `email`, `role` y `exp`. Los roles dispon
 | Registrar usuario | Sí | Sí | Sí |
 | Iniciar sesión | Sí | Sí | Sí |
 | Consultar o editar el propio perfil | No | Sí | Sí |
-| Listar usuarios | No | Sí | Sí |
+| Listar usuarios | No | Solo admin o manager | Sí |
 | Consultar, editar o eliminar un usuario | No | Solo el propio usuario | Cualquier usuario |
 | Cambiar el rol de un usuario | No | No | Sí |
+| Cambiar el estado (`is_active`) de un usuario | No | No | Sí |
 
 ## Endpoints
 
@@ -136,7 +137,7 @@ No requiere autenticación. El usuario se crea con rol `user` y estado activo, y
 Recibe `application/x-www-form-urlencoded` mediante el flujo OAuth2 Password. Aunque el campo se llama `username`, debe contener el email.
 
 ```bash
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8001/auth/login \
 	-H "Content-Type: application/x-www-form-urlencoded" \
 	-d "username=ana@example.com&password=una-clave-segura"
 ```
@@ -150,31 +151,31 @@ curl -X POST http://localhost:8000/auth/login \
 }
 ```
 
-**Errores:** `401` si el email o la contraseña son incorrectos.
+**Errores:** `401` si el email o la contraseña son incorrectos, o si la cuenta está desactivada.
 
 ### `GET /auth/me` — Usuario actual
 
 Requiere Bearer token. Devuelve los datos públicos del usuario y su perfil.
 
 ```bash
-curl http://localhost:8000/auth/me \
+curl http://localhost:8001/auth/me \
 	-H "Authorization: Bearer <access_token>"
 ```
 
-**Errores:** `401` si falta el token, es inválido o está expirado, o si el usuario ya no existe.
+**Errores:** `401` si falta el token, es inválido, está expirado, si el usuario ya no existe, o si la cuenta está desactivada.
 
 ### `GET /profiles/me` — Consultar perfil propio
 
 Requiere autenticación y devuelve `id`, `user_id`, `name`, `phone` y `address`.
 
-**Errores:** `401` sin un token válido; `404` si no existe el perfil.
+**Errores:** `401` sin un token válido o si la cuenta está desactivada; `404` si no existe el perfil.
 
 ### `PUT /profiles/me` — Editar perfil propio
 
 Requiere autenticación. Todos los campos son opcionales; los campos omitidos no se modifican.
 
 ```bash
-curl -X PUT http://localhost:8000/profiles/me \
+curl -X PUT http://localhost:8001/profiles/me \
 	-H "Authorization: Bearer <access_token>" \
 	-H "Content-Type: application/json" \
 	-d '{"name":"Ana María Pérez","phone":"+57 301 000 0000"}'
@@ -182,9 +183,13 @@ curl -X PUT http://localhost:8000/profiles/me \
 
 **Body (`application/json`):** `name`, `phone` y `address`, todos de tipo `string` y opcionales.
 
+**Errores:** `401` sin un token válido o si la cuenta está desactivada; `404` si no existe el perfil.
+
 ### `GET /users` — Listar usuarios
 
-Requiere autenticación. Devuelve una lista de usuarios públicos. Actualmente cualquier usuario autenticado puede consultar la lista; no se filtra por rol.
+Requiere autenticación. Solo los usuarios con rol `admin` o `manager` pueden listar todos los usuarios del sistema. Los usuarios con rol `user` reciben un error `403`.
+
+**Errores:** `401` sin un token válido; `403` si el rol no está autorizado.
 
 ### `GET /users/{user_id}` — Consultar usuario
 
@@ -207,9 +212,9 @@ Requiere autenticación y autorización de propietario o admin.
 }
 ```
 
-Todos los campos son opcionales. Solo un admin puede cambiar `role`; los roles permitidos son `admin`, `manager` y `user`. El cambio de contraseña vuelve a generar el hash bcrypt.
+Todos los campos son opcionales. Solo un admin puede cambiar `role` o `is_active`; los roles permitidos son `admin`, `manager` y `user`. El cambio de contraseña vuelve a generar el hash bcrypt.
 
-**Errores:** `400` si el email ya pertenece a otro usuario; `403` si no tiene permiso o intenta cambiar un rol sin ser admin; `422` si el body no es válido.
+**Errores:** `400` si el email ya pertenece a otro usuario; `403` si no tiene permiso o intenta cambiar `role` o `is_active` sin ser admin; `422` si el body no es válido.
 
 ### `DELETE /users/{user_id}` — Eliminar usuario
 
@@ -230,7 +235,7 @@ Requiere autenticación y autorización de propietario o admin. Elimina el usuar
 | Código | Situación |
 | --- | --- |
 | `400` | Email duplicado o credenciales de registro no aceptables. |
-| `401` | Falta el token, el JWT es inválido/expiró o las credenciales de login no coinciden. |
+| `401` | Falta el token, el JWT es inválido/expirado, las credenciales de login no coinciden, o la cuenta está desactivada. |
 | `403` | El usuario autenticado no tiene permisos para el recurso. |
 | `404` | Usuario o perfil inexistente. |
 | `422` | Error de validación de FastAPI/Pydantic. |

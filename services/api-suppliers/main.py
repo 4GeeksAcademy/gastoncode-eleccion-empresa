@@ -5,11 +5,6 @@ from routers.suppliers import router as suppliers_router
 
 app = FastAPI()
 
-
-@app.get("/")
-def health_check():
-    return {"message": "API working"}
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,3 +14,7 @@ app.add_middleware(
 )
 
 app.include_router(suppliers_router)
+
+@app.get("/")
+def health_check():
+    return {"message": "API working"}

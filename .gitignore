@@ -1,10 +1,15 @@
 # Sistema y editor
 .DS_Store
 Thumbs.db
+Desktop.ini
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+*.bak
+*.orig
+
 
 # Logs
 *.log
@@ -13,8 +18,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
-# Node, Next.js y artefactos frontend
+
+# Node / npm / pnpm / yarn (dependencias)
 node_modules/
 .npm/
 .pnpm-store/
@@ -25,42 +32,104 @@ node_modules/
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+
+# Next.js y artefactos frontend
 .next/
 out/
-dist/
 build/
+dist/
 .vercel/
 coverage/
 *.tsbuildinfo
 next-env.d.ts
 *.pem
 
-# Python
+# Caché de ESLint
+.eslintcache
+
+
+# Python — archivos compilados y cachés
 __pycache__/
 *.py[cod]
+*$py.class
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .tox/
 .nox/
+.hypothesis/
+pip-wheel-metadata/
+*.egg
 .coverage
 coverage.xml
 htmlcov/
+
+
+# Python — builds y empaquetado
 *.egg-info/
+build/
+dist/
+.eggs/
+*.manifest
+*.spec
+
+# uv lockfile (se regenera con `uv sync`, no debe trackearse)
+uv.lock
+
 
 # Entornos virtuales
 .venv/
 venv/
 env/
 ENV/
+.venv-win/
 services/myenv/
+
 
 # Variables de entorno
 .env
 .env.*
 !.env.example
 
-# Bases locales y resultados generados
+# Next.js genera .env.local en desarrollo
+.env.local
+.env.*.local
+
+
+# Bases de datos locales / runtime
 db.json
+services/api-auth/data/db.json
 services/api-suppliers/db.local.json
+services/api-suppliers/db.json
+
+# Análisis generados por la API de incidentes
+services/api-incidents/analyses.json
+
+
+# Resultados de scripts
 results.csv
+*.results.csv
+
+
+# Datos generados — solo READMEs se trackean
+data/eval/*
+!data/eval/README*
+data/pipelines/*
+!data/pipelines/README*
+data/process/*
+!data/process/README*
+data/raw/*
+!data/raw/README*
+
+
+# Evidencia (capturas de pantalla)
+evidencia/
+
+
+# Claves, certificados y secretos
+*.key
+*.cert
+*.p12
+*.pfx
+secrets/

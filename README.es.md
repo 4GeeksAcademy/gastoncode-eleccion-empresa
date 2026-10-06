@@ -7,6 +7,18 @@ _Plantilla base para proyectos transversales del Programa de Carrera en Ingenier
 
 _Las instrucciones están [disponibles en inglés](./README.md)._
 
+## Backoffice integrado
+
+```bash
+npm run backoffice:setup
+npm run backoffice:dev
+```
+
+Dashboard, login, cuentas y proveedores quedan accesibles en http://localhost:3000,
+manteniendo dos aplicaciones y dos APIs separadas. Consulta la
+[guia de integracion](docs/BACKOFFICE_INTEGRATION.es.md) para datos persistentes,
+primer administrador, cierre coordinado y verificaciones.
+
 ---
 
 ## Propósito
@@ -21,11 +33,15 @@ Este repositorio es la **plantilla de inicio** para los proyectos transversales.
 
 ## Estado actual de la plantilla
 
-Actualmente el repositorio ofrece una **estructura base de carpetas y documentación**, pero todavía no incluye aplicaciones ejecutables ni scripts globales en la raíz.
+El repositorio conserva la estructura de la plantilla y contiene aplicaciones
+ejecutables de backoffice, APIs de autenticacion/proveedores/incidencias y
+scripts globales de desarrollo. El arranque integrado documentado arriba
+cubre dashboard y proveedores; los otros modulos siguen separados.
 
 - `CONTEXT.md` es un placeholder y debe sustituirse por el contexto de la empresa asignada.
-- No existe todavía un `AGENTS.md` en la raíz.
-- Existe metadata del paquete compartido en `packages/shared/package.json` (`@repo/shared-types`), pero aún no hay runner de workspace en raíz.
+- `AGENTS.md` define las reglas de trabajo y las rutas protegidas.
+- La raiz configura workspaces npm para el backoffice y comandos de preparacion,
+  arranque y comprobacion; los contratos compartidos de dominio siguen en evolucion.
 
 ---
 

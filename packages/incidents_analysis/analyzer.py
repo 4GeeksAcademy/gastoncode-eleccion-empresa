@@ -85,7 +85,7 @@ ERROR_LABELS = {
         "Closed case, no score",
 
     "invalid_score":
-        "Invalid satisfaction_score",
+        "Invalid satisfaction_score (debe ser entero 1-5)",
 
     "score_out_of_range":
         "satisfaction_score out of range",
@@ -231,7 +231,7 @@ def validate_row(row):
         )
 
     elif not re.fullmatch(
-        r"MGR-\d{2}",
+        r"MGR-\d{2,}",
         reporter_id,
     ):
 
@@ -613,234 +613,6 @@ def analyze_csv_text(
     }
 
 
-def format_summary(
-    summary
-):
-
-    lines = [
-
-        "=" * 60,
-
-        (
-            "  BRASALAND — "
-            "INCIDENT REPORT ANALYSIS"
-        ),
-
-        (
-            "  Source file: "
-            f"{summary['source_file']}"
-        ),
-
-        "=" * 60,
-
-        "",
-
-        (
-            "TOTAL RECORDS IN FILE "
-            ".......... "
-            f"{summary['total_records']}"
-        ),
-
-        (
-            "  Valid records "
-            "................ "
-            f"{summary['valid_records']}"
-        ),
-
-        (
-            "  Invalid / incomplete "
-            "......... "
-            f"{summary['invalid_records']}"
-        ),
-
-        "",
-
-        "INVALID RECORDS BREAKDOWN",
-
-    ]
-
-
-    if summary[
-        "invalid_breakdown"
-    ]:
-
-        for reason, count in (
-            summary[
-                "invalid_breakdown"
-            ].items()
-        ):
-
-            lines.append(
-                f"  {reason:<42} "
-                f"{count}"
-            )
-
-    else:
-
-        lines.append(
-            "  No invalid records"
-        )
-
-
-    lines.extend([
-        "",
-        (
-            "BREAKDOWN BY CATEGORY "
-            "(valid records)"
-        ),
-    ])
-
-
-    for category, data in (
-        summary[
-            "by_category"
-        ].items()
-    ):
-
-        lines.append(
-
-            f"  {category:<28} "
-
-            f"{data['count']:>3}  "
-
-            f"("
-            f"{data['percentage']:.1f}"
-            f"%)"
-
-        )
-
-
-    lines.extend([
-        "",
-        (
-            "BREAKDOWN BY STATUS "
-            "(valid records)"
-        ),
-    ])
-
-
-    for status, data in (
-        summary[
-            "by_status"
-        ].items()
-    ):
-
-        lines.append(
-
-            f"  {status:<28} "
-
-            f"{data['count']:>3}  "
-
-            f"("
-            f"{data['percentage']:.1f}"
-            f"%)"
-
-        )
-
-
-    satisfaction = (
-        summary[
-            "satisfaction"
-        ]
-    )
-
-
-    lines.extend([
-
-        "",
-
-        (
-            "SATISFACTION INDEX "
-            "(closed cases)"
-        ),
-
-        (
-            "  Scored cases: "
-            f"{satisfaction['scored_cases']} "
-            "of "
-            f"{satisfaction['closed_cases']}"
-        ),
-
-    ])
-
-
-    if (
-        satisfaction[
-            "average"
-        ] is None
-    ):
-
-        lines.append(
-            "  Average score: N/A"
-        )
-
-    else:
-
-        lines.append(
-
-            "  Average score: "
-
-            f"{satisfaction['average']:.2f}"
-
-            " / 5.00"
-
-        )
-
-
-    score_labels = {
-
-        "1":
-            "Very dissatisfied",
-
-        "2":
-            "Dissatisfied",
-
-        "3":
-            "Neutral",
-
-        "4":
-            "Satisfied",
-
-        "5":
-            "Very satisfied",
-
-    }
-
-
-    for score, count in (
-        satisfaction[
-            "scores"
-        ].items()
-    ):
-
-        label = (
-            score_labels[
-                score
-            ]
-        )
-
-        lines.append(
-
-            f"  Score {score} "
-
-            f"({label}) "
-
-            f"........ {count}"
-
-        )
-
-
-    lines.extend([
-        "",
-        "=" * 60,
-    ])
-
-
-    return "\n".join(
-        lines
-    )
-
-
 def summary_to_csv(
     summary
 ):
@@ -980,7 +752,7 @@ def summary_to_csv(
 
         satisfaction[
             "average"
-        ],
+        ] if satisfaction["average"] is not None else "",
 
         "",
 
