@@ -4,8 +4,10 @@
 
 El dashboard dispone de cliente auth, contexto de sesion y guard reutilizable.
 El `AuthProvider` esta conectado al layout raiz. Las vistas `/login` y `/register`
-estan implementadas y `/`, `/account` y `/account/profile` utilizan el guard.
-La cabecera muestra la identidad autenticada y permite cerrar sesion.
+estan implementadas. Usan `AuthGuard`: `/`, `/account`, `/account/profile` y
+`/account/change-password`. Las vistas publicas `/forgot-password` y
+`/reset-password` no usan el guard. La cabecera muestra la identidad autenticada
+y permite cerrar sesion.
 
 Para levantar dashboard, proveedores y ambas APIs con un comando, consultar
 [integracion del backoffice](../../../docs/BACKOFFICE_INTEGRATION.es.md).
@@ -34,7 +36,9 @@ configurados fuera del frontend. Esta integracion no modifica la API ni sus perm
 
 ## Cliente y sesion
 
-- `auth-api.ts` expone login, registro, usuario actual, usuarios y perfil propio.
+- `auth-api.ts` expone login, registro, usuario actual, usuarios, perfil propio,
+  solicitud de restablecimiento (`forgotPassword`), canje de token (`resetPassword`)
+  y cambio de contraseña desde sesión activa (`changePassword`).
 - El login envia un formulario OAuth2 con `username` igual al email.
 - `login` del cliente devuelve el token; `login` del contexto lo guarda y valida
   la identidad mediante `/auth/me` antes de resolver satisfactoriamente.
@@ -59,6 +63,12 @@ la identidad mostrada. El registro no inicia sesion automaticamente.
 - `/account` permite al usuario cambiar su email y establecer una contrasena
   nueva. La contrasena y su confirmacion son opcionales; no se impone una
   fortaleza no definida por el backend.
+- `/account/change-password` permite al usuario cambiar su contrasena desde la
+  sesion activa, solicitando la contrasena actual y una nueva (minimo 8 caracteres).
+- `/forgot-password` pagina publica (sin `AuthGuard`) donde el usuario ingresa su
+  email para recibir un enlace de restablecimiento. No revela si el email existe.
+- `/reset-password` pagina publica que lee el token de `?token=` en la URL y
+  permite establecer una nueva contrasena. Redirige a `/login?reset=1` al exito.
 - `admin` y `manager` ven el directorio de usuarios devuelto por `GET /users`.
   Ese endpoint no incluye perfiles, por lo que la tabla no inventa nombres ni
   telefonos. `manager` solo puede consultar la lista.
@@ -88,7 +98,8 @@ dashboard si la sesion ya esta validada. El guard oculta sus hijos
 durante la validacion y los errores de sesion; ofrece reintento y distingue
 usuario sin sesion de usuario sin permisos. La redireccion conserva el pathname
 en `/login?next=...`, sin parametros de consulta. Login valida `next` mediante
-una lista de rutas internas: `/`, `/account`, `/account/profile` y `/suppliers`. Descarta
+una lista de rutas internas: `/`, `/account`, `/account/profile`, `/account/change-password`
+y `/suppliers`. Descarta
 URLs externas, rutas desconocidas y bucles hacia login/registro.
 
 El guard controla presentacion y navegacion, no protege Server Components,

@@ -188,3 +188,15 @@ export function fetchProfile(): Promise<Profile> {
 export function updateProfile(data: ProfileUpdate): Promise<Profile> {
   return request("/profiles/me", jsonBody("PUT", data));
 }
+
+export function forgotPassword(email: string): Promise<{ message: string }> {
+  return request("/auth/forgot-password", jsonBody("POST", { email }), false);
+}
+
+export function resetPassword(token: string, password: string): Promise<{ message: string }> {
+  return request("/auth/reset-password", jsonBody("POST", { token, password }), false);
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+  return request("/auth/change-password", jsonBody("POST", { current_password: currentPassword, new_password: newPassword }), true);
+}

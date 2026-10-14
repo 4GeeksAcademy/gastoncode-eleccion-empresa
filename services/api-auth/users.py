@@ -90,7 +90,8 @@ def register(data: UserCreate):
 
         "is_active": True,
         "role": "user",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "password_changed_at": None
     }
 
     profile = {

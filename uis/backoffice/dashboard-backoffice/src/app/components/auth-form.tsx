@@ -92,6 +92,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </p>
         )}
 
+        {!isRegister && searchParams.get("reset") === "1" && (
+          <p className="mb-6 border-l-2 border-emerald-500 pl-3 text-sm text-emerald-300" role="status">
+            {"Contrase\u00f1a restablecida correctamente. Ahora puedes iniciar sesi\u00f3n."}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} aria-busy={submitting} className="space-y-5">
           <fieldset disabled={submitting} className="min-w-0 space-y-5">
             {isRegister && (
@@ -109,6 +115,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             <div>
               <label htmlFor="auth-password" className="text-sm text-stone-300">{"Contrase\u00f1a"}</label>
               <input id="auth-password" name="password" type={showPassword ? "text" : "password"} required autoComplete={isRegister ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} className={inputClassName} />
+              {!isRegister && (
+                <p className="mt-2">
+                  <Link href="/forgot-password" className="text-xs text-stone-400 underline-offset-2 hover:text-brasa-400 hover:underline focus-visible:outline-2 focus-visible:outline-brasa-400">
+                    {"\u00bfOlvidaste tu contrase\u00f1a?"}
+                  </Link>
+                </p>
+              )}
             </div>
 
             {isRegister && (
