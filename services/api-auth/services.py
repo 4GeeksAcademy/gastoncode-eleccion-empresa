@@ -1,10 +1,11 @@
 from tinydb import Query
 
-from database import users_table, profiles_table
+from database import users_table, profiles_table, reset_tokens_table
 
 
 User = Query()
 Profile = Query()
+ResetToken = Query()
 
 
 def get_user_by_id(user_id: str):
@@ -62,3 +63,33 @@ def update_profile(user_id: str, changes: dict):
     )
 
     return get_profile_by_user_id(user_id)
+
+
+# ── Reset de contraseña ──────────────────────────────────────
+
+def create_reset_token(token_data: dict):
+    """Almacena un token de restablecimiento hasheado."""
+    reset_tokens_table.insert(token_data)
+
+
+def get_reset_token(token_hash: str):
+    """Busca un token de restablecimiento por su hash."""
+    return reset_tokens_table.get(
+        ResetToken.token_hash == token_hash
+    )
+
+
+def mark_reset_token_used(token_hash: str):
+    """Marca un token como usado para evitar reutilización."""
+    reset_tokens_table.update(
+        {"used": True},
+        ResetToken.token_hash == token_hash
+    )
+
+
+def invalidate_user_reset_tokens(user_id: str):
+    """Invalida todos los tokens pendientes de un usuario."""
+    reset_tokens_table.update(
+        {"used": True},
+        (ResetToken.user_id == user_id) & (ResetToken.used == False)
+    )

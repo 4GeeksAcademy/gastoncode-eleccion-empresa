@@ -67,7 +67,7 @@ Usar siempre el origen publico del dashboard. Acceder directamente al puerto
 3001 mantiene otro origen de localStorage y no proporciona sesion compartida.
 
 - Dashboard reenvia `/suppliers` a la otra app y `/suppliers-static/*` a sus assets.
-- `/api/auth`, `/api/users` y `/api/profiles` se reenvian a auth.
+- `/api/auth`, `/api/users`, `/api/profiles`, `/auth/forgot-password`, `/auth/reset-password` y `/auth/change-password` se reenvian a auth (cubiertos por el patrón `/api/auth/:path*`).
 - `/api/suppliers` y subrutas se reenvian a suppliers.
 - Ambas apps usan `uis/backoffice/auth-shared` con wrappers compatibles.
 - La clave de localStorage es `brasaland.backoffice.token`; las sesiones previas

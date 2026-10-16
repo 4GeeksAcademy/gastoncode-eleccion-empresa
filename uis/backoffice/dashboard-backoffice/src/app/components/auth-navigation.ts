@@ -5,7 +5,7 @@ export function safeAuthDestination(candidate: string | null): string {
   try {
     const destination = new URL(candidate, "https://backoffice.invalid");
     if (destination.origin !== "https://backoffice.invalid") return "/";
-    if (!["/", "/account", "/account/profile", "/suppliers"].includes(destination.pathname)
+    if (!["/", "/account", "/account/profile", "/account/change-password", "/suppliers", "/forgot-password", "/reset-password"].includes(destination.pathname)
       && !destination.pathname.startsWith("/suppliers/")) return "/";
     return `${destination.pathname}${destination.search}${destination.hash}`;
   } catch {

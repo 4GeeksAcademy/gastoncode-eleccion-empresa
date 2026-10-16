@@ -35,6 +35,10 @@ El servicio queda disponible en `http://localhost:8001`.
 | --- | --- | --- | --- |
 | `JWT_SECRET` | Sí | Sin valor | Clave usada para firmar y validar los JWT. El servicio valida esta variable al arrancar y no inicia si falta. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `30` | Duración del token de acceso en minutos. |
+| `RESEND_API_KEY` | No | Sin valor | Clave API de Resend para envío de emails transaccionales. Si no se configura, el servicio sigue funcionando pero el endpoint `/auth/forgot-password` registra una advertencia y no envía el correo. |
+| `RESEND_FROM_ADDRESS` | No | `onboarding@resend.dev` | Dirección de origen para los correos electrónicos enviados mediante Resend (debe estar verificada en la cuenta de Resend). |
+| `FRONTEND_URL` | No | `http://localhost:3000` | URL base del frontend, utilizada para construir el enlace de restablecimiento que se envía por email (ruta `/reset-password?token=...`). |
+| `RESET_TOKEN_EXPIRE_MINUTES` | No | `30` | Minutos de validez del token de restablecimiento de contraseña. |
 
 La aplicación carga también un archivo `.env` situado en el directorio de trabajo desde el que se ejecuta.
 
@@ -50,7 +54,7 @@ FastAPI expone automáticamente:
 
 TinyDB crea el archivo `data/db.json` relativo al directorio de este servicio. Las tablas utilizadas son:
 
-- `users`: identificador, email, hash de contraseña, estado, rol y fecha de creación.
+- `users`: identificador, email, hash de contraseña, estado, rol, fecha de creación y `password_changed_at` (fecha ISO del último cambio de contraseña, `null` si nunca se cambió).
 - `profiles`: perfil vinculado mediante `user_id`, con nombre, teléfono y dirección.
 
 El servicio crea el directorio `data` automáticamente al arrancar. Las contraseñas nunca se devuelven: se almacenan como hashes bcrypt.
@@ -229,6 +233,84 @@ Requiere autenticación y autorización de propietario o admin. Elimina el usuar
 ```
 
 **Errores:** `403` si no tiene permiso; `404` si el usuario no existe.
+
+### `POST /auth/forgot-password` — Solicitar restablecimiento de contraseña
+
+No requiere autenticación. Busca al usuario por email y, si existe, genera un token seguro (secrets.token_urlsafe, 48 bytes), lo hashea (SHA-256), lo persiste en la tabla `reset_tokens` y envía un email con el enlace mediante Resend.
+
+**Body (`application/json`):**
+
+```json
+{
+	"email": "ana@example.com"
+}
+```
+
+**Respuesta `200 OK`** (idempotente — no revela si el email existe o no):
+
+```json
+{
+	"message": "Si el email existe, recibirás un enlace para restablecer tu contraseña."
+}
+```
+
+**Errores:** `422` si el email no tiene un formato válido. La respuesta es siempre la misma exista o no el usuario, por seguridad.
+
+### `POST /auth/reset-password` — Canjear token de restablecimiento
+
+No requiere autenticación. Valida que el token exista, no esté expirado (por defecto 30 minutos) y no se haya usado ya; luego actualiza la contraseña del usuario con bcrypt, invalida el token y todos los tokens pendientes del mismo usuario.
+
+**Body (`application/json`):**
+
+```json
+{
+	"token": "abc123...token_seguro_de_64_caracteres",
+	"password": "nueva-clave-segura"
+}
+```
+
+`password` debe tener al menos 8 caracteres.
+
+**Respuesta `200 OK`:**
+
+```json
+{
+	"message": "Contraseña restablecida correctamente."
+}
+```
+
+**Errores:** `400` si la contraseña es demasiado corta, el token es inválido/expirado o ya fue usado; `422` si el body no cumple el esquema.
+
+### `POST /auth/change-password` — Cambiar contraseña desde sesión activa
+
+Requiere autenticación (Bearer token). Verifica que la contraseña actual coincida con el hash almacenado antes de actualizar. Tras el cambio, invalida cualquier token de restablecimiento pendiente del usuario.
+
+**Body (`application/json`):**
+
+```json
+{
+	"current_password": "mi-clave-actual",
+	"new_password": "mi-nueva-clave"
+}
+```
+
+`new_password` debe tener al menos 8 caracteres.
+
+**Respuesta `200 OK`:**
+
+```json
+{
+	"message": "Contraseña actualizada correctamente."
+}
+```
+
+**Errores:** `400` si la contraseña actual no coincide, la nueva es demasiado corta o es igual a la actual; `401` si falta el token o es inválido; `422` si el body no cumple el esquema.
+
+## Persistencia adicional
+
+Además de las tablas `users` y `profiles`, el servicio gestiona:
+
+- `reset_tokens`: almacena los tokens de restablecimiento con `token_hash` (SHA-256 del token), `user_id`, `expires_at` y `used`.
 
 ## Errores comunes
 
