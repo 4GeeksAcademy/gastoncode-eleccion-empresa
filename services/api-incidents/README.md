@@ -2,6 +2,58 @@
 
 Backend FastAPI para analizar archivos CSV de incidencias de Brasaland.
 
+## Modelo del gestor centralizado
+
+`models.py` define `Incident` con Pydantic, sin cambiar los endpoints del
+analizador ni su almacenamiento. Este incremento solo incorpora el modelo;
+la persistencia y el CRUD de incidencias quedan pendientes.
+
+- `id`: UUID v4 generado por instancia.
+- `title` y `description`: textos obligatorios, no vacíos ni compuestos solo
+  por espacios. Se conserva el texto original.
+- `category`: obligatorio; `equipment_failure`, `supply_issue`,
+  `customer_complaint`, `staff_issue`, `facility_issue`, `pos_system`,
+  `delivery_issue` u `other`.
+- `status`: `open` (predeterminado), `in_progress`, `resolved` o `discarded`.
+- `origin`: obligatorio; `customer`, `branch` o `internal`.
+- `branch`: uno de los 14 locales definidos en
+  [el contexto del gestor](../../CONTEXT-brasaland.es.md), o `central`
+  (predeterminado). El origen `branch` exige un local específico.
+- `created_at` y `updated_at`: fechas con zona horaria, generadas en UTC e
+  iguales al crear. Se admiten fechas explícitas para recuperar registros o
+  importar históricos; se normalizan a UTC y se exige `updated_at >= created_at`.
+
+No se aceptan valores nulos ni campos adicionales. Las instancias son inmutables:
+para actualizar se usa `incident.update(...)` y se guarda la nueva instancia
+devuelta. Este método revalida los datos, conserva `id` y `created_at` y genera
+`updated_at` automáticamente. Permite mantener el estado actual o las transiciones
+`open → in_progress`, `open → discarded`, `in_progress → resolved` e
+`in_progress → discarded`; no permite reabrir estados finales.
+No usar `model_copy(update=...)` para cambios de negocio, porque Pydantic no
+valida esos cambios.
+
+```python
+from models import Incident
+
+incident = Incident(
+    title="Horno fuera de servicio",
+    description="El horno principal no enciende.",
+    category="equipment_failure",
+    origin="branch",
+    branch="medellin_centro",
+)
+incident = incident.update(status="in_progress")
+document = incident.model_dump(mode="json")  # UUID y fechas serializables a JSON
+```
+
+### Pruebas del modelo
+
+Desde la raíz del monorepo, con las dependencias del servicio disponibles:
+
+```bash
+python -m unittest discover -s services/api-incidents/tests -v
+```
+
 ## Requisitos
 
 - Python 3.12+
