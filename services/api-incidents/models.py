@@ -44,6 +44,20 @@ IncidentBranch = Literal[
 ]
 
 
+class IncidentSummary(BaseModel):
+    total: int
+    by_status: dict[IncidentStatus, int]
+    by_category: dict[IncidentCategory, int]
+    by_origin: dict[IncidentOrigin, int]
+    by_branch: dict[IncidentBranch, int]
+
+
+class IncidentStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: IncidentStatus
+
+
 class Incident(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 

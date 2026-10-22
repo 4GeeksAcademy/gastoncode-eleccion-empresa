@@ -4,11 +4,14 @@ from collections import OrderedDict
 from pathlib import Path
 from threading import Lock
 from time import time
+from typing import get_args
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
+from pydantic import UUID4, ValidationError
 from tinydb import TinyDB, Query as AnalysisQuery
 
 try:
@@ -22,6 +25,15 @@ except ImportError as error:
 
 # Autenticación delegada a api-auth (token JWT compartido)
 from auth import get_current_user, require_roles
+from models import (
+    Incident,
+    IncidentBranch,
+    IncidentCategory,
+    IncidentOrigin,
+    IncidentStatus,
+    IncidentStatusUpdate,
+    IncidentSummary,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +61,8 @@ app.add_middleware(
 DB_PATH = Path(__file__).resolve().parent / "analyses.json"
 db = TinyDB(str(DB_PATH))
 ANALYSES_TABLE = db.table("analyses")
+INCIDENTS_DB_PATH = Path(__file__).resolve().parent / "incidents.json"
+_incidents_lock = Lock()
 
 # ── Caché LRU en memoria con lock para thread-safety ──────
 MAX_ANALYSES_CACHE = 100
@@ -77,6 +91,38 @@ def health():
     }
 
 
+def validation_error(field: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=400,
+        detail=[{"field": field, "message": message}],
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_handler(request: Request, exc: RequestValidationError):
+    messages = {
+        "missing": "Este campo es obligatorio.",
+        "extra_forbidden": "Este campo no esta permitido.",
+        "json_invalid": "El cuerpo debe contener JSON valido.",
+        "model_attributes_type": "El cuerpo debe ser un objeto JSON.",
+        "dict_type": "El valor debe ser un objeto JSON.",
+        "uuid_parsing": "Debe ser un UUID v4 valido.",
+        "uuid_type": "Debe ser un UUID v4 valido.",
+        "uuid_version": "Debe ser un UUID v4 valido.",
+    }
+    details = []
+    for error in exc.errors():
+        location = error["loc"]
+        field = ".".join(str(part) for part in location)
+        message = messages.get(error["type"], error["msg"])
+        if error["type"] == "literal_error":
+            message = f"Valor no permitido. Se espera: {error['ctx']['expected']}."
+        if error["type"] == "json_invalid":
+            field = "body"
+        details.append({"field": field, "message": message})
+    return JSONResponse(status_code=400, content={"detail": details})
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Error no manejado en %s", request.url)
@@ -87,13 +133,38 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.get("/api/incidents", response_model=list[Incident])
+def list_incidents(
+    status: IncidentStatus | None = Query(default=None),
+    origin: IncidentOrigin | None = Query(default=None),
+    branch: IncidentBranch | None = Query(default=None),
+    category: IncidentCategory | None = Query(default=None),
+    _user: dict = Depends(get_current_user),
+):
+    filters = {
+        "status": status,
+        "origin": origin,
+        "branch": branch,
+        "category": category,
+    }
+    # Abrir por solicitud evita conservar una cache obsoleta tras ejecutar el seed.
+    with _incidents_lock, TinyDB(INCIDENTS_DB_PATH) as incidents_db:
+        table = incidents_db.table("incidents")
+        condition = AnalysisQuery().noop()
+        for field, value in filters.items():
+            if value is not None:
+                condition &= AnalysisQuery()[field] == value
+        documents = table.search(condition)
+    return documents
+
+
 @app.post("/api/incidents/analyze")
 def analyze_incidents(
     file: UploadFile = File(...),
     _user: dict = Depends(get_current_user),
 ):
     if not file.filename:
-        raise HTTPException(status_code=400, detail="El fichero no tiene nombre.")
+        raise validation_error("body.file", "El fichero no tiene nombre.")
 
     if not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=415, detail="El fichero debe tener extensión .csv.")
@@ -119,20 +190,19 @@ def analyze_incidents(
             )
 
     if not content:
-        raise HTTPException(status_code=400, detail="El fichero está vacío.")
+        raise validation_error("body.file", "El fichero está vacío.")
 
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError as error:
-        raise HTTPException(
-            status_code=400,
-            detail="El fichero debe utilizar codificación UTF-8.",
+        raise validation_error(
+            "body.file", "El fichero debe utilizar codificación UTF-8."
         ) from error
 
     try:
         result = analyze_csv_text(text=text, source_file=file.filename)
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        raise validation_error("body.file", str(error)) from error
 
     analysis_id = str(uuid4())
 
@@ -152,11 +222,11 @@ def analyze_incidents(
 def _validate_analysis_id(analysis_id: str) -> None:
     """Valida que analysis_id sea un UUID v4."""
     try:
-        UUID(analysis_id, version=4)
+        if UUID(analysis_id).version != 4:
+            raise ValueError("El UUID no es de version 4.")
     except ValueError as error:
-        raise HTTPException(
-            status_code=422,
-            detail="El ID proporcionado no tiene un formato UUID v4 válido.",
+        raise validation_error(
+            "analysis_id", "El ID proporcionado no tiene un formato UUID v4 válido."
         ) from error
 
 
@@ -204,6 +274,78 @@ def get_results(
             detail="No se encontró un análisis con el ID proporcionado.",
         )
     return {"analysis_id": analysis_id, **result}
+
+
+@app.get("/api/incidents/summary", response_model=IncidentSummary)
+def get_incidents_summary(
+    _user: dict = Depends(get_current_user),
+):
+    with _incidents_lock, TinyDB(INCIDENTS_DB_PATH) as incidents_db:
+        documents = incidents_db.table("incidents").all()
+    counts = {
+        "status": dict.fromkeys(get_args(IncidentStatus), 0),
+        "category": dict.fromkeys(get_args(IncidentCategory), 0),
+        "origin": dict.fromkeys(get_args(IncidentOrigin), 0),
+        "branch": dict.fromkeys(get_args(IncidentBranch), 0),
+    }
+    for document in documents:
+        incident = Incident.model_validate(document)
+        for field, totals in counts.items():
+            totals[getattr(incident, field)] += 1
+    return {
+        "total": len(documents),
+        "by_status": counts["status"],
+        "by_category": counts["category"],
+        "by_origin": counts["origin"],
+        "by_branch": counts["branch"],
+    }
+
+
+@app.get("/api/incidents/{id}", response_model=Incident)
+def get_incident(
+    id: UUID4,
+    _user: dict = Depends(get_current_user),
+):
+    with _incidents_lock, TinyDB(INCIDENTS_DB_PATH) as incidents_db:
+        document = incidents_db.table("incidents").get(
+            AnalysisQuery().id == str(id)
+        )
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontro una incidencia con el ID proporcionado.",
+        )
+    return document
+
+
+@app.patch("/api/incidents/{id}/status", response_model=Incident)
+def update_incident_status(
+    id: UUID4,
+    payload: IncidentStatusUpdate,
+    _user: dict = Depends(get_current_user),
+):
+    with _incidents_lock, TinyDB(INCIDENTS_DB_PATH) as incidents_db:
+        table = incidents_db.table("incidents")
+        document = table.get(AnalysisQuery().id == str(id))
+        if document is None:
+            raise HTTPException(
+                status_code=404,
+                detail="No se encontro una incidencia con el ID proporcionado.",
+            )
+        incident = Incident.model_validate(document)
+        if payload.status == incident.status:
+            return incident
+        try:
+            updated = incident.update(status=payload.status)
+        except ValidationError:
+            raise
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        table.update(
+            updated.model_dump(mode="json", include={"status", "updated_at"}),
+            doc_ids=[document.doc_id],
+        )
+    return updated
 
 
 # ────────────────────────────────────────────────────────────
