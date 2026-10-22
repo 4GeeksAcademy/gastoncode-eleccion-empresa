@@ -58,6 +58,18 @@ class IncidentStatusUpdate(BaseModel):
     status: IncidentStatus
 
 
+class IncidentCreate(BaseModel):
+    """Datos que puede enviar un cliente al registrar una incidencia."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    category: IncidentCategory
+    origin: IncidentOrigin
+    branch: IncidentBranch
+
+
 class Incident(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 

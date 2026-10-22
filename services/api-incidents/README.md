@@ -5,8 +5,8 @@ Backend FastAPI para analizar archivos CSV de incidencias de Brasaland.
 ## Modelo del gestor centralizado
 
 `models.py` define `Incident` con Pydantic, sin cambiar los endpoints del
-analizador ni su almacenamiento. Este incremento solo incorpora el modelo;
-las operaciones de alta, edición general y borrado quedan pendientes.
+analizador ni su almacenamiento. `POST /api/incidents` registra incidencias;
+la edición general y el borrado quedan pendientes.
 `GET /api/incidents` permite consultar las incidencias. El seed descrito abajo incorpora
 persistencia local para los registros importados.
 
@@ -108,6 +108,7 @@ requiere revisar la carga antes de repetirla.
 | `GET` | `/` | No | Health check básico |
 | `GET` | `/health` | No | Health check con estadísticas (caché y persistencia) |
 | `GET` | `/api/incidents` | JWT | Lista incidencias con filtros opcionales |
+| `POST` | `/api/incidents` | JWT | Registra una incidencia con estado `open` |
 | `GET` | `/api/incidents/summary` | JWT | Totales por estado, categoría, origen y sede |
 | `GET` | `/api/incidents/{id}` | JWT | Detalle de una incidencia; 404 si no existe |
 | `PATCH` | `/api/incidents/{id}/status` | JWT | Actualiza únicamente el estado |
@@ -138,6 +139,16 @@ Ejemplo: `/api/incidents?status=open&origin=customer&branch=central&category=cus
 Los UUID y fechas se serializan como cadenas JSON. La consulta abre el archivo
 por solicitud para reflejar cargas del seed completadas sin reiniciar el servicio.
 No ejecutar el seed simultáneamente con otros escritores.
+
+#### `POST /api/incidents`
+
+Recibe un JSON con `title`, `description`, `category`, `origin` y `branch`,
+todos obligatorios. No acepta otros campos: `id`, `created_at` y `updated_at`
+se generan automáticamente y `status` siempre se registra como `open`.
+Devuelve **201** con la incidencia creada.
+
+Los datos inválidos devuelven **400** con el campo afectado, por ejemplo
+`body.branch` si `origin=branch` y `branch=central`.
 
 #### `GET /api/incidents/summary`
 

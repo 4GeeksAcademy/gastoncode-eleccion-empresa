@@ -29,6 +29,7 @@ from models import (
     Incident,
     IncidentBranch,
     IncidentCategory,
+    IncidentCreate,
     IncidentOrigin,
     IncidentStatus,
     IncidentStatusUpdate,
@@ -102,6 +103,7 @@ def validation_error(field: str, message: str) -> HTTPException:
 async def request_validation_handler(request: Request, exc: RequestValidationError):
     messages = {
         "missing": "Este campo es obligatorio.",
+        "string_too_short": "Este campo es obligatorio.",
         "extra_forbidden": "Este campo no esta permitido.",
         "json_invalid": "El cuerpo debe contener JSON valido.",
         "model_attributes_type": "El cuerpo debe ser un objeto JSON.",
@@ -156,6 +158,25 @@ def list_incidents(
                 condition &= AnalysisQuery()[field] == value
         documents = table.search(condition)
     return documents
+
+
+@app.post("/api/incidents", response_model=Incident, status_code=201)
+def create_incident(
+    payload: IncidentCreate,
+    _user: dict = Depends(get_current_user),
+):
+    for field in ("title", "description"):
+        if not getattr(payload, field).strip():
+            raise validation_error(f"body.{field}", "Este campo no puede estar vacio.")
+    if payload.origin == "branch" and payload.branch == "central":
+        raise validation_error(
+            "body.branch",
+            "Si el origen es una sede, selecciona una sede especifica.",
+        )
+    incident = Incident(**payload.model_dump(), status="open")
+    with _incidents_lock, TinyDB(INCIDENTS_DB_PATH) as incidents_db:
+        incidents_db.table("incidents").insert(incident.model_dump(mode="json"))
+    return incident
 
 
 @app.post("/api/incidents/analyze")

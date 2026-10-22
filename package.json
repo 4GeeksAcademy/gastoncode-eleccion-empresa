@@ -13,6 +13,7 @@
     "dev:dashboard": "npm run dev -w dashboard-backoffice",
     "dev:suppliers": "npm run dev -w suppliers-backoffice",
     "dev:incidents": "npm run dev -w incidents-analyzer",
+    "dev:incidents-manager": "npm run dev -w incidents-manager",
     "dev:talent": "npm run dev -w talent-pipeline-tracker",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
