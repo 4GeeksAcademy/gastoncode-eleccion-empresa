@@ -78,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshSession = useCallback(async () => {
-    setSession(null);
+    // Mantiene montadas las vistas protegidas durante el refresco para no
+    // perder su estado local (por ejemplo, el resultado de un formulario).
     setInitializing(true);
     setError(null);
     await resolveSession();

@@ -59,6 +59,9 @@ beforeEach(async () => {
       const index = scenario.users.findIndex((account) => account.id === id);
       if (index < 0) return route.fulfill({ status: 404, json: { detail: "Usuario no encontrado" } });
       scenario.users[index] = { ...scenario.users[index], ...changes };
+      if (id === scenario.user.id) {
+        scenario.user = { ...scenario.user, ...changes };
+      }
       return route.fulfill({ json: scenario.users[index] });
     }
     if (path === "/api/profiles/me" && request.method() === "GET") {
@@ -66,6 +69,7 @@ beforeEach(async () => {
     }
     if (path === "/api/profiles/me" && request.method() === "PUT") {
       scenario.profile = { ...scenario.profile, ...JSON.parse(request.postData() ?? "{}") };
+      scenario.user = { ...scenario.user, profile: scenario.profile };
       return route.fulfill({ json: scenario.profile });
     }
     if (path === "/api/users" && request.method() === "POST") {
