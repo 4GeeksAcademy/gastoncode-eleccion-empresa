@@ -131,6 +131,7 @@ export default function IncidentForm() {
         </div>
       )}
 
+      <fieldset className="incidentFields" disabled={submitting}>
       <div className="field">
         <label htmlFor="title">Título *</label>
         <input
@@ -255,6 +256,7 @@ export default function IncidentForm() {
           {submitting ? "Registrando..." : "Registrar incidencia"}
         </button>
       </div>
+      </fieldset>
     </form>
   );
 }

@@ -3,7 +3,12 @@ import {
   clearToken,
   getToken,
 } from "../../../auth-shared/auth-api";
-import type { Incident, IncidentField, IncidentInput } from "./incidents";
+import type {
+  Incident,
+  IncidentField,
+  IncidentInput,
+  IncidentSummary,
+} from "./incidents";
 
 const FIELDS: readonly IncidentField[] = [
   "title",
@@ -39,15 +44,17 @@ function invalidFields(body: unknown): Partial<Record<IncidentField, true>> {
   return fields;
 }
 
-function endSession(): never {
-  clearToken();
-  window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT));
+function endSession(token: string | null): never {
+  if (token === getToken()) {
+    clearToken();
+    window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT));
+  }
   throw new IncidentRequestError("Tu sesión expiró. Inicia sesión nuevamente.");
 }
 
 export async function createIncident(data: IncidentInput): Promise<Incident> {
   const token = getToken();
-  if (!token) endSession();
+  if (!token) endSession(token);
 
   let response: Response;
   try {
@@ -67,7 +74,7 @@ export async function createIncident(data: IncidentInput): Promise<Incident> {
   }
 
   if (response.ok) return (await response.json()) as Incident;
-  if (response.status === 401) endSession();
+  if (response.status === 401) endSession(token);
   if (response.status === 403) {
     throw new IncidentRequestError("No tienes permiso para registrar incidencias.");
   }
@@ -79,4 +86,34 @@ export async function createIncident(data: IncidentInput): Promise<Incident> {
     );
   }
   throw new IncidentRequestError(GENERIC_ERROR);
+}
+
+export async function fetchSummary(signal?: AbortSignal): Promise<IncidentSummary> {
+  const token = getToken();
+  if (!token) endSession(token);
+
+  let response: Response;
+  try {
+    response = await fetch("/api/incidents/summary", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal,
+    });
+  } catch (failure) {
+    if (signal?.aborted) throw failure;
+    throw new IncidentRequestError(
+      "No hay conexión con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+    );
+  }
+
+  if (response.status === 401) endSession(token);
+  if (response.status === 403) {
+    throw new IncidentRequestError("No tienes permiso para ver el resumen de incidencias.");
+  }
+  if (!response.ok) {
+    throw new IncidentRequestError(
+      "No pudimos cargar el resumen de incidencias. Inténtalo de nuevo en unos minutos.",
+    );
+  }
+  return (await response.json()) as IncidentSummary;
 }

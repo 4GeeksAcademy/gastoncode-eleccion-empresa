@@ -2,13 +2,14 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useAuth } from "./auth-context";
+import { loginDestination } from "../../../../auth-shared/auth-navigation";
 
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const { user, initializing, error, refreshSession } = useAuth();
 
   useEffect(() => {
     if (!initializing && !error && !user) {
-      window.location.replace(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+      window.location.replace(loginDestination(window.location.pathname));
     }
   }, [initializing, error, user]);
 

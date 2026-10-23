@@ -48,12 +48,42 @@ incident = incident.update(status="in_progress")
 document = incident.model_dump(mode="json")  # UUID y fechas serializables a JSON
 ```
 
-### Pruebas del modelo
+### Pruebas del modelo, identidad y contrato HTTP
 
 Desde la raíz del monorepo, con las dependencias del servicio disponibles:
 
 ```bash
 python -m unittest discover -s services/api-incidents/tests -v
+```
+
+Las pruebas HTTP requieren el grupo `test` (`httpx2`), además de las
+dependencias del servicio. No usan cuentas reales ni las bases habituales:
+simulan la respuesta de identidad y crean bases temporales.
+La prueba de concurrencia sube 32 analisis desde 8 hilos, comprueba todos los
+identificadores en el archivo persistido, vacia la cache y consulta/exporta
+cada resultado de nuevo.
+Para crear/sincronizar el entorno local del servicio con las dependencias de
+prueba y ejecutar la suite desde la raíz del monorepo:
+
+```bash
+uv sync --project services/api-incidents --group test
+PYTHONPATH="$PWD" uv run --project services/api-incidents --group test -- python -m unittest discover -s services/api-incidents/tests -v
+```
+
+La suite de navegador del backoffice se ejecuta por separado. Para probar solo
+el flujo de incidencias, levanta el dashboard (`:3000`) y el gestor
+(`:3004`); el script instala Playwright y Chromium en un directorio temporal,
+sin cambiar los manifiestos npm ni el `node_modules` del repositorio:
+
+```bash
+node scripts/browser-tests.mjs --test-name-pattern=manager scripts/medium-priority.browser.test.mjs
+```
+
+La suite completa de prioridad media también cubre proveedores y requiere que
+su UI (`:3001`) esté levantada. Para ejecutar además la suite del dashboard:
+
+```bash
+node scripts/browser-tests.mjs uis/backoffice/dashboard-backoffice/tests/auth-browser.test.mjs scripts/medium-priority.browser.test.mjs
 ```
 
 ## Seed de incidencias
@@ -236,12 +266,26 @@ El CSV puede incluir **BOM (UTF-8)** al inicio (común en archivos exportados de
 
 ## Autenticación
 
-Esta API delega la autenticación al servicio **`api-auth`** mediante tokens JWT compartidos.
+Esta API verifica el JWT compartido y consulta **`api-auth`** en
+`AUTH_SERVICE_URL/auth/me` antes de cada solicitud protegida, sin cachear
+identidades. Usa el rol vigente devuelto por auth, no el rol antiguo del token.
+La política de autorización es intencionalmente común a todos los roles: cualquier
+usuario autenticado y activo (`user`, `manager` o `admin`) puede acceder a todas
+las operaciones protegidas de incidencias, incluido registrar, listar, consultar
+y cambiar el estado de una incidencia, así como analizar y exportar CSV. Esta API
+no aplica restricciones por rol ni limita las incidencias por propietario; la
+autenticación confirma la identidad vigente, pero no determina permisos distintos
+entre operaciones.
+
+- Token invalido o expirado, cuenta eliminada o desactivada: **401**.
+- Servicio de identidad no disponible (timeout de 3 segundos), error del
+  servicio o respuesta no JSON: **503**, sin permitir la operacion.
+- Las rutas publicas `/` y `/health` no requieren consultar identidad.
 
 ### Obtener un token
 
 ```bash
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8001/auth/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin@brasaland.com&password=secreta"
 ```
@@ -267,7 +311,26 @@ Sin `JWT_SECRET`, el servidor no arranca.
 | Variable | Default | Descripción |
 |----------|---------|-------------|
 | `CORS_ORIGINS` | `*` | Orígenes CORS permitidos. Múltiples separados por coma. Si se deja vacío, no se permitirá ningún origen. |
+| `AUTH_SERVICE_URL` | `http://127.0.0.1:8001` | URL interna de api-auth para validar cada identidad y obtener el token desde Swagger. |
 | `UVICORN_RELOAD` | `0` | Activar (`1`, `true`, `yes`) recarga automática del servidor al cambiar archivos. |
+| `INCIDENTS_DB_PATH` | `services/api-incidents/incidents.json` | Archivo TinyDB de las incidencias del gestor. Usar el mismo valor en `seed_incidents.py --db`. |
+| `ANALYSES_DB_PATH` | `services/api-incidents/analyses.json` | Archivo TinyDB de los análisis de CSV. |
+
+Ambos archivos están en `.gitignore`. Para pruebas, apunta las variables a
+archivos temporales y no a los datos habituales.
+
+### Concurrencia y limite operativo
+
+Ejecutar esta API con **un solo worker y una sola instancia por archivo**.
+Las inserciones, lecturas y conteos persistidos de analisis usan un mismo
+`threading.Lock`; el calculo CSV se mantiene fuera del lock. La cache tiene
+su propio bloqueo y no se adquieren ambos locks a la vez.
+
+Esta proteccion cubre los hilos de un proceso, no multiples procesos ni
+escritores externos. No usar varios workers, replicas con el mismo archivo
+ni escribir las bases desde scripts mientras el servicio este activo.
+Para esos escenarios hace falta almacenamiento transaccional compartido.
+No hay migracion ni cambio de formato de las bases existentes.
 
 ## Ejecutar
 
@@ -280,7 +343,7 @@ uv sync
 echo "JWT_SECRET=mi-secreto-compartido" > .env
 
 # Ejecutar servidor
-uv run uvicorn main:app --host 0.0.0.0 --port 8002
+uv run uvicorn main:app --host 0.0.0.0 --port 8002 --workers 1
 
 # O mediante main.py (lee .env automáticamente)
 uv run python main.py

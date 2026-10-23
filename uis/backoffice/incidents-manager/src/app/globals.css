@@ -142,6 +142,15 @@ button:disabled {
   outline-offset: 2px;
 }
 
+.incidentFields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
 .incidentForm {
   display: flex;
   flex-direction: column;
@@ -298,6 +307,102 @@ button:disabled {
   padding: 60px 0;
 }
 
+.summaryPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.metric {
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  box-shadow: 0 5px 20px var(--bl-shadow-card);
+}
+
+.metric span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--bl-text-muted);
+}
+
+.metric strong {
+  font-size: 30px;
+}
+
+.metricTotal {
+  border-color: var(--bl-accent);
+}
+
+.metricTotal strong {
+  color: var(--bl-accent);
+}
+
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.breakdown h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.dataList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dataList li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.dataRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.dataRow small {
+  color: var(--bl-text-subtle);
+  font-weight: 500;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bl-surface-2);
+  overflow: hidden;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--bl-accent);
+}
+
+@media (max-width: 900px) {
+  .metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .breakdownGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -311,6 +416,10 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .fieldRow {
     grid-template-columns: 1fr;
   }
@@ -318,4 +427,11 @@ button:disabled {
   .formActions button {
     width: 100%;
   }
+}
+
+.backLink {
+  border: 1px solid var(--bl-border-strong);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
 }

@@ -7,6 +7,8 @@ interface Props {
   required?: boolean;
   type?: string;
   placeholder?: string;
+  min?: number;
+  step?: number;
 }
 
 export default function FormField({
@@ -16,6 +18,8 @@ export default function FormField({
   required = false,
   type = 'text',
   placeholder,
+  min,
+  step,
 }: Props) {
   const id = label.toLowerCase().replace(/\s+/g, '-');
   return (
@@ -33,6 +37,8 @@ export default function FormField({
         onChange={(e) => onChange(e.target.value)}
         required={required}
         placeholder={placeholder}
+        min={min}
+        step={step}
         className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-200 focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600"
       />
     </div>

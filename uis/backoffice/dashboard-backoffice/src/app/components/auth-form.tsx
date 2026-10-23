@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { register } from "./auth-api";
 import { useAuth } from "./auth-context";
-import { safeAuthDestination } from "./auth-navigation";
+import { isExternalAppPath, safeAuthDestination } from "./auth-navigation";
 import { BrasaMark } from "./site-header";
 
 const inputClassName = "mt-2 w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-3 text-base text-stone-100 outline-none placeholder:text-stone-600 focus:border-brasa-400 focus:ring-2 focus:ring-brasa-400/20 disabled:opacity-60";
@@ -34,7 +34,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   useEffect(() => {
     if (!initializing && user) {
-      if (destination === "/suppliers" || destination.startsWith("/suppliers/")) window.location.replace(destination);
+      if (isExternalAppPath(new URL(destination, window.location.origin).pathname)) window.location.replace(destination);
       else router.replace(destination);
     }
   }, [initializing, user, destination, router]);

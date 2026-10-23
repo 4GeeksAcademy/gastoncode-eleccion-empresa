@@ -41,6 +41,7 @@ def update_user(user_id: str, changes: dict):
 
 
 def delete_user(user_id: str):
+    invalidate_user_reset_tokens(user_id)
     users_table.remove(
         User.id == user_id
     )

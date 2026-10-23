@@ -33,10 +33,17 @@ export const BRANCH_OPTIONS = [
   { value: "fort_lauderdale", label: "Fort Lauderdale" },
 ] as const;
 
+export const STATUS_OPTIONS = [
+  { value: "open", label: "Abierta" },
+  { value: "in_progress", label: "En curso" },
+  { value: "resolved", label: "Resuelta" },
+  { value: "discarded", label: "Descartada" },
+] as const;
+
 export type IncidentCategory = (typeof CATEGORY_OPTIONS)[number]["value"];
 export type IncidentOrigin = (typeof ORIGIN_OPTIONS)[number]["value"];
 export type IncidentBranch = (typeof BRANCH_OPTIONS)[number]["value"];
-export type IncidentStatus = "open" | "in_progress" | "resolved" | "discarded";
+export type IncidentStatus = (typeof STATUS_OPTIONS)[number]["value"];
 
 export interface IncidentInput {
   title: string;
@@ -54,3 +61,11 @@ export interface Incident extends IncidentInput {
 }
 
 export type IncidentField = keyof IncidentInput;
+
+export interface IncidentSummary {
+  total: number;
+  by_status: Record<IncidentStatus, number>;
+  by_category: Record<IncidentCategory, number>;
+  by_origin: Record<IncidentOrigin, number>;
+  by_branch: Record<IncidentBranch, number>;
+}

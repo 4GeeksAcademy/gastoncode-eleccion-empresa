@@ -5,7 +5,11 @@ Valida tokens JWT emitidos por el servicio api-auth
 usando el mismo JWT_SECRET compartido.
 """
 
+import json
+import logging
 import os
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -20,19 +24,20 @@ if not JWT_SECRET:
         "Definilo en el entorno o en un archivo .env antes de iniciar."
     )
 ALGORITHM = "HS256"
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://127.0.0.1:8001").rstrip("/")
+if not AUTH_SERVICE_URL:
+    raise RuntimeError("AUTH_SERVICE_URL no esta configurado.")
+logger = logging.getLogger("api-incidents.auth")
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="http://localhost:8000/auth/login"
+    tokenUrl=f"{AUTH_SERVICE_URL}/auth/login"
 )
 
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
 ):
-    """Valida el token JWT y retorna el usuario autenticado.
-
-    El token debió haber sido emitido por api-auth (POST /auth/login).
-    """
+    """Valida el JWT y consulta la identidad vigente en api-auth."""
     try:
         payload = jwt.decode(
             token,
@@ -40,26 +45,47 @@ def get_current_user(
             algorithms=[ALGORITHM],
         )
         user_id = payload.get("sub")
-        email = payload.get("email")
-        role = payload.get("role")
-
-        if not user_id or not role:
+        if not isinstance(user_id, str) or not user_id:
             raise HTTPException(
                 status_code=401,
                 detail="Token inválido: faltan campos obligatorios",
             )
 
-        return {
-            "id": user_id,
-            "email": email,
-            "role": role,
-        }
-
-    except JWTError:
+    except JWTError as error:
         raise HTTPException(
             status_code=401,
             detail="Token inválido o expirado",
-        )
+        ) from error
+
+    request = Request(
+        f"{AUTH_SERVICE_URL}/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urlopen(request, timeout=3) as response:
+            current_user = json.load(response)
+    except HTTPError as error:
+        if error.code == 401:
+            raise HTTPException(
+                status_code=401, detail="Cuenta no valida o desactivada"
+            ) from error
+        logger.warning("Identidad no disponible: HTTP %s", error.code)
+        raise HTTPException(
+            status_code=503, detail="No se pudo validar la identidad"
+        ) from error
+    except (URLError, TimeoutError, OSError, ValueError) as error:
+        logger.warning("Servicio de identidad no disponible (%s)", type(error).__name__)
+        raise HTTPException(
+            status_code=503, detail="Servicio de identidad no disponible"
+        ) from error
+
+    if (
+        not isinstance(current_user, dict)
+        or current_user.get("id") != user_id
+        or current_user.get("role") not in ("admin", "manager", "user")
+    ):
+        raise HTTPException(status_code=401, detail="Identidad no valida")
+    return current_user
 
 
 def require_roles(allowed_roles: list[str]):

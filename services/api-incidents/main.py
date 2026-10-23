@@ -58,11 +58,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Persistencia con TinyDB (ruta fija respecto a este archivo) ─
-DB_PATH = Path(__file__).resolve().parent / "analyses.json"
+# ── Persistencia con TinyDB (rutas configurables por entorno) ─
+SERVICE_DIR = Path(__file__).resolve().parent
+DB_PATH = Path(os.getenv("ANALYSES_DB_PATH", str(SERVICE_DIR / "analyses.json")))
 db = TinyDB(str(DB_PATH))
 ANALYSES_TABLE = db.table("analyses")
-INCIDENTS_DB_PATH = Path(__file__).resolve().parent / "incidents.json"
+_analyses_db_lock = Lock()
+INCIDENTS_DB_PATH = Path(os.getenv("INCIDENTS_DB_PATH", str(SERVICE_DIR / "incidents.json")))
 _incidents_lock = Lock()
 
 # ── Caché LRU en memoria con lock para thread-safety ──────
@@ -85,10 +87,14 @@ def root():
 @app.get("/health")
 def health():
     """Health check con estadísticas del almacén."""
+    with _cache_lock:
+        cached_analyses = len(analyses_cache)
+    with _analyses_db_lock:
+        persisted_analyses = len(ANALYSES_TABLE)
     return {
         "status": "healthy",
-        "cached_analyses": len(analyses_cache),
-        "persisted_analyses": len(ANALYSES_TABLE),
+        "cached_analyses": cached_analyses,
+        "persisted_analyses": persisted_analyses,
     }
 
 
@@ -228,7 +234,8 @@ def analyze_incidents(
     analysis_id = str(uuid4())
 
     # Persistir en TinyDB
-    ANALYSES_TABLE.insert({"analysis_id": analysis_id, "result": result, "created_at": time()})
+    with _analyses_db_lock:
+        ANALYSES_TABLE.insert({"analysis_id": analysis_id, "result": result, "created_at": time()})
 
     # Guardar en caché LRU (bajo lock para thread-safety)
     with _cache_lock:
@@ -378,9 +385,11 @@ def _get_analysis(analysis_id: str) -> dict | None:
     with _cache_lock:
         result = analyses_cache.get(analysis_id)
         if result is not None:
+            analyses_cache.move_to_end(analysis_id)
             return result
 
-    doc = ANALYSES_TABLE.get(AnalysisQuery().analysis_id == analysis_id)
+    with _analyses_db_lock:
+        doc = ANALYSES_TABLE.get(AnalysisQuery().analysis_id == analysis_id)
     if doc is None:
         return None
 
