@@ -88,18 +88,36 @@ node scripts/browser-tests.mjs uis/backoffice/dashboard-backoffice/tests/auth-br
 
 ## Seed de incidencias
 
-Desde la raíz del monorepo, usando Python con las dependencias del servicio:
+Ejecuta los comandos desde la raíz del monorepo. `uv` usa las dependencias
+declaradas por `api-incidents`, incluido TinyDB, en vez de depender de los
+paquetes instalados en el Python global.
 
 ```bash
-python scripts/seed_incidents.py
+# Carga predeterminada: escribe en la base del servicio (ver advertencia abajo).
+uv run --project services/api-incidents -- python scripts/seed_incidents.py
+
+# Validación segura con una base temporal, sin modificar la base del servicio.
+uv run --project services/api-incidents -- python scripts/seed_incidents.py \
+  --db /tmp/brasaland-seed-test-incidents.json
+
 # Rutas alternativas para una carga local:
-python scripts/seed_incidents.py --csv /ruta/incidencias.csv --db /ruta/incidents.json
-python -m unittest discover -s scripts/tests -p 'test_seed_incidents.py' -v
+uv run --project services/api-incidents -- python scripts/seed_incidents.py \
+  --csv /ruta/incidencias.csv --db /ruta/incidents.json
+
+# Pruebas unitarias del seed:
+uv run --project services/api-incidents -- python -m unittest discover \
+  -s scripts/tests -p 'test_seed_incidents.py' -v
 ```
 
+La invocación predeterminada modifica `services/api-incidents/incidents.json`:
+no la ejecutes si solo quieres probar el flujo. Para validar sin tocarla, usa
+una ruta temporal como en el segundo ejemplo. No ejecutes el seed mientras la API
+u otro proceso escriba sobre el mismo archivo TinyDB, porque la base no ofrece
+transacciones ni coordinación entre procesos.
+
 Por defecto lee `scripts/incidents-brasaland.csv` con soporte UTF-8 BOM y escribe
-en `services/api-incidents/incidents.json`, tabla `incidents`, separada de los
-análisis CSV existentes. No versionar la base generada.
+en la tabla `incidents` de `services/api-incidents/incidents.json`, separada de
+los análisis CSV existentes. No versionar la base generada.
 
 Por cada fila transforma primero los campos según el contexto, reutiliza
 `validate_row` del analizador, valida el modelo `Incident`, comprueba duplicados
