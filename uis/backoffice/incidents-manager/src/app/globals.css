@@ -313,6 +313,134 @@ button:disabled {
   gap: 20px;
 }
 
+.incidentsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding: 20px;
+}
+
+.filterGrid .field {
+  gap: 6px;
+}
+
+.filterGrid select,
+.statusEditor select {
+  width: 100%;
+  min-height: 46px;
+  padding: 9px 12px;
+  border: 1px solid var(--bl-border-strong);
+  border-radius: 10px;
+  background: var(--bl-surface-2);
+  color: var(--bl-text);
+}
+
+.incidentList {
+  display: grid;
+  gap: 16px;
+}
+
+.incidentCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+  align-items: start;
+  gap: 26px;
+}
+
+.incidentTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.incidentTitleRow h2 {
+  margin: 0;
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.incidentDetails > p {
+  margin: 12px 0 18px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.statusBadge {
+  flex: none;
+  border: 1px solid var(--bl-border-strong);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.status-open {
+  color: var(--bl-accent);
+}
+
+.status-in_progress {
+  color: var(--bl-brasa-300);
+}
+
+.status-resolved {
+  color: var(--bl-success-text);
+}
+
+.status-discarded {
+  color: var(--bl-danger-text);
+}
+
+.incidentMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.incidentMeta dt {
+  color: var(--bl-text-muted);
+  font-size: 13px;
+}
+
+.incidentMeta dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.statusEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.statusEditor select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.resultCount {
+  margin: 0;
+}
+
+.confirmation h2 {
+  margin-top: 0;
+}
+
+.confirmationActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -401,6 +529,10 @@ button:disabled {
   .breakdownGrid {
     grid-template-columns: 1fr;
   }
+
+  .incidentCard {
+    grid-template-columns: 1fr;
+  }
 }
 
 @keyframes spin {
@@ -422,6 +554,26 @@ button:disabled {
 
   .fieldRow {
     grid-template-columns: 1fr;
+  }
+
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .incidentMeta {
+    grid-template-columns: 1fr;
+  }
+
+  .incidentTitleRow {
+    flex-direction: column;
+  }
+
+  .confirmationActions {
+    flex-direction: column-reverse;
+  }
+
+  .confirmationActions button {
+    width: 100%;
   }
 
   .formActions button {

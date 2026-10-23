@@ -7,6 +7,9 @@ import type {
   Incident,
   IncidentField,
   IncidentInput,
+  IncidentOrigin,
+  IncidentBranch,
+  IncidentStatus,
   IncidentSummary,
 } from "./incidents";
 
@@ -116,4 +119,97 @@ export async function fetchSummary(signal?: AbortSignal): Promise<IncidentSummar
     );
   }
   return (await response.json()) as IncidentSummary;
+}
+
+export interface IncidentFilters {
+  status?: IncidentStatus;
+  origin?: IncidentOrigin;
+  branch?: IncidentBranch;
+}
+
+export async function fetchIncidents(
+  filters: IncidentFilters = {},
+  signal?: AbortSignal,
+): Promise<Incident[]> {
+  const token = getToken();
+  if (!token) endSession(token);
+
+  const query = new URLSearchParams();
+  for (const [field, value] of Object.entries(filters)) {
+    if (value) query.set(field, value);
+  }
+  const suffix = query.size ? `?${query.toString()}` : "";
+
+  let response: Response;
+  try {
+    response = await fetch(`/api/incidents${suffix}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal,
+    });
+  } catch (failure) {
+    if (signal?.aborted) throw failure;
+    throw new IncidentRequestError(
+      "No hay conexión con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+    );
+  }
+
+  if (response.status === 401) endSession(token);
+  if (response.status === 403) {
+    throw new IncidentRequestError("No tienes permiso para ver las incidencias.");
+  }
+  if (!response.ok) {
+    throw new IncidentRequestError(
+      "No pudimos cargar las incidencias. Inténtalo de nuevo en unos minutos.",
+    );
+  }
+  return (await response.json()) as Incident[];
+}
+
+export async function updateIncidentStatus(
+  id: string,
+  status: IncidentStatus,
+): Promise<Incident> {
+  const token = getToken();
+  if (!token) endSession(token);
+
+  let response: Response;
+  try {
+    response = await fetch(`/api/incidents/${encodeURIComponent(id)}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+      cache: "no-store",
+    });
+  } catch {
+    throw new IncidentRequestError(
+      "No hay conexión con el servidor. El estado anterior se ha restaurado.",
+    );
+  }
+
+  if (response.status === 401) endSession(token);
+  if (response.status === 403) {
+    throw new IncidentRequestError(
+      "No tienes permiso para actualizar incidencias. El estado anterior se ha restaurado.",
+    );
+  }
+  if (response.status === 404) {
+    throw new IncidentRequestError(
+      "La incidencia ya no existe. Actualiza el listado e inténtalo de nuevo.",
+    );
+  }
+  if (response.status === 409) {
+    throw new IncidentRequestError(
+      "Ese cambio de estado ya no está permitido. El estado anterior se ha restaurado.",
+    );
+  }
+  if (!response.ok) {
+    throw new IncidentRequestError(
+      "No pudimos actualizar la incidencia. El estado anterior se ha restaurado.",
+    );
+  }
+  return (await response.json()) as Incident;
 }

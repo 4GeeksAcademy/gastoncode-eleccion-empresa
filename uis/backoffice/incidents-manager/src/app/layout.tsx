@@ -31,6 +31,7 @@ export default function RootLayout({
               </Link>
               <div className="navLinks">
                 <Link href="/">Registrar incidencia</Link>
+                <Link href="/incidents">Incidencias</Link>
                 <Link href="/summary">Resumen</Link>
                 <SessionMenu />
                 {/* Enlace fuera del basePath: lo sirve el dashboard en el mismo origen. */}

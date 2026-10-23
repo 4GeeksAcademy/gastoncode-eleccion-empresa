@@ -1,8 +1,8 @@
 # Gestor de incidencias (backoffice)
 
-Aplicación Next.js para registrar incidencias de Brasaland en
-`services/api-incidents`. Por ahora incluye la vista del formulario de
-registro y el panel de resumen.
+Aplicación Next.js para registrar y gestionar incidencias de Brasaland en
+`services/api-incidents`. Incluye el formulario de registro, el panel de
+incidencias y el panel de resumen.
 
 ## Ejecutar
 
@@ -29,6 +29,10 @@ login. Next.js redirige `/api/auth`,
 Rutas relativas a `/incidents-manager`:
 
 - `/`: formulario de registro, protegido por sesión.
+- `/incidents`: listado protegido con filtros por estado, origen y sede, y
+  actualización del estado desde cada incidencia. Los cambios a estados finales
+  (resuelta o descartada) piden confirmación; si una actualización falla, se
+  restaura el estado anterior y se informa al usuario.
 - `/summary`: panel de resumen, protegido por sesión.
 - `/login`: redirige al login del dashboard (`NEXT_PUBLIC_DASHBOARD_URL`),
   que devuelve al gestor tras iniciar sesión.
@@ -67,6 +71,16 @@ sesion nueva, tanto al registrar como al cargar el resumen.
   botón "Reintentar" dentro del panel, sin afectar al resto de la página.
 - Con la base vacía muestra todas las métricas en cero y un aviso.
 - El botón "Actualizar" vuelve a consultar las métricas.
+
+## Panel de incidencias
+
+- Consume `GET /api/incidents` con filtros opcionales por estado, origen y sede;
+  los filtros se combinan y consultar el servidor al cambiar cualquiera de ellos.
+- Muestra carga, error con reintento y un mensaje explícito si no hay incidencias
+  (o no hay resultados para los filtros elegidos).
+- Permite cambiar el estado directamente desde cada tarjeta, respetando las
+  transiciones admitidas por la API. Los estados finales requieren confirmación;
+  una actualización fallida revierte el cambio visual y muestra un aviso.
 
 ## Validación
 

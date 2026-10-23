@@ -45,6 +45,8 @@ afterEach(() => {
 for (const [name, request] of [
   ["create", () => api.createIncident(input)],
   ["summary", () => api.fetchSummary()],
+  ["incident list", () => api.fetchIncidents()],
+  ["incident status update", () => api.updateIncidentStatus("incident-1", "in_progress")],
 ]) {
   test(`${name}: a delayed 401 never clears a replacement session`, async () => {
     let respond;
@@ -78,4 +80,48 @@ for (const [name, request] of [
     assert.equal(notifications, 1);
   });
 }
+
+test("incident list sends selected filters and bearer token", async () => {
+  let requestUrl;
+  let requestOptions;
+  globalThis.fetch = async (url, options) => {
+    requestUrl = url;
+    requestOptions = options;
+    return Response.json([]);
+  };
+
+  assert.deepEqual(await api.fetchIncidents({ status: "open", origin: "branch", branch: "medellin_centro" }), []);
+  const url = new URL(requestUrl, "http://localhost");
+  assert.equal(url.pathname, "/api/incidents");
+  assert.equal(url.searchParams.get("status"), "open");
+  assert.equal(url.searchParams.get("origin"), "branch");
+  assert.equal(url.searchParams.get("branch"), "medellin_centro");
+  assert.equal(requestOptions.headers.Authorization, "Bearer old-token");
+  assert.equal(requestOptions.cache, "no-store");
+});
+
+test("incident status update sends PATCH with status payload", async () => {
+  let requestUrl;
+  let requestOptions;
+  globalThis.fetch = async (url, options) => {
+    requestUrl = url;
+    requestOptions = options;
+    return Response.json({ id: "incident-1", status: "in_progress" });
+  };
+
+  const incident = await api.updateIncidentStatus("incident-1", "in_progress");
+  assert.equal(incident.status, "in_progress");
+  assert.equal(requestUrl, "/api/incidents/incident-1/status");
+  assert.equal(requestOptions.method, "PATCH");
+  assert.equal(requestOptions.headers.Authorization, "Bearer old-token");
+  assert.deepEqual(JSON.parse(requestOptions.body), { status: "in_progress" });
+});
+
+test("failed incident status update reports that previous state was restored", async () => {
+  globalThis.fetch = async () => Response.json({ detail: "transition invalid" }, { status: 409 });
+  await assert.rejects(
+    api.updateIncidentStatus("incident-1", "resolved"),
+    /estado anterior se ha restaurado/,
+  );
+});
 
