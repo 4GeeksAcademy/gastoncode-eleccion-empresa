@@ -3,7 +3,7 @@
 ## Arranque
 
 Requisitos: Node.js 22 o superior, npm y uv. Auth requiere Python >=3.14;
-suppliers requiere >=3.12. uv prepara entornos independientes por servicio.
+suppliers e incidents requieren >=3.12. uv prepara entornos independientes por servicio.
 
 Desde la raiz:
 
@@ -13,8 +13,10 @@ npm run backoffice:dev
 ```
 
 Abrir http://localhost:3000. Login, registro y cuentas pertenecen al dashboard;
-proveedores se sirve en `/suppliers` desde una app Next.js independiente.
-El lanzador no incluye incidencias ni talento y nunca ejecuta seeds.
+proveedores se sirve en `/suppliers` y el gestor de incidencias en
+`/incidents-manager`; el analizador CSV se sirve en `/incidents-analyzer`.
+Cada interfaz es una app Next.js independiente.
+El lanzador no incluye talento y nunca ejecuta seeds.
 `setup` instala las versiones declaradas, no corrige automaticamente vulnerabilidades.
 
 | Proceso | Puerto local | Directorio |
@@ -23,9 +25,12 @@ El lanzador no incluye incidencias ni talento y nunca ejecuta seeds.
 | API suppliers | 8000 | services/api-suppliers |
 | Dashboard y gateway | 3000 | uis/backoffice/dashboard-backoffice |
 | Interfaz proveedores | 3001 | uis/backoffice/suppliers-management |
+| API incidents | 8002 | services/api-incidents |
+| Gestor de incidencias | 3004 | uis/backoffice/incidents-manager |
+| Analizador CSV | 3002 | uis/backoffice/incidents-analyzer |
 
-Los cuatro puertos deben estar libres. El lanzador rechaza conflictos sin
-detener procesos existentes. Ctrl+C cierra los cuatro procesos; si uno falla,
+Los siete puertos deben estar libres. El lanzador rechaza conflictos sin
+detener procesos existentes. Ctrl+C cierra todos los procesos; si uno falla,
 se cierra el conjunto. Espera disponibilidad hasta 120 segundos.
 Los logs se identifican por servicio.
 
@@ -33,22 +38,29 @@ Los logs se identifican por servicio.
 npm run backoffice:check
 ```
 
-Este comando comprueba disponibilidad y el proxy auth, no reemplaza pruebas
+Este comando comprueba disponibilidad y los proxies de auth e incidencias, no reemplaza pruebas
 funcionales ni una revision de permisos.
 
 ## Identidad y datos
 
-El lanzador entrega el mismo `JWT_SECRET` a ambas APIs. Usa el valor del entorno
+El lanzador entrega el mismo `JWT_SECRET` a las tres APIs. A la API de
+incidencias le añade `PYTHONPATH` con la raíz del monorepo para resolver
+`packages.incidents_analysis`. Usa el valor del entorno
 si existe; de lo contrario genera una clave local persistente en
 `~/.local/state/brasaland/<hash-del-workspace>/jwt-secret`, con permisos 0600.
 No escribe archivos `.env` ni muestra la clave. No usar este mecanismo local
 como gestion de secretos de produccion. Borrar la clave invalida tokens anteriores.
 
-Por defecto se conservan `services/api-auth/data/db.json` y
-`services/api-suppliers/db.json`. `AUTH_DB_PATH` y `SUPPLIERS_DB_PATH` permiten
-elegir archivos alternativos. Las pruebas deben usar bases aisladas, no copiar
+Por defecto se conservan `services/api-auth/data/db.json`,
+`services/api-suppliers/db.json` y `services/api-incidents/incidents.json` /
+`analyses.json`. `AUTH_DB_PATH`, `SUPPLIERS_DB_PATH`, `INCIDENTS_DB_PATH` y
+`ANALYSES_DB_PATH` permiten elegir archivos alternativos. Las pruebas deben usar bases aisladas, no copiar
 ni reemplazar los datos habituales. TinyDB sigue siendo almacenamiento local,
 no una base transaccional para multiples instancias.
+La API de incidencias se ejecuta con `--workers 1`: un lock por proceso
+serializa las lecturas y escrituras de los analisis, incluidas las estadisticas
+de health. No ejecutar varias instancias sobre los mismos archivos ni escribir
+desde scripts externos mientras esta en marcha. El lock no coordina procesos.
 
 Para el primer administrador:
 
@@ -64,34 +76,55 @@ El acceso local al terminal y las bases concede privilegios de administracion.
 ## Origen y sesion
 
 Usar siempre el origen publico del dashboard. Acceder directamente al puerto
-3001 mantiene otro origen de localStorage y no proporciona sesion compartida.
+3001, 3002 o 3004 mantiene otro origen de localStorage y no proporciona sesion compartida.
 
 - Dashboard reenvia `/suppliers` a la otra app y `/suppliers-static/*` a sus assets.
 - `/api/auth`, `/api/users`, `/api/profiles`, `/auth/forgot-password`, `/auth/reset-password` y `/auth/change-password` se reenvian a auth (cubiertos por el patrón `/api/auth/:path*`).
 - `/api/suppliers` y subrutas se reenvian a suppliers.
-- Ambas apps usan `uis/backoffice/auth-shared` con wrappers compatibles.
+- Dashboard reenvia `/incidents-manager` y subrutas (incluidos sus assets, por
+  `basePath`) al gestor de incidencias, y `/api/incidents` y subrutas a la API
+  de incidencias.
+- Dashboard reenvia `/incidents-analyzer` y subrutas (incluidos sus assets)
+  a `INCIDENTS_UI_URL` (`http://localhost:3002` por defecto).
+- Las cuatro apps usan `uis/backoffice/auth-shared`.
 - La clave de localStorage es `brasaland.backoffice.token`; las sesiones previas
   de las apps separadas requieren volver a iniciar sesion.
 - La navegacion entre zonas es completa, no una transicion de Next Link.
 - El logout elimina el token y se sincroniza entre pestanas del mismo origen.
-- Suppliers consulta `/auth/me` con el token antes de autorizar: cambios de rol,
+- Una invalidacion de sesion conserva solo el pathname validado en
+  `/login?next=...`, nunca query ni fragmento. Un cierre voluntario va a
+  `/login` sin retorno; el guard no compite con esa redireccion.
+- El gestor compara el token de cada solicitud con el actual antes de
+  invalidarlo: un 401 tardio no elimina una sesion nueva.
+- Suppliers e incidents consultan `/auth/me` con el token antes de autorizar: cambios de rol,
   borrado o desactivacion se aplican en la siguiente llamada protegida.
-- Si auth no responde, suppliers deniega la operacion con 503; no confia en un
+- Si auth no responde, ambos servicios deniegan la operacion con 503; no confian en un
   rol antiguo ni elimina el token por una caida temporal del servicio.
 
 El JWT sigue siendo accesible a JavaScript y no tiene refresh ni revocacion
 individual. Un origen compartido amplifica el impacto de XSS entre modulos.
-El frontend oculta escritura a `user`; FastAPI aplica los permisos efectivos.
+El frontend de proveedores oculta escritura a `user`; FastAPI aplica los permisos
+efectivos. Incidencias conserva sus permisos: sus operaciones requieren una
+cuenta activa, sin restricciones nuevas por rol.
+
+El analizador sube el CSV autenticado, obtiene el `analysis_id`, consulta el
+resultado completo y exporta usando ese identificador y el mismo token.
+Analizar no inserta incidencias en el gestor; para importar historicos existe
+el seed independiente.
 
 ## Verificacion
 
 ```bash
-node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs
+node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/incidents-analyzer/tests/incidents-api.test.mjs uis/backoffice/incidents-manager/tests/incidents-api.test.mjs
 uv run --directory services/api-suppliers --no-sync python -m unittest discover -s tests -v
 npm run lint -w dashboard-backoffice
 npm run lint -w suppliers-backoffice
+npm run lint -w incidents-manager
+npm run lint -w incidents-analyzer
 npm run build -w dashboard-backoffice
 npm run build -w suppliers-backoffice
+npm run build -w incidents-manager
+npm run build -w incidents-analyzer
 ```
 
 Detener desarrollo antes de compilar. Para E2E real, iniciar con archivos
@@ -101,7 +134,20 @@ Playwright se obtiene externamente via `PLAYWRIGHT_MODULE`; no es dependencia
 del workspace. La prueba crea fixtures, comprueba roles y elimina admin al final.
 Las capturas permanecen en /tmp.
 
-Con los cuatro puertos libres, `BACKOFFICE_LIFECYCLE=1 node --test
+Con las UIs ya iniciadas, se puede automatizar la instalacion externa de
+Playwright y Chromium (con limpieza al terminar):
+
+```bash
+node scripts/browser-tests.mjs
+node scripts/browser-tests.mjs scripts/medium-priority.browser.test.mjs
+```
+
+La primera orden prueba el dashboard; la segunda requiere tambien proveedores
+y gestor. Ambas interceptan la API y no modifican bases reales. Cubren retorno
+tras expiracion, logout y tarifas de alta con centavos. Requisitos y limites
+en [scripts](../scripts/README.es.md#pruebas-de-navegador-con-instalacion-temporal).
+
+Con los siete puertos libres, `BACKOFFICE_LIFECYCLE=1 node --test
 scripts/backoffice.test.mjs` valida arranque y cierre coordinado por SIGINT.
 Esta prueba se omite en la ejecucion habitual para no interferir con servicios activos.
 

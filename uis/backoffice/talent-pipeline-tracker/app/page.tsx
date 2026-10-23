@@ -6,6 +6,7 @@ import { RecordsResponse } from "@/types/candidates";
 import { TRACKER_API_URL } from "@/utils/api";
 import { FilterBar } from "@/utils/candidates/filter-bar";
 import { Pagination } from "@/utils/candidates/pagination";
+import { paginationParams } from "@/utils/candidates/pagination-params";
 
 type SearchParams = {
   status?: string;
@@ -35,9 +36,7 @@ export default async function Home({
   const stage = params.stage || "";
   const search = params.search || "";
   const email = params.email || "";
-  const page = Number(params.page || "1");
-  const limitValue = params.limit === "all" ? "all" : params.limit || "9";
-  const limit = limitValue === "all" ? 1000 : Number(limitValue);
+  const { page, limit, limitValue } = paginationParams(params.page, params.limit);
   const data = await getRecords({ status, stage, search, email, page, limit });
 
   return (

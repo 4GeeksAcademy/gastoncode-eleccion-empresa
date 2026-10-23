@@ -59,6 +59,9 @@ beforeEach(async () => {
       const index = scenario.users.findIndex((account) => account.id === id);
       if (index < 0) return route.fulfill({ status: 404, json: { detail: "Usuario no encontrado" } });
       scenario.users[index] = { ...scenario.users[index], ...changes };
+      if (id === scenario.user.id) {
+        scenario.user = { ...scenario.user, ...changes };
+      }
       return route.fulfill({ json: scenario.users[index] });
     }
     if (path === "/api/profiles/me" && request.method() === "GET") {
@@ -66,6 +69,7 @@ beforeEach(async () => {
     }
     if (path === "/api/profiles/me" && request.method() === "PUT") {
       scenario.profile = { ...scenario.profile, ...JSON.parse(request.postData() ?? "{}") };
+      scenario.user = { ...scenario.user, profile: scenario.profile };
       return route.fulfill({ json: scenario.profile });
     }
     if (path === "/api/users" && request.method() === "POST") {
@@ -214,6 +218,7 @@ test("login sends OAuth2 and Bearer, survives reload and logout removes the toke
   assert.ok(calls.filter((call) => call.path.endsWith("/me")).length >= 2);
   await page.getByRole("button", { name: "Cerrar sesi\u00f3n" }).click();
   await page.waitForURL((url) => url.pathname === "/login");
+  assert.equal(new URL(page.url()).search, "");
   assert.equal(await savedToken(), null);
 });
 
@@ -223,6 +228,23 @@ test("expired session clears token and returns to login", async () => {
   await page.reload();
   await page.locator("#auth-email").waitFor();
   assert.equal(new URL(page.url()).pathname, "/login");
+  assert.equal(await savedToken(), null);
+});
+
+test("expiration preserves the profile path but drops query and fragment before returning after login", async () => {
+  await login();
+  await page.goto(`${base}/account/profile?private=do-not-forward#section`);
+  await page.getByRole("button", { name: "Cerrar sesi\u00f3n" }).waitFor();
+  scenario.meStatus = 401;
+  await page.reload();
+  await page.locator("#auth-email").waitFor();
+  assert.equal(new URL(page.url()).search, "?next=%2Faccount%2Fprofile");
+  scenario.meStatus = 200;
+  await fillCredentials();
+  await page.getByRole("button", { name: "Iniciar sesi\u00f3n", exact: true }).click();
+  await page.waitForURL(`${base}/account/profile`);
+  await page.getByRole("button", { name: "Cerrar sesi\u00f3n" }).click();
+  await page.waitForURL(`${base}/login`);
   assert.equal(await savedToken(), null);
 });
 

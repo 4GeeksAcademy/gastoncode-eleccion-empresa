@@ -67,6 +67,8 @@ export default function SupplierForm({ onSubmit, onClose }: Props) {
       <FormField
         label="Tarifa por unidad"
         type="number"
+        min={0.01}
+        step={0.01}
         value={String(form.rate_per_unit || '')}
         onChange={(v) => update('rate_per_unit', parseFloat(v) || 0)}
         required

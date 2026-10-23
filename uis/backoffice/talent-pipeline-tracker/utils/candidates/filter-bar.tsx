@@ -62,7 +62,7 @@ export function FilterBar({ stage, status, search, email, limitValue }: FilterBa
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {[9, 12, 24, "all"].map((item) => (
           <button key={item} type="button" className={chipClass(String(item) === limitValue)} onClick={() => update({ limit: String(item) })}>
-            {item === "all" ? "Todos" : `${item} / página`}
+            {item === "all" ? "Hasta 1000" : `${item} / página`}
           </button>
         ))}
       </div>

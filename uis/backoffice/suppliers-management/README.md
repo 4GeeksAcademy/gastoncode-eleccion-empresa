@@ -2,6 +2,23 @@
 
 Panel de administración de proveedores para **Brasaland**, cadena de restaurantes de parrilla con locales en Colombia y Estados Unidos. Consume la [Suppliers API](../../services/api-suppliers/README.md) y permite gestionar el catálogo completo de proveedores desde una única vista.
 
+El alta y la edicion de tarifas admiten centavos (`step="0.01"`) y un minimo
+de `0.01`. El formulario bloquea valores como `0`, `-1` o `12.501`, sin
+redondearlos automaticamente. La API mantiene su contrato de numero positivo.
+
+Las expiraciones se gestionan mediante la invalidacion compartida de sesion,
+con retorno a `/suppliers` despues del login. No se tratan como un cierre
+voluntario; el boton de logout sigue llevando al login sin retorno.
+
+Pruebas de navegador focalizadas, con dashboard, proveedores y gestor iniciados:
+
+```bash
+node scripts/browser-tests.mjs scripts/medium-priority.browser.test.mjs
+```
+
+Ejecutar desde la raiz. El comando instala Playwright y Chromium de forma
+temporal; la API se intercepta y no se crean proveedores reales.
+
 ---
 
 ## Índice

@@ -10,68 +10,7 @@ import type {
   FormEvent
 } from "react";
 
-
-type BreakdownValue = {
-
-  count: number;
-
-  percentage: number;
-
-};
-
-
-type Satisfaction = {
-
-  closed_cases: number;
-
-  scored_cases: number;
-
-  average:
-    number | null;
-
-  scores:
-    Record<
-      string,
-      number
-    >;
-
-};
-
-
-type AnalysisResult = {
-
-  company: string;
-
-  source_file: string;
-
-  total_records: number;
-
-  valid_records: number;
-
-  invalid_records: number;
-
-  invalid_breakdown:
-    Record<
-      string,
-      number
-    >;
-
-  by_category:
-    Record<
-      string,
-      BreakdownValue
-    >;
-
-  by_status:
-    Record<
-      string,
-      BreakdownValue
-    >;
-
-  satisfaction:
-    Satisfaction;
-
-};
+import { analyzeFile, exportAnalysis, type AnalysisResult } from "@/lib/incidents-api";
 
 
 export default function IncidentsPage() {
@@ -114,6 +53,7 @@ export default function IncidentsPage() {
 
     event.preventDefault();
 
+    if (loading) return;
 
     if (!file) {
 
@@ -133,65 +73,8 @@ export default function IncidentsPage() {
     setResult(null);
 
 
-    const formData =
-      new FormData();
-
-
-    formData.append(
-      "file",
-      file
-    );
-
-
     try {
-
-      const response =
-        await fetch(
-
-          (
-            "/backend"
-            + "/api/incidents/analyze"
-          ),
-
-          {
-            method:
-              "POST",
-
-            body:
-              formData,
-          }
-
-        );
-
-
-      const data =
-        await response
-          .json()
-          .catch(
-            () => null
-          );
-
-
-      if (!response.ok) {
-
-        throw new Error(
-
-          data?.detail
-          ??
-          (
-            "No fue posible "
-            + "analizar el CSV."
-          )
-
-        );
-
-      }
-
-
-      setResult(
-        data as AnalysisResult
-      );
-
+      setResult(await analyzeFile(file));
 
     } catch (error) {
 
@@ -225,37 +108,14 @@ export default function IncidentsPage() {
 
   async function downloadResults() {
 
+    if (!result) return;
 
     setError("");
 
 
     try {
 
-      const response =
-        await fetch(
-          (
-            "/backend"
-            + "/api/incidents/"
-            + "results/export"
-          )
-        );
-
-
-      if (!response.ok) {
-
-        throw new Error(
-          (
-            "No fue posible "
-            + "descargar "
-            + "los resultados."
-          )
-        );
-
-      }
-
-
-      const blob =
-        await response.blob();
+      const blob = await exportAnalysis(result.analysis_id);
 
 
       const url =
@@ -362,6 +222,7 @@ export default function IncidentsPage() {
               id="csvFile"
 
               type="file"
+              disabled={loading}
 
               accept=".csv,text/csv"
 
@@ -379,6 +240,8 @@ export default function IncidentsPage() {
                 setFile(
                   selected
                 );
+                setResult(null);
+                setError("");
 
               }}
 
@@ -443,6 +306,7 @@ export default function IncidentsPage() {
 
           <>
 
+            <p role="status">Resultados de: {result.source_file}</p>
 
             <section className="metrics">
 

@@ -38,7 +38,7 @@ La solución debe servir a los equipos de operaciones, compras, personas, formac
 
 El repositorio organiza el trabajo en varias áreas, no en una única aplicación:
 
-- `uis/backoffice/` reúne interfaces para el dashboard ejecutivo, la gestión de proveedores, el análisis de incidencias y el seguimiento de talento.
+- `uis/backoffice/` reúne interfaces para el dashboard ejecutivo, la gestión de proveedores, el análisis y la gestión centralizada de incidencias, y el seguimiento de talento.
 - `services/` contiene servicios de API, incluidos los dominios de autenticación, incidencias y proveedores.
 - `packages/`, `src/` y `shared/` alojan tipos, utilidades y convenciones compartidas.
 - `data/`, `scripts/`, `skills/`, `agents/`, `mcps/` y `workflows/` proporcionan espacio para análisis de datos, automatización y capacidades de IA. Además, `.agents/skills/` contiene skills operativas con scripts y pruebas; entre ellas, un planificador determinista que sugiere reposición a partir de inventario validado.

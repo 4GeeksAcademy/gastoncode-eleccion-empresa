@@ -6,7 +6,7 @@ interface Props {
   supplierId: number;
   supplierName: string;
   currentRate: number;
-  onSubmit: (id: number, rate: number) => Promise<void>;
+  onSubmit: (id: number, rate: number) => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -22,10 +22,10 @@ export default function RateDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
     setSaving(true);
     try {
-      await onSubmit(supplierId, rate);
-      onClose();
+      if (await onSubmit(supplierId, rate)) onClose();
     } finally {
       setSaving(false);
     }

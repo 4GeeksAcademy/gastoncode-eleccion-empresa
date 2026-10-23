@@ -2,6 +2,147 @@
 
 Backend FastAPI para analizar archivos CSV de incidencias de Brasaland.
 
+## Modelo del gestor centralizado
+
+`models.py` define `Incident` con Pydantic, sin cambiar los endpoints del
+analizador ni su almacenamiento. `POST /api/incidents` registra incidencias;
+la edición general y el borrado quedan pendientes.
+`GET /api/incidents` permite consultar las incidencias. El seed descrito abajo incorpora
+persistencia local para los registros importados.
+
+- `id`: UUID v4 generado por instancia.
+- `title` y `description`: textos obligatorios, no vacíos ni compuestos solo
+  por espacios. Se conserva el texto original.
+- `category`: obligatorio; `equipment_failure`, `supply_issue`,
+  `customer_complaint`, `staff_issue`, `facility_issue`, `pos_system`,
+  `delivery_issue` u `other`.
+- `status`: `open` (predeterminado), `in_progress`, `resolved` o `discarded`.
+- `origin`: obligatorio; `customer`, `branch` o `internal`.
+- `branch`: uno de los 14 locales definidos en
+  [el contexto del gestor](../../CONTEXT-brasaland.es.md), o `central`
+  (predeterminado). El origen `branch` exige un local específico.
+- `created_at` y `updated_at`: fechas con zona horaria, generadas en UTC e
+  iguales al crear. Se admiten fechas explícitas para recuperar registros o
+  importar históricos; se normalizan a UTC y se exige `updated_at >= created_at`.
+
+No se aceptan valores nulos ni campos adicionales. Las instancias son inmutables:
+para actualizar se usa `incident.update(...)` y se guarda la nueva instancia
+devuelta. Este método revalida los datos, conserva `id` y `created_at` y genera
+`updated_at` automáticamente. Permite mantener el estado actual o las transiciones
+`open → in_progress`, `open → discarded`, `in_progress → resolved` e
+`in_progress → discarded`; no permite reabrir estados finales.
+No usar `model_copy(update=...)` para cambios de negocio, porque Pydantic no
+valida esos cambios.
+
+```python
+from models import Incident
+
+incident = Incident(
+    title="Horno fuera de servicio",
+    description="El horno principal no enciende.",
+    category="equipment_failure",
+    origin="branch",
+    branch="medellin_centro",
+)
+incident = incident.update(status="in_progress")
+document = incident.model_dump(mode="json")  # UUID y fechas serializables a JSON
+```
+
+### Pruebas del modelo, identidad y contrato HTTP
+
+Desde la raíz del monorepo, con las dependencias del servicio disponibles:
+
+```bash
+python -m unittest discover -s services/api-incidents/tests -v
+```
+
+Las pruebas HTTP requieren el grupo `test` (`httpx2`), además de las
+dependencias del servicio. No usan cuentas reales ni las bases habituales:
+simulan la respuesta de identidad y crean bases temporales.
+La prueba de concurrencia sube 32 analisis desde 8 hilos, comprueba todos los
+identificadores en el archivo persistido, vacia la cache y consulta/exporta
+cada resultado de nuevo.
+Para crear/sincronizar el entorno local del servicio con las dependencias de
+prueba y ejecutar la suite desde la raíz del monorepo:
+
+```bash
+uv sync --project services/api-incidents --group test
+PYTHONPATH="$PWD" uv run --project services/api-incidents --group test -- python -m unittest discover -s services/api-incidents/tests -v
+```
+
+La suite de navegador del backoffice se ejecuta por separado. Para probar solo
+el flujo de incidencias, levanta el dashboard (`:3000`) y el gestor
+(`:3004`); el script instala Playwright y Chromium en un directorio temporal,
+sin cambiar los manifiestos npm ni el `node_modules` del repositorio:
+
+```bash
+node scripts/browser-tests.mjs --test-name-pattern=manager scripts/medium-priority.browser.test.mjs
+```
+
+La suite completa de prioridad media también cubre proveedores y requiere que
+su UI (`:3001`) esté levantada. Para ejecutar además la suite del dashboard:
+
+```bash
+node scripts/browser-tests.mjs uis/backoffice/dashboard-backoffice/tests/auth-browser.test.mjs scripts/medium-priority.browser.test.mjs
+```
+
+## Seed de incidencias
+
+Ejecuta los comandos desde la raíz del monorepo. `uv` usa las dependencias
+declaradas por `api-incidents`, incluido TinyDB, en vez de depender de los
+paquetes instalados en el Python global.
+
+```bash
+# Carga predeterminada: escribe en la base del servicio (ver advertencia abajo).
+uv run --project services/api-incidents -- python scripts/seed_incidents.py
+
+# Validación segura con una base temporal, sin modificar la base del servicio.
+uv run --project services/api-incidents -- python scripts/seed_incidents.py \
+  --db /tmp/brasaland-seed-test-incidents.json
+
+# Rutas alternativas para una carga local:
+uv run --project services/api-incidents -- python scripts/seed_incidents.py \
+  --csv /ruta/incidencias.csv --db /ruta/incidents.json
+
+# Pruebas unitarias del seed:
+uv run --project services/api-incidents -- python -m unittest discover \
+  -s scripts/tests -p 'test_seed_incidents.py' -v
+```
+
+La invocación predeterminada modifica `services/api-incidents/incidents.json`:
+no la ejecutes si solo quieres probar el flujo. Para validar sin tocarla, usa
+una ruta temporal como en el segundo ejemplo. No ejecutes el seed mientras la API
+u otro proceso escriba sobre el mismo archivo TinyDB, porque la base no ofrece
+transacciones ni coordinación entre procesos.
+
+Por defecto lee `scripts/incidents-brasaland.csv` con soporte UTF-8 BOM y escribe
+en la tabla `incidents` de `services/api-incidents/incidents.json`, separada de
+los análisis CSV existentes. No versionar la base generada.
+
+Por cada fila transforma primero los campos según el contexto, reutiliza
+`validate_row` del analizador, valida el modelo `Incident`, comprueba duplicados
+y finalmente inserta. Conserva la descripción literal, recorta el título a
+120 caracteres y convierte la fecha a medianoche UTC para ambas marcas de tiempo.
+Los registros importados tienen origen `customer`.
+
+La idempotencia usa `incident_id` como clave principal, registrada únicamente
+en la tabla auxiliar `incident_seed_sources`, no en el documento `Incident`.
+Sin identificador se compara `title + created_at`. Conforme al contexto,
+se permite ID ausente y se usa `central` para sedes ausentes o desconocidas;
+las demás reglas legacy siguen aplicándose, incluida la puntuación obligatoria
+para `CLOSED`. Un identificador presente pero inválido se rechaza.
+
+El script informa las filas descartadas sin imprimir descripciones ni datos
+de clientes. El resumen incluye filas leídas, insertadas, duplicadas y
+descartadas, más conteos por estado y categoría **de las filas insertadas en esa
+ejecución**. Los errores de archivo o estructura producen una salida distinta
+de cero; las filas inválidas se reportan y no detienen las siguientes.
+
+Ejecutar una sola instancia del seed y sin otros escritores sobre el archivo:
+TinyDB no ofrece transacciones entre la inserción y el registro de su clave
+legacy ni coordinación entre procesos. Una interrupción entre ambas escrituras
+requiere revisar la carga antes de repetirla.
+
 ## Requisitos
 
 - Python 3.12+
@@ -14,6 +155,11 @@ Backend FastAPI para analizar archivos CSV de incidencias de Brasaland.
 |--------|------|------|-------------|
 | `GET` | `/` | No | Health check básico |
 | `GET` | `/health` | No | Health check con estadísticas (caché y persistencia) |
+| `GET` | `/api/incidents` | JWT | Lista incidencias con filtros opcionales |
+| `POST` | `/api/incidents` | JWT | Registra una incidencia con estado `open` |
+| `GET` | `/api/incidents/summary` | JWT | Totales por estado, categoría, origen y sede |
+| `GET` | `/api/incidents/{id}` | JWT | Detalle de una incidencia; 404 si no existe |
+| `PATCH` | `/api/incidents/{id}/status` | JWT | Actualiza únicamente el estado |
 | `POST` | `/api/incidents/analyze` | JWT | Sube un CSV y devuelve el `analysis_id` |
 | `GET` | `/api/incidents/results/{analysis_id}` | JWT | Obtiene el análisis completo por ID |
 | `GET` | `/api/incidents/results/export?analysis_id=...` | JWT | Exporta resultados como CSV descargable |
@@ -24,6 +170,70 @@ Backend FastAPI para analizar archivos CSV de incidencias de Brasaland.
 - **`GET /health`** → Información del estado del servicio, cantidad de análisis en caché y persistidos.
 
 ### Endpoints protegidos (requieren autenticación)
+
+#### `GET /api/incidents`
+
+Devuelve una lista JSON de incidencias de la tabla `incidents` en
+`incidents.json`, el mismo destino predeterminado del seed. Sin filtros devuelve
+todas; sin coincidencias devuelve `[]`.
+
+Acepta los parámetros opcionales `status`, `origin`, `branch` y `category`,
+con los valores permitidos por el modelo `Incident`. Los filtros se combinan
+con AND y coincidencia exacta. Un valor no permitido, incluido un parámetro
+vacío, devuelve **400**.
+
+Ejemplo: `/api/incidents?status=open&origin=customer&branch=central&category=customer_complaint`.
+
+Los UUID y fechas se serializan como cadenas JSON. La consulta abre el archivo
+por solicitud para reflejar cargas del seed completadas sin reiniciar el servicio.
+No ejecutar el seed simultáneamente con otros escritores.
+
+#### `POST /api/incidents`
+
+Recibe un JSON con `title`, `description`, `category`, `origin` y `branch`,
+todos obligatorios. No acepta otros campos: `id`, `created_at` y `updated_at`
+se generan automáticamente y `status` siempre se registra como `open`.
+Devuelve **201** con la incidencia creada.
+
+Los datos inválidos devuelven **400** con el campo afectado, por ejemplo
+`body.branch` si `origin=branch` y `branch=central`.
+
+#### `GET /api/incidents/summary`
+
+Requiere JWT. Devuelve `total` (cantidad total de incidencias) y los objetos
+`by_status`, `by_category`, `by_origin` y `by_branch`, cuyas claves son los
+valores del modelo y cuyos valores son conteos enteros. Incluye todos los
+valores permitidos, también los que tienen cero incidencias.
+
+Lee la misma tabla `incidents` que el listado y el seed, sin aplicar filtros.
+La suma de cada agrupación coincide con `total`. Si la tabla está vacía,
+`total` y todos los conteos son cero. Los cambios de estado completados
+se reflejan en la siguiente consulta.
+
+#### `GET /api/incidents/{id}`
+
+Devuelve un objeto JSON con todos los campos de `Incident`, consultando la
+misma tabla que el listado y el seed. Requiere autenticación JWT.
+El identificador debe ser un UUID v4; un formato inválido devuelve **400**.
+Si el UUID es válido pero la incidencia no existe, devuelve **404** con
+`{"detail": "No se encontro una incidencia con el ID proporcionado."}`.
+
+#### `PATCH /api/incidents/{id}/status`
+
+Requiere JWT y un cuerpo JSON como `{"status": "in_progress"}`. `status` es
+obligatorio; no se aceptan otros campos. Devuelve **200** con la incidencia
+actualizada y persiste únicamente `status` y `updated_at`.
+
+Reutiliza las transiciones del modelo: `open → in_progress/discarded` e
+`in_progress → resolved/discarded`. `resolved` y `discarded` son finales.
+Una transición no permitida devuelve **409** sin modificar el registro.
+Enviar el estado actual devuelve **200** sin cambios, incluida la fecha.
+Un UUID válido inexistente devuelve **404**; un UUID, estado o cuerpo inválido
+devuelve **400**.
+
+Las lecturas y actualizaciones de incidencias comparten un lock dentro del
+proceso para evitar carreras entre solicitudes. Esta protección no coordina
+varios procesos: usar un solo worker y no ejecutar el seed en paralelo.
 
 #### `POST /api/incidents/analyze`
 
@@ -48,7 +258,7 @@ Respuesta exitosa (200):
 
 #### `GET /api/incidents/results/{analysis_id}`
 
-Obtiene el análisis completo en JSON. El `analysis_id` debe ser un **UUID v4** válido (de lo contrario responde **422**). Si no existe, responde **404**.
+Obtiene el análisis completo en JSON. El `analysis_id` debe ser un **UUID v4** válido (de lo contrario responde **400**). Si no existe, responde **404**.
 
 #### `GET /api/incidents/results/export?analysis_id=...`
 
@@ -74,12 +284,26 @@ El CSV puede incluir **BOM (UTF-8)** al inicio (común en archivos exportados de
 
 ## Autenticación
 
-Esta API delega la autenticación al servicio **`api-auth`** mediante tokens JWT compartidos.
+Esta API verifica el JWT compartido y consulta **`api-auth`** en
+`AUTH_SERVICE_URL/auth/me` antes de cada solicitud protegida, sin cachear
+identidades. Usa el rol vigente devuelto por auth, no el rol antiguo del token.
+La política de autorización es intencionalmente común a todos los roles: cualquier
+usuario autenticado y activo (`user`, `manager` o `admin`) puede acceder a todas
+las operaciones protegidas de incidencias, incluido registrar, listar, consultar
+y cambiar el estado de una incidencia, así como analizar y exportar CSV. Esta API
+no aplica restricciones por rol ni limita las incidencias por propietario; la
+autenticación confirma la identidad vigente, pero no determina permisos distintos
+entre operaciones.
+
+- Token invalido o expirado, cuenta eliminada o desactivada: **401**.
+- Servicio de identidad no disponible (timeout de 3 segundos), error del
+  servicio o respuesta no JSON: **503**, sin permitir la operacion.
+- Las rutas publicas `/` y `/health` no requieren consultar identidad.
 
 ### Obtener un token
 
 ```bash
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST http://localhost:8001/auth/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin@brasaland.com&password=secreta"
 ```
@@ -105,7 +329,26 @@ Sin `JWT_SECRET`, el servidor no arranca.
 | Variable | Default | Descripción |
 |----------|---------|-------------|
 | `CORS_ORIGINS` | `*` | Orígenes CORS permitidos. Múltiples separados por coma. Si se deja vacío, no se permitirá ningún origen. |
+| `AUTH_SERVICE_URL` | `http://127.0.0.1:8001` | URL interna de api-auth para validar cada identidad y obtener el token desde Swagger. |
 | `UVICORN_RELOAD` | `0` | Activar (`1`, `true`, `yes`) recarga automática del servidor al cambiar archivos. |
+| `INCIDENTS_DB_PATH` | `services/api-incidents/incidents.json` | Archivo TinyDB de las incidencias del gestor. Usar el mismo valor en `seed_incidents.py --db`. |
+| `ANALYSES_DB_PATH` | `services/api-incidents/analyses.json` | Archivo TinyDB de los análisis de CSV. |
+
+Ambos archivos están en `.gitignore`. Para pruebas, apunta las variables a
+archivos temporales y no a los datos habituales.
+
+### Concurrencia y limite operativo
+
+Ejecutar esta API con **un solo worker y una sola instancia por archivo**.
+Las inserciones, lecturas y conteos persistidos de analisis usan un mismo
+`threading.Lock`; el calculo CSV se mantiene fuera del lock. La cache tiene
+su propio bloqueo y no se adquieren ambos locks a la vez.
+
+Esta proteccion cubre los hilos de un proceso, no multiples procesos ni
+escritores externos. No usar varios workers, replicas con el mismo archivo
+ni escribir las bases desde scripts mientras el servicio este activo.
+Para esos escenarios hace falta almacenamiento transaccional compartido.
+No hay migracion ni cambio de formato de las bases existentes.
 
 ## Ejecutar
 
@@ -118,7 +361,7 @@ uv sync
 echo "JWT_SECRET=mi-secreto-compartido" > .env
 
 # Ejecutar servidor
-uv run uvicorn main:app --host 0.0.0.0 --port 8002
+uv run uvicorn main:app --host 0.0.0.0 --port 8002 --workers 1
 
 # O mediante main.py (lee .env automáticamente)
 uv run python main.py
@@ -159,13 +402,30 @@ uv run python main.py
 
 ## Control de errores
 
+Los errores de validación de solicitudes devuelven **400** con una lista de
+campos y mensajes, sin incluir los valores recibidos ni detalles internos:
+
+```json
+{
+  "detail": [
+    {"field": "body.status", "message": "Este campo es obligatorio."}
+  ]
+}
+```
+
+Los campos de filtros usan el prefijo `query.`, los identificadores de ruta
+`path.` y los campos del cuerpo `body.`. Los errores de contenido del CSV
+se identifican como `body.file`; la validación manual del analizador identifica
+`analysis_id`. Los errores internos de validación de datos persistidos o de la
+respuesta siguen devolviendo **500** genérico, no **400**.
+
 | Código | Significado |
 |--------|-------------|
-| 400 | Error de validación (archivo vacío, extensión, CSV inválido, decodificación) |
+| 400 | Error de validación de campos, UUID, filtros, cuerpo o contenido del CSV |
 | 401 | Token JWT faltante, inválido o expirado |
 | 403 | Token válido pero sin permisos suficientes |
-| 404 | `analysis_id` no encontrado |
+| 404 | Incidencia o `analysis_id` no encontrado |
+| 409 | Transición de estado no permitida |
 | 413 | Archivo excede el tamaño máximo (10 MB) |
 | 415 | Tipo de archivo no soportado |
-| 422 | `analysis_id` no es un UUID v4 válido |
 | 500 | Error interno del servidor (logeado) |

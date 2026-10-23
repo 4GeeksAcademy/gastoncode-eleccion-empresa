@@ -30,10 +30,21 @@ export const SERVICES: BackofficeService[] = [
     area: "Operaciones de Restaurante",
     owner: "Felipe Guerrero",
     description:
-      "Clasificación y seguimiento de incidencias reportadas por los 14 locales.",
+      "Análisis de archivos CSV históricos de incidencias y exportación de resultados.",
     icon: "🍖",
     path: "uis/backoffice/incidents-analyzer",
-    url: process.env.NEXT_PUBLIC_INCIDENTS_UI_URL ?? "http://localhost:3002",
+    url: "/incidents-analyzer",
+  },
+  {
+    id: "incidents-manager",
+    name: "Gestor de incidencias",
+    area: "Operaciones de Restaurante",
+    owner: "Felipe Guerrero",
+    description:
+      "Registro centralizado de incidencias de las sedes y panel de resumen por estado, categoría, origen y sede.",
+    icon: "🚨",
+    path: "uis/backoffice/incidents-manager",
+    url: "/incidents-manager",
   },
   {
     id: "talent-pipeline-tracker",
