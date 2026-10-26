@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { type Role } from "./auth-api";
 import { useAuth } from "./auth-context";
+import { loginDestination } from "./auth-navigation";
 
 export function AuthGuard({
   children,
@@ -15,7 +16,7 @@ export function AuthGuard({
 
   useEffect(() => {
     if (!initializing && !error && !user) {
-      window.location.replace(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+      window.location.replace(loginDestination(window.location.pathname));
     }
   }, [initializing, error, user]);
 

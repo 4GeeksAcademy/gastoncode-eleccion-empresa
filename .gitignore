@@ -105,6 +105,8 @@ services/api-suppliers/db.json
 
 # Análisis generados por la API de incidentes
 services/api-incidents/analyses.json
+# Incidencias del gestor (seed y altas desde la API)
+services/api-incidents/incidents.json
 
 
 # Resultados de scripts

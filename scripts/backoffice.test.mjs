@@ -7,11 +7,15 @@ import path from "node:path";
 import test from "node:test";
 import { assertPortAvailable, root, services } from "./backoffice.mjs";
 
-test("launcher contains exactly two APIs and two UIs with unique ports", () => {
-  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001]);
-  assert.equal(new Set(services.map((service) => service.port)).size, 4);
+test("launcher contains three APIs and four UIs with unique ports", () => {
+  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 3004, 3002]);
+  assert.equal(new Set(services.map((service) => service.port)).size, 7);
   assert.equal(services[0].cwd, "services/api-auth");
   assert.equal(services[1].cwd, "services/api-suppliers");
+  assert.equal(services[4].cwd, "services/api-incidents");
+  assert.equal(services[4].env.PYTHONPATH, root);
+  assert.deepEqual(services[4].args.slice(-2), ["--workers", "1"]);
+  assert.equal(services[6].health, "http://127.0.0.1:3002/incidents-analyzer");
 });
 
 test("occupied ports are rejected without stopping the existing server", async () => {
@@ -23,11 +27,17 @@ test("occupied ports are rejected without stopping the existing server", async (
   } finally { await new Promise((resolve) => server.close(resolve)); }
 });
 
-test("SIGINT closes all four services", { skip: process.env.BACKOFFICE_LIFECYCLE !== "1", timeout: 150000 }, async () => {
+test("SIGINT closes all services", { skip: process.env.BACKOFFICE_LIFECYCLE !== "1", timeout: 150000 }, async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "brasaland-lifecycle-"));
   const coordinator = spawn(process.execPath, ["scripts/backoffice.mjs", "dev"], {
     cwd: root,
-    env: { ...process.env, AUTH_DB_PATH: path.join(directory, "auth.json"), SUPPLIERS_DB_PATH: path.join(directory, "suppliers.json") },
+    env: {
+      ...process.env,
+      AUTH_DB_PATH: path.join(directory, "auth.json"),
+      SUPPLIERS_DB_PATH: path.join(directory, "suppliers.json"),
+      INCIDENTS_DB_PATH: path.join(directory, "incidents.json"),
+      ANALYSES_DB_PATH: path.join(directory, "analyses.json"),
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";

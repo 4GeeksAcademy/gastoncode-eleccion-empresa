@@ -14,10 +14,13 @@ npm run backoffice:setup
 npm run backoffice:dev
 ```
 
-Dashboard, login, cuentas y proveedores quedan accesibles en http://localhost:3000,
-manteniendo dos aplicaciones y dos APIs separadas. Consulta la
-[guia de integracion](docs/BACKOFFICE_INTEGRATION.es.md) para datos persistentes,
-primer administrador, cierre coordinado y verificaciones.
+Dashboard, login, cuentas, proveedores, el gestor de incidencias
+(`/incidents-manager`: formulario de registro y panel de resumen) y el analizador
+CSV (`/incidents-analyzer`) quedan
+accesibles en http://localhost:3000 con una sesión compartida, manteniendo
+aplicaciones y APIs separadas (autenticación, proveedores e incidencias).
+Consulta la [guia de integracion](docs/BACKOFFICE_INTEGRATION.es.md) para datos
+persistentes, primer administrador, cierre coordinado y verificaciones.
 
 ---
 
@@ -36,7 +39,8 @@ Este repositorio es la **plantilla de inicio** para los proyectos transversales.
 El repositorio conserva la estructura de la plantilla y contiene aplicaciones
 ejecutables de backoffice, APIs de autenticacion/proveedores/incidencias y
 scripts globales de desarrollo. El arranque integrado documentado arriba
-cubre dashboard y proveedores; los otros modulos siguen separados.
+cubre dashboard, proveedores, gestor y analizador CSV de incidencias;
+el seguimiento de talento sigue separado.
 
 - `CONTEXT.md` es un placeholder y debe sustituirse por el contexto de la empresa asignada.
 - `AGENTS.md` define las reglas de trabajo y las rutas protegidas.

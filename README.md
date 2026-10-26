@@ -1,98 +1,135 @@
-# AI Engineering Company Project — Student Template
+# Brasaland Digital
 
-[![4Geeks Academy](https://img.shields.io/badge/4Geeks-Academy-blue)](https://4geeksacademy.com)
-[![AI Engineering](https://img.shields.io/badge/track-AI%20Engineering-green)](https://4geeksacademy.com/es/programas-de-carrera/ingenieria-ia)
+Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain’s internal workflows. It currently includes a coordinated backoffice for authentication, supplier management, and incident handling, plus separate prototypes and utilities for talent tracking, CSV analysis, and inventory replenishment.
 
-_Base template for transversal projects in the AI Engineering Career Program — 4Geeks Academy._
+This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate, and the backend services currently persist data locally with TinyDB.
 
-> _Instrucciones disponibles en español en [README.es.md](./README.es.md)._
+## What’s included
 
----
+- **Integrated backoffice:** dashboard and account management, supplier catalog, incident registration and summaries, and CSV incident analysis. The integrated launcher starts the dashboard, supplier interface, incident manager and analyzer, together with their authentication, supplier, and incidents APIs.
+- **Backend APIs:** FastAPI services for authentication, suppliers, and incidents. Authentication uses JWT; the APIs enforce their own authorization checks.
+- **Talent pipeline tracker:** a separate Next.js interface; it is not started by the integrated backoffice launcher.
+- **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
+- **Static website prototypes, shared UI/types/utilities, data and analysis packages, scripts, and project documentation.**
 
-## Purpose
+The repository does not yet provide a central operational database, unified deployment, or integrated sales and telemetry pipeline. See [project status](./memory-bank/progress.md) and the [architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) for current scope and future plans.
 
-This repository is the **starter template** for transversal projects. You will work on real company scenarios (Brasaland, TrackFlow, Nexova), building deliverables that map to course milestones (Web, Programming, Backend, Telemetry, RAG, Agents, Workflows, Real-time).
+## Requirements
 
-- Create a template from this repository.
-- Replace the placeholder `CONTEXT.md` with your assigned company context.
-- Use `skills/` and the directory-level `README.md` files as working guidance.
+- Node.js 22 or later and npm.
+- [uv](https://docs.astral.sh/uv/) for Python environments.
+- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers` and `api-incidents`.
 
----
+Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
 
-## Current status of the template
+## Start the integrated backoffice
 
-The repository currently provides a **base folder structure and documentation skeleton**. It does not include runnable apps or global scripts yet.
+From the repository root:
 
-- `CONTEXT.md` is a placeholder and must be replaced with your assigned company context.
-- There is no root `AGENTS.md` yet.
-- Shared package metadata exists in `packages/shared/package.json` (`@repo/shared-types`), but no workspace runner is configured at root.
-
----
-
-## Repository structure
-
-```text
-ai-engineering-company-project-monorepo/
-├── README.md
-├── README.es.md
-├── CONTEXT.md                # Placeholder to be replaced with assigned context
-├── agents/                   # Agent patterns/templates and tools docs
-├── data/                     # raw, process, pipelines, eval
-├── docs/                     # Project and architecture documentation
-├── infra/                    # Docker, Terraform, deployment configs
-├── internal/                 # CLIs, packaged migration scripts, internal utilities
-├── mcps/                     # Model Context Protocol (MCP) Servers
-├── packages/
-│   └── shared/               # Shared package (@repo/shared-types)
-├── scripts/                  # Script conventions/documentation
-├── services/                 # APIs and background workers
-├── shared/                   # Shared assets/conventions at repo level
-├── skills/                   # Reusable agent skills
-├── uis/                      # User interfaces (React, Next.js, Streamlit, HTML)
-└── workflows/                # Automation/orchestration documentation
+```bash
+npm run backoffice:setup
+npm run backoffice:dev
 ```
 
----
+Open **<http://localhost:3000>**. The dashboard is the public origin for the integrated experience and shared session:
 
-## How to start
+- `/` — dashboard and account access
+- `/suppliers` — supplier management
+- `/incidents-manager` — incident registration and summary
+- `/incidents-analyzer` — upload and analyze incident CSV files
 
-1. **Use this repository as a template** and create your own project repo.
-2. **Clone** your repository (or open it in Codespaces).
-3. **Replace** `CONTEXT.md` with the full context for your assigned company.
-4. **Review** each top-level folder `README.md` to understand intended responsibilities (`uis/`, `services/`, `data/`, `skills/`, etc.).
-5. **Start implementing** milestone deliverables in `uis/` and `services/`, reusing `packages/shared/` and `data/` as needed.
+The launcher starts seven processes and requires ports **3000, 3001, 3002, 3004, 8000, 8001, and 8002** to be free. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access the separate UI ports directly when you need the dashboard’s shared session.
 
----
+`backoffice:setup` installs the npm workspace and syncs the three API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. The launcher’s local secret storage is for development only, not production secret management.
 
-## Milestones (reference)
+To check that the integrated services and selected dashboard proxies respond while the stack is running:
 
-| Milestone | Focus        | Typical deliverables                        |
-| --------- | ------------ | ------------------------------------------- |
-| 0         | Prework      | Environment setup, first prompts            |
-| 1         | Web          | Corporate website, forms, SEO               |
-| 2         | Programming  | Business logic, scoring, calculations       |
-| 3         | AI-driven UI | AI-generated interfaces                     |
-| 4         | Next.js      | Portals, loyalty app, operations UI         |
-| 5         | Backend      | Central API (locations, menus, sales, etc.) |
-| 6         | Telemetry    | Data pipeline, dashboards                   |
-| 7         | RAG & Memory | Semantic knowledge base, search             |
-| 8         | Agents       | Support, onboarding, training agents        |
-| 9         | Workflows    | n8n automations                             |
-| 10        | Real-time    | Live dashboards, alerts, streaming          |
+```bash
+npm run backoffice:check
+```
 
----
+The check is not a substitute for functional tests or a permissions review. For persistent data, first-admin setup, port details, session behavior, and operational cautions, see the [integrated backoffice guide](./docs/BACKOFFICE_INTEGRATION.es.md).
 
-## Links
+### Create the first administrator
 
-- [4Geeks Academy — AI Engineering](https://4geeksacademy.com/es/programas-de-carrera/ingenieria-ia)
-- [How to start a coding project](https://4geeks.com/lesson/how-to-start-a-project)
+1. Start the integrated backoffice and register an account at `/register`.
+2. Stop the processes with `Ctrl+C`.
+3. Promote that existing account while the APIs are stopped:
 
----
+   ```bash
+   npm run backoffice:admin -- user@example.com
+   ```
 
-## Contributors
+4. Restart the backoffice and sign in.
 
-This template was built as part of the 4Geeks Academy AI Engineering Career Program by [@marcogonzalo](https://www.linkedin.com/in/marcogonzalo) and [@alezanchezr](https://x.com/alesanchezr) and many other contributors. Find out more about our [AI Engineering Course](https://4geeksacademy.com/en/career-programs/ai-engineering), and [other courses](https://4geeksacademy.com/en/program-comparison).
+This command does not create an account. Access to the local terminal and data files is equivalent to administrative access.
 
-You can find other templates and resources like this at the [4Geeks Academy GitHub page](https://github.com/4geeksacademy).
+## Run individual interfaces
 
-_This template is maintained by 4Geeks Academy for the AI Engineering track. For exclusive use in the programme._
+The following root scripts start only their respective Next.js interfaces; they do **not** start the APIs they depend on:
+
+```bash
+npm run dev:dashboard
+npm run dev:suppliers
+npm run dev:incidents
+npm run dev:incidents-manager
+npm run dev:talent
+```
+
+The talent tracker runs on port 3003 and is not part of the integrated dashboard/session. For the usual integrated workflow, use `npm run backoffice:dev` instead. Each UI and API has its own README with standalone configuration and details.
+
+## Tests and quality checks
+
+Root workspace scripts are available for build and lint:
+
+```bash
+npm run build
+npm run lint
+```
+
+Examples of focused test commands from the repository root:
+
+```bash
+# Integrated launcher and dashboard/API client tests
+node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/incidents-analyzer/tests/incidents-api.test.mjs uis/backoffice/incidents-manager/tests/incidents-api.test.mjs
+
+# Authentication API tests
+uv sync --project services/api-auth --group test
+uv run --project services/api-auth --group test -- python -m unittest discover -s services/api-auth/tests -v
+
+# Incidents API tests (PYTHONPATH is needed for the local analysis package)
+uv sync --project services/api-incidents --group test
+PYTHONPATH="$PWD" uv run --project services/api-incidents --group test -- python -m unittest discover -s services/api-incidents/tests -v
+
+# Inventory replenishment planner tests
+python3 -m unittest discover -s .agents/skills/replenishment-planner/tests -v
+```
+
+For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) and the [integration guide](./docs/BACKOFFICE_INTEGRATION.es.md) for test prerequisites and isolation guidance.
+
+## Repository map
+
+```text
+.
+├── agents/                         # Agent templates and tool guidance
+├── data/                           # Raw, processed, pipeline, and evaluation data areas
+├── docs/                           # Architecture and integration documentation
+├── packages/                       # Python analysis package and shared package areas
+├── scripts/                        # Backoffice launcher, seeds, analysis, and test tools
+├── services/                       # FastAPI: api-auth, api-suppliers, api-incidents
+├── uis/
+│   ├── backoffice/                  # Dashboard, suppliers, incidents, talent interfaces
+│   └── website/                     # Static website prototypes
+├── .agents/skills/                  # Operational skills, including replenishment planner
+├── src/ and shared/                 # Shared types, utilities, and conventions
+└── workflows/, mcps/, infra/        # Automation, MCP, and infrastructure work areas
+```
+
+## Data and security notes
+
+- TinyDB files are local to each service and are not a shared transactional database. Do not run multiple instances or external writers against the same files.
+- The integrated launcher preserves local data and uses the same JWT secret for the related APIs. Keep secrets out of source control; configure production secrets through an appropriate secret manager.
+- Avoid using real or sensitive data in development and tests. Use isolated database paths for tests and seeds.
+- The replenishment planner produces suggestions only. A responsible person must review them before any purchasing decision.
+
+For business context, see [`memory-bank/projectbrief.md`](./memory-bank/projectbrief.md) and [`memory-bank/CONTEXT-brasaland-briefing.es.md`](./memory-bank/CONTEXT-brasaland-briefing.es.md).

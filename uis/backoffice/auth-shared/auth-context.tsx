@@ -20,6 +20,7 @@ import {
   UnauthorizedError,
   type AuthUser,
 } from "./auth-api";
+import { loginDestination } from "./auth-navigation";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -37,17 +38,21 @@ function messageOf(error: unknown): string {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<{ token: string; user: AuthUser } | null>(null);
+  const user = session?.token === getToken() ? session.user : null;
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const generation = useRef(0);
 
-  const endSession = useCallback(() => {
+  const endSession = useCallback((preserveDestination: boolean) => {
     generation.current++;
-    setUser(null);
+    setSession(null);
     setError(null);
-    setInitializing(false);
-    window.location.replace("/login");
+    // Evita que el guard compita con la redireccion que ya esta en curso.
+    setInitializing(true);
+    window.location.replace(
+      preserveDestination ? loginDestination(window.location.pathname) : "/login",
+    );
   }, []);
 
   const resolveSession = useCallback(() => {
@@ -59,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .then((session) => {
         if (currentGeneration === generation.current && session.token === getToken()) {
-          setUser(session.me);
+          setSession(session.token && session.me ? { token: session.token, user: session.me } : null);
         }
       })
       .catch((failure: unknown) => {
@@ -73,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshSession = useCallback(async () => {
+    // Mantiene montadas las vistas protegidas durante el refresco para no
+    // perder su estado local (por ejemplo, el resultado de un formulario).
     setInitializing(true);
     setError(null);
     await resolveSession();
@@ -84,17 +91,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     function handleStorage(event: StorageEvent) {
       if (event.storageArea !== window.localStorage) return;
       if (event.key !== TOKEN_KEY && event.key !== null) return;
-      if (!getToken()) endSession();
+      if (!getToken()) endSession(false);
       else void refreshSession();
     }
 
-    window.addEventListener(SESSION_INVALIDATED_EVENT, endSession);
+    function handleInvalidation() {
+      endSession(true);
+    }
+
+    window.addEventListener(SESSION_INVALIDATED_EVENT, handleInvalidation);
     window.addEventListener("storage", handleStorage);
     void resolveSession();
 
     return () => {
       sessionGeneration.current++;
-      window.removeEventListener(SESSION_INVALIDATED_EVENT, endSession);
+      window.removeEventListener(SESSION_INVALIDATED_EVENT, handleInvalidation);
       window.removeEventListener("storage", handleStorage);
     };
   }, [endSession, refreshSession, resolveSession]);
@@ -106,13 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = await loginRequest(email, password);
       if (currentGeneration !== generation.current) throw new Error("Inicio de sesion cancelado.");
       setToken(token);
-      setUser(null);
+      setSession(null);
       setInitializing(true);
       const me = await fetchMe();
       if (currentGeneration !== generation.current || token !== getToken()) {
         throw new Error("Inicio de sesion cancelado.");
       }
-      setUser(me);
+      setSession({ token, user: me });
     } catch (failure) {
       if (currentGeneration === generation.current && !(failure instanceof UnauthorizedError)) {
         setError(messageOf(failure));
@@ -127,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       clearToken();
     } finally {
-      endSession();
+      endSession(false);
     }
   }, [endSession]);
 

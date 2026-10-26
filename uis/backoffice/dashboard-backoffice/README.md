@@ -9,9 +9,11 @@ estan implementadas. Usan `AuthGuard`: `/`, `/account`, `/account/profile` y
 `/reset-password` no usan el guard. La cabecera muestra la identidad autenticada
 y permite cerrar sesion.
 
-Para levantar dashboard, proveedores y ambas APIs con un comando, consultar
+Para levantar las cuatro interfaces y las tres APIs con un comando, consultar
 [integracion del backoffice](../../../docs/BACKOFFICE_INTEGRATION.es.md).
-`/suppliers` pertenece a una app independiente expuesta por el proxy del dashboard.
+`/suppliers`, `/incidents-manager` y `/incidents-analyzer` pertenecen a apps independientes
+expuestas por el proxy del dashboard; el catalogo de la portada enlaza a ellas. Tras el
+login, `next` admite esas rutas y navega a ellas con recarga completa.
 
 El registro pide email, contrasena, confirmacion y nombre opcional. Tras crear
 la cuenta, redirige al login con una confirmacion, sin guardar token ni iniciar
@@ -24,6 +26,12 @@ Los rewrites de Next.js dirigen `/api/auth`, `/api/users` y `/api/profiles` a
 `AUTH_API_URL`, con valor predeterminado `http://localhost:8001`.
 La variable pertenece al servidor Next.js, no utiliza el prefijo `NEXT_PUBLIC`.
 No es necesario modificar un archivo de entorno para usar el valor predeterminado.
+
+Para el gestor de incidencias, `/incidents-manager` se reenvía a
+`INCIDENTS_MANAGER_UI_URL` (`http://localhost:3004`) y `/api/incidents` a
+`INCIDENTS_API_URL` (`http://localhost:8002`).
+El analizador CSV y sus assets se publican en `/incidents-analyzer`, mediante
+`INCIDENTS_UI_URL` (`http://localhost:3002`).
 
 Desde la raiz del monorepo:
 
@@ -43,15 +51,20 @@ configurados fuera del frontend. Esta integracion no modifica la API ni sus perm
 - `login` del cliente devuelve el token; `login` del contexto lo guarda y valida
   la identidad mediante `/auth/me` antes de resolver satisfactoriamente.
 - Solo el JWT se guarda en `localStorage`, bajo `brasaland.backoffice.token`.
-- Cliente, contexto y guard viven en `../auth-shared`; ambas apps los reexportan.
+- Cliente, contexto y guard viven en `../auth-shared`; las cuatro apps los reutilizan.
 - Cada llamada protegida agrega `Authorization: Bearer <token>` y usa `no-store`.
 - Un `401` protegido elimina el token usado, notifica al proveedor y redirige a
-  `/login`. Una respuesta tardia no elimina un token que ya fue reemplazado.
+  `/login?next=...`, conservando solo el pathname validado, sin query ni
+  fragmento. Una respuesta tardia no elimina un token que ya fue reemplazado.
 - Un `403`, un error de red o un fallo del servidor no elimina el token.
 - Al montar, el proveedor recupera el token y consulta `/auth/me`. Los errores
   temporales quedan disponibles para reintentar mediante `refreshSession`.
-- `logout` elimina el token, limpia el estado y ejecuta `router.replace('/login')`.
+- `logout` elimina el token y navega a `/login` sin retorno. Mientras se
+  redirige, el proveedor mantiene el estado de inicializacion para evitar
+  otra redireccion del guard.
 - El evento `storage` sincroniza cambios de sesion entre pestanas del mismo origen.
+- Las reglas de destinos internos viven en `../auth-shared/auth-navigation.ts`;
+  el dashboard las reexporta para sus formularios.
 
 `useAuth()` ofrece `user`, `initializing`, `error`, `login`, `logout` y
 `refreshSession`. Debe usarse dentro del proveedor y en componentes cliente.
@@ -99,7 +112,7 @@ durante la validacion y los errores de sesion; ofrece reintento y distingue
 usuario sin sesion de usuario sin permisos. La redireccion conserva el pathname
 en `/login?next=...`, sin parametros de consulta. Login valida `next` mediante
 una lista de rutas internas: `/`, `/account`, `/account/profile`, `/account/change-password`
-y `/suppliers`. Descarta
+y `/suppliers`, `/incidents-manager`, `/incidents-analyzer` y sus subrutas. Descarta
 URLs externas, rutas desconocidas y bucles hacia login/registro.
 
 El guard controla presentacion y navegacion, no protege Server Components,
@@ -122,7 +135,15 @@ capturas de escritorio/movil. Los contratos y permisos tambien se verificaron
 manualmente contra una instancia temporal de `api-auth` con TinyDB aislada.
 
 La suite de navegador requiere Playwright y Chromium disponibles externamente;
-no se agregaron dependencias al workspace. En el entorno temporal autorizado:
+no se agregaron dependencias al workspace. Con el dashboard iniciado, el
+preparador temporal descarga ambos, ejecuta los tests y limpia al finalizar:
+
+```bash
+node scripts/browser-tests.mjs
+```
+
+Tambien se permite usar una instalacion externa existente mediante
+`PLAYWRIGHT_MODULE`. Ejemplo de configuracion manual:
 
 ```bash
 LD_LIBRARY_PATH=/tmp/brasaland-account-browser/libs/usr/lib/x86_64-linux-gnu \
@@ -138,9 +159,9 @@ de navegador simulada no sustituye la prueba manual contra el backend real.
 
 ## Limites
 
-El almacenamiento es por origen: dashboard y proveedores comparten sesion si
-se accede a ambos desde el origen del dashboard. Incidencias y talento no estan
-integrados en esta sesion. Entrar directamente por 3001 usa otro almacenamiento.
+El almacenamiento es por origen: dashboard, proveedores, gestor y analizador
+de incidencias comparten sesion al acceder desde el origen del dashboard.
+Talento sigue separado. Entrar directamente por 3001, 3002 o 3004 usa otro almacenamiento.
 El JWT es accesible a JavaScript y debe protegerse frente a XSS; nunca registrar
 tokens ni contrasenas. No hay refresh ni revocacion backend: el logout elimina
 la copia local, pero un token obtenido previamente puede seguir siendo valido.

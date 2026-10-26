@@ -8,11 +8,11 @@ const { outputText } = ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
 });
 const api = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
-const navigationSource = await readFile(new URL("../src/app/components/auth-navigation.ts", import.meta.url), "utf8");
+const navigationSource = await readFile(new URL("../../auth-shared/auth-navigation.ts", import.meta.url), "utf8");
 const { outputText: navigationCode } = ts.transpileModule(navigationSource, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
 });
-const { safeAuthDestination } = await import(
+const { safeAuthDestination, loginDestination } = await import(
   `data:text/javascript;base64,${Buffer.from(navigationCode).toString("base64")}`
 );
 const originalFetch = globalThis.fetch;
@@ -175,7 +175,7 @@ test("auth rewrites cover collection and nested routes for all three resources",
 });
 
 test("auth destinations retain supported internal routes", () => {
-  for (const route of ["/", "/account", "/account/profile", "/suppliers", "/?view=tools#services"]) {
+  for (const route of ["/", "/account", "/account/profile", "/suppliers", "/incidents-manager", "/incidents-manager/summary", "/incidents-analyzer", "/incidents-analyzer/incidents", "/?view=tools#services"]) {
     assert.equal(safeAuthDestination(route), route);
   }
 });
@@ -184,8 +184,17 @@ test("auth destinations reject external URLs, scripts, control characters and lo
   for (const route of [
     null, "", "https://example.com", "//example.com", "javascript:alert(1)",
     "/\\example.com", "/%2f%2fexample.com", "/\nexample.com", "/login", "/register",
-    "/missing", "/account/profile-other", "/account /profile",
+    "/missing", "/account/profile-other", "/account /profile", "/incidents-manager-other", "/incidents-analyzer-other",
   ]) {
     assert.equal(safeAuthDestination(route), "/");
+  }
+});
+
+test("expiration destinations preserve only validated paths, never query strings or fragments", () => {
+  assert.equal(loginDestination("/incidents-manager/summary?token=private#section"),
+    "/login?next=%2Fincidents-manager%2Fsummary");
+  assert.equal(loginDestination("/account/profile?email=private"), "/login?next=%2Faccount%2Fprofile");
+  for (const pathname of ["//example.com", "/login", "/unknown", "/\\example.com"]) {
+    assert.equal(loginDestination(pathname), "/login?next=%2F");
   }
 });

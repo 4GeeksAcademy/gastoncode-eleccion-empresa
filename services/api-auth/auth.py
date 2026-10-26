@@ -290,12 +290,25 @@ def reset_password(data: ResetPasswordRequest):
 
     # 3. Actualizar la contraseña del usuario
     user_id = stored_token["user_id"]
+    user = get_user_by_id(user_id)
+    if not user or not user.get("is_active", True):
+        invalidate_user_reset_tokens(user_id)
+        raise HTTPException(
+            status_code=400,
+            detail="El enlace no es válido o ha expirado",
+        )
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    update_user(user_id, {
+    updated_user = update_user(user_id, {
         "hashed_password": bcrypt.hash(data.password),
         "password_changed_at": now_iso,
     })
+    if updated_user is None:
+        invalidate_user_reset_tokens(user_id)
+        raise HTTPException(
+            status_code=400,
+            detail="El enlace no es válido o ha expirado",
+        )
 
     # 4. Invalidar el token (y cualquier otro token pendiente del usuario)
     mark_reset_token_used(token_hash)

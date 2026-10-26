@@ -1,0 +1,589 @@
+@import "@brasaland/theme/theme.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-ui), system-ui, sans-serif;
+  background: var(--bl-bg);
+  color: var(--bl-text);
+  font-size: 17px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.navbar {
+  background: var(--bl-surface);
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.navContent {
+  width: min(1100px, 92%);
+  min-height: 68px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--bl-accent);
+}
+
+.navLinks,
+.sessionMenu {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--bl-text-muted);
+}
+
+.navLinks a:hover {
+  color: var(--bl-text);
+}
+
+.container {
+  width: min(1100px, 92%);
+  margin: 40px auto;
+}
+
+.narrow {
+  max-width: 760px;
+}
+
+.pageHeader h1,
+.incidentForm h1 {
+  margin: 8px 0 12px;
+  font-size: 36px;
+}
+
+.pageHeader p,
+.muted,
+.fieldHint {
+  color: var(--bl-text-muted);
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--bl-accent);
+}
+
+.card {
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 5px 20px var(--bl-shadow-card);
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--bl-accent-strong);
+  color: var(--bl-accent-contrast);
+  padding: 12px 24px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--bl-accent);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.secondaryButton {
+  min-height: 40px;
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--bl-text);
+  border: 1px solid var(--bl-border-strong);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--bl-surface-2);
+}
+
+:focus-visible {
+  outline: 3px solid var(--bl-brasa-400);
+  outline-offset: 2px;
+}
+
+.incidentFields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.incidentForm {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.field label,
+.field legend {
+  font-weight: 700;
+  padding: 0;
+}
+
+.field legend {
+  margin-bottom: 8px;
+}
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="password"],
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--bl-border-strong);
+  background: var(--bl-surface-2);
+  color: var(--bl-text);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input[readonly] {
+  color: var(--bl-text-muted);
+}
+
+.field [aria-invalid="true"] {
+  border-color: var(--bl-danger-text);
+}
+
+.fieldHint,
+.fieldError {
+  margin: 0;
+  font-size: 15px;
+}
+
+.fieldError {
+  color: var(--bl-danger-text);
+  font-weight: 600;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.choiceGroup {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--bl-border-strong);
+  background: var(--bl-surface-2);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.choice input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--bl-accent);
+}
+
+.choice:has(input:checked) {
+  border-color: var(--bl-accent);
+}
+
+.choiceGroup[aria-invalid="true"] .choice {
+  border-color: var(--bl-danger-text);
+}
+
+.fieldHighlighted {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid var(--bl-accent);
+  background: color-mix(in oklab, var(--bl-accent) 12%, transparent);
+}
+
+.fieldHighlighted select {
+  border-color: var(--bl-accent);
+}
+
+.highlightHint {
+  color: var(--bl-brasa-300);
+  font-weight: 600;
+}
+
+.notice {
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+
+.noticeError {
+  background: var(--bl-danger-bg);
+  color: var(--bl-danger-text);
+}
+
+.noticeSuccess {
+  background: color-mix(in oklab, var(--bl-success-text) 14%, transparent);
+  color: var(--bl-success-text);
+  font-weight: 600;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 0;
+}
+
+.summaryPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.incidentsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding: 20px;
+}
+
+.filterGrid .field {
+  gap: 6px;
+}
+
+.filterGrid select,
+.statusEditor select {
+  width: 100%;
+  min-height: 46px;
+  padding: 9px 12px;
+  border: 1px solid var(--bl-border-strong);
+  border-radius: 10px;
+  background: var(--bl-surface-2);
+  color: var(--bl-text);
+}
+
+.incidentList {
+  display: grid;
+  gap: 16px;
+}
+
+.incidentCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+  align-items: start;
+  gap: 26px;
+}
+
+.incidentTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.incidentTitleRow h2 {
+  margin: 0;
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.incidentDetails > p {
+  margin: 12px 0 18px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.statusBadge {
+  flex: none;
+  border: 1px solid var(--bl-border-strong);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.status-open {
+  color: var(--bl-accent);
+}
+
+.status-in_progress {
+  color: var(--bl-brasa-300);
+}
+
+.status-resolved {
+  color: var(--bl-success-text);
+}
+
+.status-discarded {
+  color: var(--bl-danger-text);
+}
+
+.incidentMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.incidentMeta dt {
+  color: var(--bl-text-muted);
+  font-size: 13px;
+}
+
+.incidentMeta dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.statusEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.statusEditor select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.resultCount {
+  margin: 0;
+}
+
+.confirmation h2 {
+  margin-top: 0;
+}
+
+.confirmationActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.metric {
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  box-shadow: 0 5px 20px var(--bl-shadow-card);
+}
+
+.metric span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--bl-text-muted);
+}
+
+.metric strong {
+  font-size: 30px;
+}
+
+.metricTotal {
+  border-color: var(--bl-accent);
+}
+
+.metricTotal strong {
+  color: var(--bl-accent);
+}
+
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.breakdown h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.dataList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dataList li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.dataRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.dataRow small {
+  color: var(--bl-text-subtle);
+  font-weight: 500;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bl-surface-2);
+  overflow: hidden;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--bl-accent);
+}
+
+@media (max-width: 900px) {
+  .metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .breakdownGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .incidentCard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+@media (max-width: 640px) {
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .incidentMeta {
+    grid-template-columns: 1fr;
+  }
+
+  .incidentTitleRow {
+    flex-direction: column;
+  }
+
+  .confirmationActions {
+    flex-direction: column-reverse;
+  }
+
+  .confirmationActions button {
+    width: 100%;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+}
+
+.backLink {
+  border: 1px solid var(--bl-border-strong);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
+}

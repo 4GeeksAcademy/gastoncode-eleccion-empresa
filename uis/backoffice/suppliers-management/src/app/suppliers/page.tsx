@@ -52,12 +52,11 @@ function SuppliersDashboard() {
   const handleFailure = useCallback(
     (err: unknown, fallback: string) => {
       if (err instanceof UnauthorizedError) {
-        logout();
         return;
       }
       setError(err instanceof Error ? err.message : fallback);
     },
-    [logout]
+    []
   );
 
   const loadAll = useCallback(async () => {
@@ -130,11 +129,13 @@ function SuppliersDashboard() {
   async function handleRate(id: number, rate: number) {
     try {
       await updateRate(id, rate);
-      flash('Tarifa actualizada.');
-      await loadAll();
     } catch (err) {
       handleFailure(err, 'Error al actualizar la tarifa.');
+      return false;
     }
+    flash('Tarifa actualizada.');
+    await loadAll();
+    return true;
   }
 
   async function handleToggleStatus(
