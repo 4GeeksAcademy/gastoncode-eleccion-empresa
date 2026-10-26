@@ -16,10 +16,14 @@
     "dev:incidents-manager": "npm run dev -w incidents-manager",
     "dev:talent": "npm run dev -w talent-pipeline-tracker",
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "test:auth:ts": "jest --coverage --config jest.config.cjs"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@types/jest": "^30.0.0",
+    "concurrently": "^9.1.2",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.15"
   },
   "dependencies": {
     "typescript": "^6.0.3",
