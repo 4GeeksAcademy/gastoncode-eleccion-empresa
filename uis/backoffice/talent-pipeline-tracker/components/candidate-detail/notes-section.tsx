@@ -24,6 +24,8 @@ function parseNotes(payload: unknown): CandidateNote[] {
 export function NotesSection({ recordId }: NotesSectionProps) {
   const [notes, setNotes] = useState<CandidateNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notesRetry, setNotesRetry] = useState(0);
+  const [notesLoadFailed, setNotesLoadFailed] = useState(false);
   const [error, setError] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -70,10 +72,12 @@ export function NotesSection({ recordId }: NotesSectionProps) {
         if (!ignore) {
           setNotes(parseNotes(payload));
           setError("");
+          setNotesLoadFailed(false);
         }
       } catch {
         if (!ignore) {
           setError("No se pudieron cargar las notas.");
+          setNotesLoadFailed(true);
         }
       } finally {
         if (!ignore) {
@@ -86,7 +90,13 @@ export function NotesSection({ recordId }: NotesSectionProps) {
     return () => {
       ignore = true;
     };
-  }, [recordId]);
+  }, [recordId, notesRetry]);
+
+  const retryNotes = () => {
+    setError("");
+    setLoading(true);
+    setNotesRetry((attempt) => attempt + 1);
+  };
 
   const onAddNote = async () => {
     const value = content.trim();
@@ -177,7 +187,20 @@ export function NotesSection({ recordId }: NotesSectionProps) {
           </p>
         )}
 
-        {error && <p className="text-sm text-[var(--text-soft)]">{error}</p>}
+        {error && (
+          <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-soft)]">
+            <p role="alert">{error}</p>
+            {notesLoadFailed && !loading && (
+              <button
+                type="button"
+                onClick={retryNotes}
+                className="rounded-md border border-[var(--border-strong)] px-3 py-1 text-xs text-[var(--foreground)] transition hover:bg-[var(--surface-1)]"
+              >
+                Reintentar carga de notas
+              </button>
+            )}
+          </div>
+        )}
 
         {notes.map((note) => (
           <article key={note.id} className="rounded-lg border border-[var(--border-muted)] bg-[var(--surface-chip)] p-4">

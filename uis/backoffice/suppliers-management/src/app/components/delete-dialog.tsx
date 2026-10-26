@@ -5,7 +5,7 @@ import { useState } from 'react';
 interface Props {
   supplierId: number;
   supplierName: string;
-  onSubmit: (id: number) => Promise<void>;
+  onSubmit: (id: number) => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -20,8 +20,7 @@ export default function DeleteDialog({
   async function handleConfirm() {
     setDeleting(true);
     try {
-      await onSubmit(supplierId);
-      onClose();
+      if (await onSubmit(supplierId)) onClose();
     } finally {
       setDeleting(false);
     }

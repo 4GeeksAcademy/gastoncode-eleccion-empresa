@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
-import { resetPassword } from "../components/auth-api";
+import { publicErrorMessage, resetPassword } from "../components/auth-api";
 import { AuthLoading } from "../components/auth-form";
 import { BrasaMark } from "../components/site-header";
 
@@ -38,16 +38,14 @@ function ResetPasswordForm() {
     setSubmitting(true);
     try {
       await resetPassword(token!, password);
-      router.replace("/login?reset=1");
     } catch (failure) {
-      setError(
-        failure instanceof TypeError
-          ? "No se pudo conectar con el servicio. Intenta nuevamente."
-          : failure instanceof Error ? failure.message : "No se pudo completar la solicitud.",
-      );
+      setError(publicErrorMessage(failure));
+      setSubmitting(false);
+      return;
     } finally {
       setSubmitting(false);
     }
+    router.replace("/login?reset=1");
   }
 
   if (!token) {

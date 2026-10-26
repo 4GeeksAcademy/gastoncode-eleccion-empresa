@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { forgotPassword } from "../components/auth-api";
+import { forgotPassword, publicErrorMessage } from "../components/auth-api";
 import { BrasaMark } from "../components/site-header";
 
 const inputClassName = "mt-2 w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-3 text-base text-stone-100 outline-none placeholder:text-stone-600 focus:border-brasa-400 focus:ring-2 focus:ring-brasa-400/20 disabled:opacity-60";
@@ -22,11 +22,7 @@ export default function ForgotPasswordPage() {
     try {
       await forgotPassword(email.trim());
     } catch (failure) {
-      setError(
-        failure instanceof TypeError
-          ? "No se pudo conectar con el servicio. Intenta nuevamente."
-          : failure instanceof Error ? failure.message : "No se pudo completar la solicitud.",
-      );
+      setError(publicErrorMessage(failure));
       setSubmitting(false);
       return;
     }

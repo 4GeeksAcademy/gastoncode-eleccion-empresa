@@ -26,16 +26,38 @@ export interface CreateSupplierInput {
 
 const BASE = '/api';
 
+export class SupplierRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SupplierRequestError';
+  }
+}
+
+async function readJson<T>(res: Response, message: string): Promise<T> {
+  try {
+    return await res.json() as T;
+  } catch {
+    throw new SupplierRequestError(message);
+  }
+}
+
 async function apiFetch(
   path: string,
   init: RequestInit = {},
   errorMessage = 'Request failed'
 ): Promise<Response> {
   const token = getToken();
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { ...(init.headers ?? {}), ...authHeaders() },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...init,
+      headers: { ...(init.headers ?? {}), ...authHeaders() },
+    });
+  } catch {
+    throw new SupplierRequestError(
+      'No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.'
+    );
+  }
 
   if (res.status === 401) {
     if (token === getToken()) {
@@ -45,9 +67,9 @@ async function apiFetch(
     throw new UnauthorizedError();
   }
   if (res.status === 403) {
-    throw new Error('No tenés permisos para realizar esta acción.');
+    throw new SupplierRequestError('No tienes permisos para realizar esta acción.');
   }
-  if (!res.ok) throw new Error(errorMessage);
+  if (!res.ok) throw new SupplierRequestError(errorMessage);
 
   return res;
 }
@@ -56,9 +78,12 @@ export async function fetchSuppliers(): Promise<Supplier[]> {
   const res = await apiFetch(
     '/suppliers',
     {},
-    'Failed to fetch suppliers'
+    'No se pudo cargar la lista de proveedores. Inténtalo de nuevo.'
   );
-  return res.json();
+  return readJson(
+    res,
+    'El servidor devolvió una lista de proveedores no válida. Inténtalo de nuevo.'
+  );
 }
 
 export async function searchSuppliers(
@@ -72,9 +97,12 @@ export async function searchSuppliers(
   const res = await apiFetch(
     `/suppliers/search${qs ? '?' + qs : ''}`,
     {},
-    'Search failed'
+    'No se pudo completar la búsqueda. Inténtalo de nuevo.'
   );
-  return res.json();
+  return readJson(
+    res,
+    'El servidor devolvió resultados no válidos. Inténtalo de nuevo.'
+  );
 }
 
 export async function createSupplier(
@@ -87,9 +115,12 @@ export async function createSupplier(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     },
-    'Create failed'
+    'No se pudo crear el proveedor. Revisa los datos e inténtalo de nuevo.'
   );
-  return res.json();
+  return readJson(
+    res,
+    'El servidor devolvió una respuesta no válida al crear el proveedor.'
+  );
 }
 
 export async function updateRate(
@@ -103,9 +134,12 @@ export async function updateRate(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rate_per_unit }),
     },
-    'Rate update failed'
+    'No se pudo actualizar la tarifa. Inténtalo de nuevo.'
   );
-  return res.json();
+  return readJson(
+    res,
+    'El servidor devolvió una respuesta no válida al actualizar la tarifa.'
+  );
 }
 
 export async function updateStatus(
@@ -119,11 +153,18 @@ export async function updateStatus(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     },
-    'Status update failed'
+    'No se pudo cambiar el estado del proveedor. Inténtalo de nuevo.'
   );
-  return res.json();
+  return readJson(
+    res,
+    'El servidor devolvió una respuesta no válida al cambiar el estado.'
+  );
 }
 
 export async function deleteSupplier(id: number): Promise<void> {
-  await apiFetch(`/suppliers/${id}`, { method: 'DELETE' }, 'Delete failed');
+  await apiFetch(
+    `/suppliers/${id}`,
+    { method: 'DELETE' },
+    'No se pudo eliminar el proveedor. Inténtalo de nuevo.'
+  );
 }

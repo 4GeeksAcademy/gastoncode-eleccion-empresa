@@ -228,6 +228,48 @@ class IncidentsApiTests(unittest.TestCase):
         self.assertEqual(missing.status_code, 404)
         self.assertEqual(invalid.status_code, 400)
 
+    def test_unhandled_error_log_uses_route_template_not_request_url(self):
+        client = TestClient(self.main.app, raise_server_exceptions=False)
+        self.addCleanup(client.close)
+        self.main.app.dependency_overrides[auth.get_current_user] = lambda: {
+            "id": "fixture-id", "role": "user",
+        }
+        self.addCleanup(self.main.app.dependency_overrides.clear)
+        with patch.object(
+            self.main,
+            "_get_analysis",
+            side_effect=RuntimeError("synthetic internal failure"),
+        ), self.assertLogs(self.main.logger, level="ERROR") as captured:
+            response = client.get(
+                "/api/incidents/results/bd107364-ff31-4443-9560-067ac4f39eaf?secret=do-not-log"
+            )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json(), {"detail": "Error interno del servidor"})
+        log_output = "\n".join(captured.output)
+        self.assertIn("GET /api/incidents/results/{analysis_id}", log_output)
+        self.assertNotIn("secret=do-not-log", log_output)
+        self.assertNotIn("bd107364-ff31-4443-9560-067ac4f39eaf", log_output)
+
+    def test_unexpected_content_type_log_omits_client_filename(self):
+        malicious_filename = "private\nforged log entry.csv"
+        csv = (
+            "incident_id,date,location_id,category,description,status,customer_id,satisfaction_score,reporter_id\n"
+            "BRS-000001,2025-01-02,COL-01,EQUIPMENT,Horno sin funcionar,OPEN,,,MGR-01\n"
+        )
+        with self.as_role("user"), self.assertLogs(self.main.logger, level="WARNING") as captured:
+            response = self.client.post(
+                "/api/incidents/analyze",
+                headers=self.token_headers(),
+                files={"file": (malicious_filename, csv, "application/x-untrusted")},
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        log_output = "\n".join(captured.output)
+        self.assertIn("Content-Type inesperado al subir un CSV", log_output)
+        self.assertNotIn("private", log_output)
+        self.assertNotIn("forged log entry", log_output)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -82,6 +82,17 @@ test("validation errors use the API field/message shape", async () => {
   assert.equal(auth.getToken(), "fixture-token");
 });
 
+test("unrecognized server validation details are not exposed to callers", async () => {
+  globalThis.fetch = async () => Response.json({
+    detail: "Database password is hunter2; /srv/app/private.csv",
+  }, { status: 400 });
+  await assert.rejects(api.analyzeFile(file), (error) => {
+    assert.equal(error.message, "No se pudo procesar la solicitud. Revisa el archivo e inténtalo de nuevo.");
+    assert.doesNotMatch(error.message, /hunter2|srv\/app/);
+    return true;
+  });
+});
+
 test("upload without an ID and incomplete or mismatched results are rejected", async () => {
   for (const uploaded of [{}, { analysis_id: "" }]) {
     globalThis.fetch = async () => Response.json(uploaded);
@@ -134,6 +145,15 @@ test("network and malformed JSON responses surface explicit errors", async () =>
   globalThis.fetch = async () => new Response("not-json");
   await assert.rejects(api.analyzeFile(file), /respuesta no válida/);
   assert.equal(auth.getToken(), "fixture-token");
+});
+
+test("export body read failures are normalized", async () => {
+  globalThis.fetch = async () => {
+    const response = new Response("csv");
+    response.blob = async () => { throw new Error("internal body read failure"); };
+    return response;
+  };
+  await assert.rejects(api.exportAnalysis(analysisId), /No se pudo preparar el archivo CSV/);
 });
 
 test("analyzer uses a basePath and unprefixed protected API rewrites", async () => {

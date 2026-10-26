@@ -417,7 +417,10 @@ Los campos de filtros usan el prefijo `query.`, los identificadores de ruta
 `path.` y los campos del cuerpo `body.`. Los errores de contenido del CSV
 se identifican como `body.file`; la validación manual del analizador identifica
 `analysis_id`. Los errores internos de validación de datos persistidos o de la
-respuesta siguen devolviendo **500** genérico, no **400**.
+respuesta siguen devolviendo **500** genérico, no **400**. Los logs de errores
+no controlados identifican el método y la plantilla de ruta, sin query string ni
+identificadores de ruta; los warnings de uploads tampoco registran el nombre del
+archivo ni el `Content-Type` enviado por el cliente.
 
 | Código | Significado |
 |--------|-------------|

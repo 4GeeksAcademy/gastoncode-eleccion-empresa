@@ -48,7 +48,13 @@ def edit_my_profile(
         exclude_none=True
     )
 
-    return update_profile(
+    profile = update_profile(
         current_user["id"],
         changes
     )
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Perfil no encontrado"
+        )
+    return profile

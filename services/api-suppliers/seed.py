@@ -1,3 +1,4 @@
+import logging
 import sys
 from pathlib import Path
 
@@ -7,6 +8,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 import os
 from database import suppliers_table
 from models import SupplierCreateInput
+from pydantic import ValidationError
+
+logger = logging.getLogger(__name__)
 
 seed_data = [
     {
@@ -157,17 +161,33 @@ seed_data = [
 ]
 
 
-validated_suppliers = [
-    SupplierCreateInput(**item).model_dump()
-    for item in seed_data
-]
+def main() -> int:
+    try:
+        validated_suppliers = [
+            SupplierCreateInput(**item).model_dump()
+            for item in seed_data
+        ]
+    except ValidationError:
+        logger.error("Supplier seed data failed validation")
+        return 1
 
-if len(suppliers_table) != 0:
-    print("Suppliers table is not empty. Skipping seeding.")
-else:
-    for supplier in validated_suppliers:
-        suppliers_table.insert(supplier)
-    print(
-    f"Inserted {len(validated_suppliers)} suppliers"
-    )
+    if len(suppliers_table) != 0:
+        print("Suppliers table is not empty. Skipping seeding.")
+        return 0
+
+    try:
+        for supplier in validated_suppliers:
+            suppliers_table.insert(supplier)
+    except (OSError, TypeError, ValueError) as error:
+        # Keep diagnostics useful without printing supplier data or raw exception
+        # details that may expose local paths or database contents.
+        logger.error("Supplier seed persistence failed (%s)", type(error).__name__)
+        return 1
+
+    print(f"Inserted {len(validated_suppliers)} suppliers")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 

@@ -6,6 +6,7 @@ import SupplierCard from './supplier-card';
 interface Props {
   canWrite: boolean;
   suppliers: Supplier[];
+  updatingStatusIds: ReadonlySet<number>;
   onEditRate: (id: number, name: string) => void;
   onToggleStatus: (id: number, name: string, status: 'active' | 'suspended') => void;
   onDelete: (id: number, name: string) => void;
@@ -14,6 +15,7 @@ interface Props {
 export default function SupplierList({
   canWrite,
   suppliers,
+  updatingStatusIds,
   onEditRate,
   onToggleStatus,
   onDelete,
@@ -31,6 +33,7 @@ export default function SupplierList({
       {suppliers.map((s) => (
         <SupplierCard
           canWrite={canWrite}
+          statusUpdating={updatingStatusIds.has(s.id)}
           key={s.id}
           supplier={s}
           onEditRate={onEditRate}

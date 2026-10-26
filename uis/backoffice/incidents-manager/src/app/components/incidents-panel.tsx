@@ -101,22 +101,9 @@ export default function IncidentsPanel() {
       });
     }
 
+    let updated: Incident;
     try {
-      const updated = await updateIncidentStatus(incident.id, status);
-      const matchesStatusFilter = !requestFilters.status || requestFilters.status === updated.status;
-      const matchesOriginFilter = !requestFilters.origin || requestFilters.origin === updated.origin;
-      const matchesBranchFilter = !requestFilters.branch || requestFilters.branch === updated.branch;
-      setState((current) =>
-        current.kind === "ready"
-          ? {
-              kind: "ready",
-              incidents: !matchesStatusFilter || !matchesOriginFilter || !matchesBranchFilter
-                ? current.incidents.filter((item) => item.id !== updated.id)
-                : current.incidents.map((item) => item.id === updated.id ? updated : item),
-            }
-          : current,
-      );
-      setNotice(`Estado de «${incident.title}» actualizado a ${optionLabel(STATUS_OPTIONS, updated.status)}.`);
+      updated = await updateIncidentStatus(incident.id, status);
     } catch (failure) {
       setState((current) =>
         current.kind === "ready"
@@ -129,9 +116,25 @@ export default function IncidentsPanel() {
           : current,
       );
       setNotice(messageFor(failure, "No pudimos actualizar la incidencia. El estado anterior se ha restaurado."));
-    } finally {
       setUpdating((current) => ({ ...current, [incident.id]: false }));
+      return;
     }
+
+    setUpdating((current) => ({ ...current, [incident.id]: false }));
+    const matchesStatusFilter = !requestFilters.status || requestFilters.status === updated.status;
+    const matchesOriginFilter = !requestFilters.origin || requestFilters.origin === updated.origin;
+    const matchesBranchFilter = !requestFilters.branch || requestFilters.branch === updated.branch;
+    setState((current) =>
+      current.kind === "ready"
+        ? {
+            kind: "ready",
+            incidents: !matchesStatusFilter || !matchesOriginFilter || !matchesBranchFilter
+              ? current.incidents.filter((item) => item.id !== updated.id)
+              : current.incidents.map((item) => item.id === updated.id ? updated : item),
+          }
+        : current,
+    );
+    setNotice(`Estado de «${incident.title}» actualizado a ${optionLabel(STATUS_OPTIONS, updated.status)}.`);
   }
 
   function requestStatusChange(incident: Incident, status: IncidentStatus) {
