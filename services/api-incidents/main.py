@@ -133,7 +133,13 @@ async def request_validation_handler(request: Request, exc: RequestValidationErr
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception("Error no manejado en %s", request.url)
+    route = request.scope.get("route")
+    route_template = getattr(route, "path", "unknown")
+    logger.exception(
+        "Error no manejado en %s %s",
+        request.method,
+        route_template,
+    )
     return Response(
         status_code=500,
         content='{"detail":"Error interno del servidor"}',
@@ -204,7 +210,7 @@ def analyze_incidents(
         "application/octet-stream",
         None,
     ):
-        logger.warning("Content-Type inesperado: %s (file=%s)", file.content_type, file.filename)
+        logger.warning("Content-Type inesperado al subir un CSV")
 
     # Leer el archivo en chunks hasta MAX_FILE_SIZE
     content = bytearray()

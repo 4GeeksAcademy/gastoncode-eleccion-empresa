@@ -355,16 +355,16 @@ Registra un nuevo proveedor en el sistema. Brasaland lo usa cuando un restaurant
 {
   "detail": [
     {
-      "type": "missing",
       "loc": ["body", "name"],
-      "msg": "Field required",
-      "input": null
+      "type": "missing"
     }
   ]
 }
 ```
 
-> FastAPI/Pydantic devuelve automáticamente errores 422 con el detalle de cada campo que falla, incluyendo tipo de error, ubicación y mensaje.
+> La API devuelve los campos `loc` y `type` de cada error de validación, pero
+> omite el valor rechazado y el mensaje bruto de Pydantic para no reflejar datos
+> enviados por el cliente.
 
 ---
 
@@ -508,6 +508,10 @@ Elimina un proveedor del sistema. Esta operación es definitiva, por lo que Bras
 | 422    | Error de validación             | Datos inválidos en el body (Pydantic validation)    |
 | 500    | Error interno                   | Fallo inesperado del servidor (contactar al equipo técnico) |
 
+Los errores internos no controlados devuelven un cuerpo genérico (`Internal
+server error`). En los logs se registra el método, la plantilla de ruta y el tipo
+de excepción, pero no el mensaje ni el traceback de la excepción.
+
 ### Errores de autenticación
 
 **401 Unauthorized** — Token faltante o inválido:
@@ -532,7 +536,9 @@ Elimina un proveedor del sistema. Esta operación es definitiva, por lo que Bras
 }
 ```
 
-> FastAPI devuelve errores **422** automáticamente con el detalle del campo que falló cuando el payload no cumple con el esquema definido. Los errores **401** y **403** son intencionales y provienen del módulo de autenticación.
+> La API devuelve **422** con la ubicación y el tipo de los campos que fallan,
+> sin incluir los valores recibidos. Los errores **401** y **403** son
+> intencionales y provienen del módulo de autenticación.
 
 ---
 

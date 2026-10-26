@@ -10,7 +10,12 @@ def main():
     user = get_user_by_email(args.email)
     if not user or not user.get("is_active", True):
         parser.error("La cuenta no existe o esta desactivada. No se crearon usuarios.")
-    update_user(user["id"], {"role": "admin"})
+    try:
+        updated_user = update_user(user["id"], {"role": "admin"})
+    except Exception:
+        parser.exit(1, f"{parser.prog}: no se pudo actualizar la cuenta.\n")
+    if updated_user is None:
+        parser.exit(1, f"{parser.prog}: la cuenta ya no está disponible.\n")
     print("Cuenta existente promovida a admin. Reinicia el backoffice y vuelve a iniciar sesion.")
 
 

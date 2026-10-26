@@ -1,4 +1,6 @@
 import importlib
+import hashlib
+import logging
 import os
 import sys
 import tempfile
@@ -139,6 +141,35 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.database_module.profiles_table.all()[1]["name"], "Otra Persona")
         self.assertNotEqual(first["user"]["id"], other["user"]["id"])
 
+    def test_updating_missing_profile_returns_not_found(self):
+        registered = self.register()
+        token = self.login()
+        self.database_module.profiles_table.remove(
+            lambda profile: profile["user_id"] == registered["user"]["id"]
+        )
+        response = self.client.put(
+            "/profiles/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"name": "Updated"},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["detail"], "Perfil no encontrado")
+
+    def test_registration_rolls_back_user_when_profile_insert_fails(self):
+        with patch.object(
+            self.database_module.profiles_table,
+            "insert",
+            side_effect=OSError("disk unavailable"),
+        ):
+            with self.assertRaises(OSError):
+                self.client.post("/users", json={
+                    "email": "ana@example.com",
+                    "password": "clave-segura-123",
+                    "name": "Ana",
+                })
+        self.assertEqual(self.database_module.users_table.all(), [])
+        self.assertEqual(self.database_module.profiles_table.all(), [])
+
     def test_user_listing_and_user_records_follow_role_and_owner_rules(self):
         own = self.register()
         other = self.register(email="otra@example.com")
@@ -183,6 +214,51 @@ class AuthApiTests(unittest.TestCase):
         self.assertNotEqual(stored["token_hash"], raw_token)
         self.assertEqual(len(stored["token_hash"]), 64)
 
+    def test_forgot_password_keeps_generic_response_when_email_delivery_fails(self):
+        self.register()
+        with patch.object(self.auth_module, "send_reset_email", return_value=False):
+            with self.assertLogs("api-auth.auth", level="WARNING") as captured:
+                known = self.client.post(
+                    "/auth/forgot-password", json={"email": "ana@example.com"}
+                )
+        unknown = self.client.post(
+            "/auth/forgot-password", json={"email": "missing@example.com"}
+        )
+        self.assertEqual(known.status_code, 200)
+        self.assertEqual(known.json(), unknown.json())
+        self.assertNotIn("ana@example.com", " ".join(captured.output))
+
+    def test_reset_password_rejects_malformed_persisted_token(self):
+        self.register()
+        raw_token = "malformed-stored-token"
+        self.database_module.reset_tokens_table.insert({
+            "token_hash": hashlib.sha256(raw_token.encode()).hexdigest(),
+            "user_id": "not-a-valid-user-id",
+            "expires_at": "not-a-timestamp",
+            "used": False,
+        })
+        response = self.client.post("/auth/reset-password", json={
+            "token": raw_token,
+            "password": "nueva-clave-123",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "El enlace no es válido o ha expirado")
+
+    def test_reset_password_rejects_naive_timestamp(self):
+        self.register()
+        raw_token = "naive-timestamp-token"
+        self.database_module.reset_tokens_table.insert({
+            "token_hash": hashlib.sha256(raw_token.encode()).hexdigest(),
+            "user_id": self.database_module.users_table.all()[0]["id"],
+            "expires_at": "2099-01-01T00:00:00",
+            "used": False,
+        })
+        response = self.client.post("/auth/reset-password", json={
+            "token": raw_token,
+            "password": "nueva-clave-123",
+        })
+        self.assertEqual(response.status_code, 400)
+
     def test_reset_password_is_single_use_and_invalidates_pending_tokens(self):
         self.register()
         sent = []
@@ -222,6 +298,30 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(changed.status_code, 200, changed.text)
         self.assertEqual(login.status_code, 200)
         self.assertTrue(self.database_module.reset_tokens_table.all()[0]["used"])
+
+    def test_password_write_is_not_attempted_if_reset_token_invalidation_fails(self):
+        registered = self.register()
+        token = self.login()
+        with patch.object(
+            self.database_module.reset_tokens_table,
+            "update",
+            side_effect=OSError("disk unavailable"),
+        ):
+            with self.assertRaises(OSError):
+                self.client.post(
+                    "/auth/change-password",
+                    headers={"Authorization": f"Bearer {token}"},
+                    json={
+                        "current_password": "clave-segura-123",
+                        "new_password": "nueva-clave-123",
+                    },
+                )
+        stored_user = self.database_module.users_table.get(
+            lambda user: user["id"] == registered["user"]["id"]
+        )
+        self.assertTrue(self.auth_module.bcrypt.verify(
+            "clave-segura-123", stored_user["hashed_password"]
+        ))
 
 
 if __name__ == "__main__":

@@ -32,8 +32,8 @@ def send_reset_email(email_to: str, reset_url: str, user_name: str | None = None
     """
     if not RESEND_API_KEY:
         logger.warning(
-            "RESEND_API_KEY no está configurado. "
-            "No se puede enviar el email de restablecimiento."
+        "RESEND_API_KEY no está configurado; no se pudo enviar "
+        "una notificación de restablecimiento."
         )
         return False
 
@@ -92,16 +92,13 @@ def send_reset_email(email_to: str, reset_url: str, user_name: str | None = None
             "html": body_html,
         }
 
-        response = Emails.send(params)
-        logger.info(
-            "Email de restablecimiento enviado a %s (id=%s)",
-            email_to,
-            response.get("id") if isinstance(response, dict) else response,
-        )
+        Emails.send(params)
+        logger.info("Password reset notification sent")
         return True
 
-    except Exception:
-        logger.exception(
-            "Error al enviar email de restablecimiento a %s", email_to
+    except Exception as error:
+        logger.error(
+            "Password reset notification failed (error_type=%s)",
+            type(error).__name__,
         )
         return False

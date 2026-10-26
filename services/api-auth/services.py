@@ -1,3 +1,7 @@
+import logging
+from threading import RLock
+from datetime import datetime, timezone
+
 from tinydb import Query
 
 from database import users_table, profiles_table, reset_tokens_table
@@ -6,6 +10,8 @@ from database import users_table, profiles_table, reset_tokens_table
 User = Query()
 Profile = Query()
 ResetToken = Query()
+logger = logging.getLogger("api-auth.persistence")
+_write_lock = RLock()
 
 
 def get_user_by_id(user_id: str):
@@ -25,30 +31,51 @@ def get_all_users():
 
 
 def create_user(user: dict, profile: dict):
-    users_table.insert(user)
-    profiles_table.insert(profile)
+    """Create a user and profile, compensating if the second write fails.
+
+    TinyDB does not provide a transaction spanning tables. This rollback
+    protects against ordinary write failures, but cannot provide crash-safe or
+    cross-process atomicity.
+    """
+    with _write_lock:
+        user_doc_id = users_table.insert(user)
+        try:
+            profiles_table.insert(profile)
+        except Exception as error:
+            try:
+                profiles_table.remove(Profile.id == profile["id"])
+                users_table.remove(doc_ids=[user_doc_id])
+            except Exception as rollback_error:
+                logger.error(
+                    "User creation rollback failed (error_type=%s)",
+                    type(rollback_error).__name__,
+                )
+                raise RuntimeError("No se pudo revertir el alta incompleta") from error
+            raise
 
     return user
 
 
 def update_user(user_id: str, changes: dict):
-    users_table.update(
-        changes,
-        User.id == user_id
-    )
+    with _write_lock:
+        users_table.update(
+            changes,
+            User.id == user_id
+        )
 
     return get_user_by_id(user_id)
 
 
 def delete_user(user_id: str):
-    invalidate_user_reset_tokens(user_id)
-    users_table.remove(
-        User.id == user_id
-    )
+    with _write_lock:
+        invalidate_user_reset_tokens(user_id)
+        users_table.remove(
+            User.id == user_id
+        )
 
-    profiles_table.remove(
-        Profile.user_id == user_id
-    )
+        profiles_table.remove(
+            Profile.user_id == user_id
+        )
 
 
 def get_profile_by_user_id(user_id: str):
@@ -58,10 +85,11 @@ def get_profile_by_user_id(user_id: str):
 
 
 def update_profile(user_id: str, changes: dict):
-    profiles_table.update(
-        changes,
-        Profile.user_id == user_id
-    )
+    with _write_lock:
+        profiles_table.update(
+            changes,
+            Profile.user_id == user_id
+        )
 
     return get_profile_by_user_id(user_id)
 
@@ -70,7 +98,8 @@ def update_profile(user_id: str, changes: dict):
 
 def create_reset_token(token_data: dict):
     """Almacena un token de restablecimiento hasheado."""
-    reset_tokens_table.insert(token_data)
+    with _write_lock:
+        reset_tokens_table.insert(token_data)
 
 
 def get_reset_token(token_hash: str):
@@ -82,15 +111,59 @@ def get_reset_token(token_hash: str):
 
 def mark_reset_token_used(token_hash: str):
     """Marca un token como usado para evitar reutilización."""
-    reset_tokens_table.update(
-        {"used": True},
-        ResetToken.token_hash == token_hash
-    )
+    with _write_lock:
+        reset_tokens_table.update(
+            {"used": True},
+            ResetToken.token_hash == token_hash
+        )
 
 
 def invalidate_user_reset_tokens(user_id: str):
     """Invalida todos los tokens pendientes de un usuario."""
-    reset_tokens_table.update(
-        {"used": True},
-        (ResetToken.user_id == user_id) & (ResetToken.used == False)
-    )
+    with _write_lock:
+        reset_tokens_table.update(
+            {"used": True},
+            (ResetToken.user_id == user_id) & (ResetToken.used == False)
+        )
+
+
+def update_password_and_invalidate_reset_tokens(user_id: str, changes: dict):
+    """Update a password only after disabling its outstanding reset tokens.
+
+    The order is deliberately fail-closed: if the user update fails after the
+    token write, the old password remains but no reset link remains usable.
+    TinyDB cannot make the two table writes atomic.
+    """
+    with _write_lock:
+        invalidate_user_reset_tokens(user_id)
+        return update_user(user_id, changes)
+
+
+def reset_password_and_invalidate_reset_tokens(
+    user_id: str, token_hash: str, changes: dict
+):
+    """Consume a still-pending reset token and update its user's password.
+
+    The token is rechecked under the same process-local lock used for writes,
+    preventing two concurrent requests in this process from consuming it.
+    """
+    with _write_lock:
+        token = get_reset_token(token_hash)
+        if (
+            not token
+            or token.get("user_id") != user_id
+            or token.get("used") is not False
+        ):
+            return None
+        try:
+            expires_at = datetime.fromisoformat(token.get("expires_at"))
+        except (TypeError, ValueError):
+            return None
+        if (
+            expires_at.tzinfo is None
+            or expires_at.utcoffset() is None
+            or expires_at < datetime.now(timezone.utc)
+        ):
+            return None
+        invalidate_user_reset_tokens(user_id)
+        return update_user(user_id, changes)

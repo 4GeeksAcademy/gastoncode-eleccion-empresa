@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -17,13 +18,13 @@ from services import (
     get_reset_token,
     get_user_by_email,
     get_user_by_id,
-    invalidate_user_reset_tokens,
-    mark_reset_token_used,
     update_user,
+    update_password_and_invalidate_reset_tokens,
 )
 
 
 load_dotenv()
+logger = logging.getLogger("api-auth.auth")
 
 
 router = APIRouter(
@@ -78,30 +79,30 @@ def get_current_user(
             JWT_SECRET,
             algorithms=[ALGORITHM]
         )
-
-        user_id = payload.get("sub")
-
-        user = get_user_by_id(user_id)
-
-        if not user:
-            raise HTTPException(
-                status_code=401,
-                detail="Usuario no válido"
-            )
-
-        if not user.get("is_active", True):
-            raise HTTPException(
-                status_code=401,
-                detail="Cuenta desactivada"
-            )
-
-        return user
-
     except JWTError:
         raise HTTPException(
             status_code=401,
             detail="Token inválido o expirado"
         )
+
+    user_id = payload.get("sub") if isinstance(payload, dict) else None
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+
+    user = get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Usuario no válido"
+        )
+
+    if not user.get("is_active", True):
+        raise HTTPException(
+            status_code=401,
+            detail="Cuenta desactivada"
+        )
+
+    return user
 
 def require_roles(allowed_roles: list[str]):
     def role_checker(current_user: dict = Depends(get_current_user)) -> dict:
@@ -234,11 +235,14 @@ def forgot_password(data: ForgotPasswordRequest):
         if profile:
             user_name = profile.get("name")
 
-        send_reset_email(
+        email_sent = send_reset_email(
             email_to=user["email"],
             reset_url=reset_url,
             user_name=user_name,
         )
+        if not email_sent:
+            # Never log the address or distinguish the API response by account.
+            logger.warning("Password reset notification could not be delivered")
 
     # Respuesta genérica: misma para email existente e inexistente
     return {
@@ -281,38 +285,45 @@ def reset_password(data: ResetPasswordRequest):
             detail="El enlace no es válido o ha expirado",
         )
 
-    expires_at = datetime.fromisoformat(stored_token["expires_at"])
-    if expires_at < datetime.now(timezone.utc):
+    expires_at_value = stored_token.get("expires_at")
+    user_id = stored_token.get("user_id")
+    try:
+        expires_at = datetime.fromisoformat(expires_at_value)
+    except (TypeError, ValueError):
+        expires_at = None
+    if (
+        stored_token.get("used") is not False
+        or not isinstance(user_id, str)
+        or not user_id
+        or expires_at is None
+        or expires_at.tzinfo is None
+        or expires_at.utcoffset() is None
+        or expires_at < datetime.now(timezone.utc)
+    ):
         raise HTTPException(
             status_code=400,
             detail="El enlace no es válido o ha expirado",
         )
 
     # 3. Actualizar la contraseña del usuario
-    user_id = stored_token["user_id"]
     user = get_user_by_id(user_id)
     if not user or not user.get("is_active", True):
-        invalidate_user_reset_tokens(user_id)
+        update_password_and_invalidate_reset_tokens(user_id, {})
         raise HTTPException(
             status_code=400,
             detail="El enlace no es válido o ha expirado",
         )
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    updated_user = update_user(user_id, {
+    updated_user = update_password_and_invalidate_reset_tokens(user_id, {
         "hashed_password": bcrypt.hash(data.password),
         "password_changed_at": now_iso,
     })
     if updated_user is None:
-        invalidate_user_reset_tokens(user_id)
         raise HTTPException(
             status_code=400,
             detail="El enlace no es válido o ha expirado",
         )
-
-    # 4. Invalidar el token (y cualquier otro token pendiente del usuario)
-    mark_reset_token_used(token_hash)
-    invalidate_user_reset_tokens(user_id)
 
     return {
         "message": "Contraseña restablecida correctamente",
@@ -348,13 +359,12 @@ def change_password(
 
     # 3. Actualizar la contraseña
     now_iso = datetime.now(timezone.utc).isoformat()
-    update_user(current_user["id"], {
+    updated_user = update_password_and_invalidate_reset_tokens(current_user["id"], {
         "hashed_password": bcrypt.hash(data.new_password),
         "password_changed_at": now_iso,
     })
-
-    # 4. Invalidar tokens de restablecimiento pendientes
-    invalidate_user_reset_tokens(current_user["id"])
+    if updated_user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     return {
         "message": "Contraseña actualizada correctamente",
