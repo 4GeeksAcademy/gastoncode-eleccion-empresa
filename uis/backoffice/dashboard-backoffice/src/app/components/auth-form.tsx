@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { register } from "./auth-api";
+import { publicErrorMessage, register } from "./auth-api";
 import { useAuth } from "./auth-context";
 import { isExternalAppPath, safeAuthDestination } from "./auth-navigation";
 import { BrasaMark } from "./site-header";
@@ -52,19 +52,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     try {
       if (isRegister) {
         await register({ email: email.trim(), password, name: name.trim() || undefined });
-        router.replace(`/login?registered=1&next=${encodeURIComponent(destination)}`);
       } else {
         await login(email.trim(), password);
       }
     } catch (failure) {
-      setError(
-        failure instanceof TypeError
-          ? "No se pudo conectar con el servicio. Intenta nuevamente."
-          : failure instanceof Error ? failure.message : "No se pudo completar la solicitud.",
-      );
+      setError(publicErrorMessage(failure));
+      setSubmitting(false);
+      return;
     } finally {
       setSubmitting(false);
     }
+    if (isRegister) router.replace(`/login?registered=1&next=${encodeURIComponent(destination)}`);
   }
 
   if (initializing || user) return <AuthLoading />;

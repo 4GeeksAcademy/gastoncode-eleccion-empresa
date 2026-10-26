@@ -55,6 +55,14 @@ function endSession(token: string | null): never {
   throw new IncidentRequestError("Tu sesión expiró. Inicia sesión nuevamente.");
 }
 
+async function readJson<T>(response: Response, failureMessage: string): Promise<T> {
+  try {
+    return await response.json() as T;
+  } catch {
+    throw new IncidentRequestError(failureMessage);
+  }
+}
+
 export async function createIncident(data: IncidentInput): Promise<Incident> {
   const token = getToken();
   if (!token) endSession(token);
@@ -76,13 +84,21 @@ export async function createIncident(data: IncidentInput): Promise<Incident> {
     );
   }
 
-  if (response.ok) return (await response.json()) as Incident;
+  if (response.ok) {
+    return readJson<Incident>(response, "El servidor devolvió una respuesta no válida al registrar la incidencia.");
+  }
   if (response.status === 401) endSession(token);
   if (response.status === 403) {
     throw new IncidentRequestError("No tienes permiso para registrar incidencias.");
   }
   if (response.status === 400) {
-    const fields = invalidFields(await response.json().catch(() => null));
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new IncidentRequestError("El servidor no pudo validar los datos. Revisa el formulario e inténtalo de nuevo.");
+    }
+    const fields = invalidFields(body);
     throw new IncidentRequestError(
       "Revisa los campos marcados e inténtalo de nuevo.",
       fields,
@@ -118,7 +134,10 @@ export async function fetchSummary(signal?: AbortSignal): Promise<IncidentSummar
       "No pudimos cargar el resumen de incidencias. Inténtalo de nuevo en unos minutos.",
     );
   }
-  return (await response.json()) as IncidentSummary;
+  return readJson<IncidentSummary>(
+    response,
+    "El servidor devolvió un resumen no válido. Inténtalo de nuevo.",
+  );
 }
 
 export interface IncidentFilters {
@@ -163,7 +182,10 @@ export async function fetchIncidents(
       "No pudimos cargar las incidencias. Inténtalo de nuevo en unos minutos.",
     );
   }
-  return (await response.json()) as Incident[];
+  return readJson<Incident[]>(
+    response,
+    "El servidor devolvió una lista de incidencias no válida. Inténtalo de nuevo.",
+  );
 }
 
 export async function updateIncidentStatus(
@@ -211,5 +233,8 @@ export async function updateIncidentStatus(
       "No pudimos actualizar la incidencia. El estado anterior se ha restaurado.",
     );
   }
-  return (await response.json()) as Incident;
+  return readJson<Incident>(
+    response,
+    "El servidor devolvió una respuesta no válida al actualizar la incidencia.",
+  );
 }

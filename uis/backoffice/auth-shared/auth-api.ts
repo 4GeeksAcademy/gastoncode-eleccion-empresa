@@ -78,22 +78,24 @@ export class UnauthorizedError extends ApiError {
   }
 }
 
-async function errorMessage(response: Response): Promise<string> {
-  const fallback = "No se pudo completar la solicitud.";
-  try {
-    const body: unknown = await response.json();
-    if (typeof body !== "object" || body === null || !("detail" in body)) return fallback;
-    if (typeof body.detail === "string") return body.detail;
-    if (Array.isArray(body.detail)) {
-      const messages = body.detail.flatMap((detail: unknown) => {
-        if (typeof detail !== "object" || detail === null || !("msg" in detail)) return [];
-        return typeof detail.msg === "string" ? [detail.msg] : [];
-      });
-      if (messages.length) return messages.join("; ");
-    }
-  } catch {
-    return fallback;
+function publicStatusMessage(status: number): string {
+  if (status === 400 || status === 422) return "Revisa los datos ingresados e intenta nuevamente.";
+  if (status === 401) return "Sesion expirada o no valida.";
+  if (status === 403) return "No tienes permiso para realizar esta accion.";
+  if (status === 404) return "No se encontro el recurso solicitado.";
+  if (status === 409) return "La solicitud entra en conflicto con los datos existentes.";
+  if (status >= 500) return "El servicio no pudo completar la solicitud. Intenta mas tarde.";
+  return "No se pudo completar la solicitud.";
+}
+
+/** Devuelve mensajes preparados para mostrar en la UI, sin propagar detalles internos. */
+export function publicErrorMessage(error: unknown, fallback = "No se pudo completar la solicitud."): string {
+  if (error instanceof ApiError) {
+    if (error.status === 0) return "No se pudo conectar con el servicio. Intenta nuevamente.";
+    if (error.status === 502) return "El servicio devolvio una respuesta no valida.";
+    return publicStatusMessage(error.status);
   }
+  if (error instanceof TypeError) return "No se pudo conectar con el servicio. Intenta nuevamente.";
   return fallback;
 }
 
@@ -112,14 +114,19 @@ async function request<Result>(
 
   const headers = new Headers(options.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(`/api${path}`, {
-    ...options,
-    headers,
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(0, "No se pudo conectar con el servicio. Intenta nuevamente.");
+  }
 
   if (!response.ok) {
-    const message = await errorMessage(response);
+    const message = publicStatusMessage(response.status);
     if (response.status === 401) {
       if (protectedRequest && token === getToken()) {
         clearToken();
@@ -130,7 +137,11 @@ async function request<Result>(
     throw new ApiError(response.status, message);
   }
 
-  return response.json() as Promise<Result>;
+  try {
+    return await response.json() as Result;
+  } catch {
+    throw new ApiError(502, "El servicio devolvio una respuesta no valida.");
+  }
 }
 
 function jsonBody(method: string, data: object): RequestInit {

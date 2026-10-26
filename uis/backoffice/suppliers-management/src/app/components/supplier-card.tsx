@@ -6,6 +6,7 @@ import StatusBadge from './status-badge';
 interface Props {
   canWrite: boolean;
   supplier: Supplier;
+  statusUpdating: boolean;
   onEditRate: (id: number, name: string) => void;
   onToggleStatus: (id: number, name: string, status: 'active' | 'suspended') => void;
   onDelete: (id: number, name: string) => void;
@@ -14,6 +15,7 @@ interface Props {
 export default function SupplierCard({
   canWrite,
   supplier,
+  statusUpdating,
   onEditRate,
   onToggleStatus,
   onDelete,
@@ -67,9 +69,14 @@ export default function SupplierCard({
           onClick={() =>
             onToggleStatus(supplier.id, supplier.name, supplier.status)
           }
+          disabled={statusUpdating}
           className="rounded-lg bg-stone-700/50 px-3 py-1.5 text-xs font-medium text-stone-300 transition hover:bg-stone-700"
         >
-          {supplier.status === 'active' ? 'Suspender' : 'Activar'}
+          {statusUpdating
+            ? 'Actualizando…'
+            : supplier.status === 'active'
+              ? 'Suspender'
+              : 'Activar'}
         </button>
         <button
           onClick={() => onDelete(supplier.id, supplier.name)}

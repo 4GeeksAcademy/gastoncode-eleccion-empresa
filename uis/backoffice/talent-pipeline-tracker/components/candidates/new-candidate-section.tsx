@@ -140,7 +140,7 @@ export function NewCandidateSection() {
       } else {
         setFeedback({
           type: "error",
-          message: `No se pudo crear la candidatura. Código de respuesta: ${response.status}.`,
+          message: "No se pudo crear la candidatura. Revisa los datos e inténtalo nuevamente.",
         });
       }
     } catch {

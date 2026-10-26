@@ -33,7 +33,7 @@ beforeEach(async () => {
   scenario.users = directoryUsers.map((account) => ({ ...account }));
   scenario.profile = { ...fixtureProfile };
   context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  context.on("page", (currentPage) => currentPage.on("pageerror", (error) => failures.push(error.message)));
+  context.on("page", (currentPage) => currentPage.on("pageerror", () => failures.push(true)));
   await context.route("**/api/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -105,7 +105,7 @@ async function login() {
   try {
     await page.getByRole("button", { name: "Cerrar sesi\u00f3n" }).waitFor({ timeout: 5000 });
   } catch (failure) {
-    console.error("Login diagnostic:", page.url(), await page.locator("body").innerText(), calls, failures);
+    console.error("Login diagnostic:", new URL(page.url()).pathname, calls.map(({ path, method }) => ({ path, method })), `${failures.length} browser exceptions`);
     throw failure;
   }
 }
@@ -126,7 +126,7 @@ async function waitForFormOutcome(successText) {
       document.querySelector("p[role='alert']") !== null,
     successText, { timeout: 3000 });
   } catch (failure) {
-    console.error("Form outcome diagnostic:", await page.locator("main").innerText(), calls);
+    console.error("Form outcome diagnostic:", new URL(page.url()).pathname, calls.map(({ path, method }) => ({ path, method })));
     throw failure;
   }
   const alert = await page.locator("p[role='alert']").allInnerTexts();

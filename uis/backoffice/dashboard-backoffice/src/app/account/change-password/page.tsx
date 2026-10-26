@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { changePassword } from "../../components/auth-api";
+import { changePassword, publicErrorMessage } from "../../components/auth-api";
 import { useAuth } from "../../components/auth-context";
 
 const fieldClassName = "mt-2 w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-3 text-base text-stone-100 outline-none focus:border-brasa-400 focus:ring-2 focus:ring-brasa-400/20 disabled:opacity-60";
@@ -33,20 +33,20 @@ export default function ChangePasswordPage() {
     }
 
     setSaving(true);
+    let updatedSuccessfully = false;
     try {
       await changePassword(currentPassword, newPassword);
+      updatedSuccessfully = true;
       setSuccess("Contrase\u00f1a actualizada correctamente.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmation("");
-      await refreshSession();
     } catch (failure) {
-      setError(
-        failure instanceof Error ? failure.message : "No se pudo actualizar la contrase\u00f1a.",
-      );
+      setError(publicErrorMessage(failure, "No se pudo actualizar la contrase\u00f1a."));
     } finally {
       setSaving(false);
     }
+    if (updatedSuccessfully) await refreshSession();
   }
 
   return (

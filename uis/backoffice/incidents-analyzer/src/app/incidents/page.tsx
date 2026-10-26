@@ -10,7 +10,12 @@ import type {
   FormEvent
 } from "react";
 
-import { analyzeFile, exportAnalysis, type AnalysisResult } from "@/lib/incidents-api";
+import {
+  analyzeFile,
+  exportAnalysis,
+  publicIncidentErrorMessage,
+  type AnalysisResult,
+} from "@/lib/incidents-api";
 
 
 export default function IncidentsPage() {
@@ -41,6 +46,11 @@ export default function IncidentsPage() {
   const [
     loading,
     setLoading,
+  ] = useState(false);
+
+  const [
+    exporting,
+    setExporting,
   ] = useState(false);
 
 
@@ -77,25 +87,7 @@ export default function IncidentsPage() {
       setResult(await analyzeFile(file));
 
     } catch (error) {
-
-
-      if (
-        error
-        instanceof Error
-      ) {
-
-        setError(
-          error.message
-        );
-
-      } else {
-
-        setError(
-          "Ocurrió un error inesperado."
-        );
-
-      }
-
+      setError(publicIncidentErrorMessage(error, "No se pudo analizar el archivo. Inténtalo de nuevo."));
 
     } finally {
 
@@ -108,8 +100,9 @@ export default function IncidentsPage() {
 
   async function downloadResults() {
 
-    if (!result) return;
+    if (!result || exporting) return;
 
+    setExporting(true);
     setError("");
 
 
@@ -155,19 +148,9 @@ export default function IncidentsPage() {
 
 
     } catch (error) {
-
-
-      if (
-        error
-        instanceof Error
-      ) {
-
-        setError(
-          error.message
-        );
-
-      }
-
+      setError(publicIncidentErrorMessage(error, "No se pudo descargar el archivo CSV. Inténtalo de nuevo."));
+    } finally {
+      setExporting(false);
     }
 
   }
@@ -287,7 +270,7 @@ export default function IncidentsPage() {
           error
           && (
 
-            <div className="error">
+            <div className="error" role="alert">
 
               {error}
 
@@ -686,10 +669,11 @@ export default function IncidentsPage() {
                 onClick={
                   downloadResults
                 }
+                disabled={exporting}
                 className="downloadButton"
               >
 
-                Descargar resultados CSV
+                {exporting ? "Preparando descarga..." : error ? "Reintentar descarga CSV" : "Descargar resultados CSV"}
 
               </button>
 

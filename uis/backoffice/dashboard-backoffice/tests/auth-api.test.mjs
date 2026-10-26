@@ -80,7 +80,7 @@ test("protected 401 clears token and notifies the provider", async () => {
   let notifications = 0;
   browser.addEventListener(api.SESSION_INVALIDATED_EVENT, () => notifications++);
   globalThis.fetch = async () => Response.json({ detail: "Token expirado" }, { status: 401 });
-  await assert.rejects(api.fetchMe(), { name: "UnauthorizedError", status: 401, message: "Token expirado" });
+  await assert.rejects(api.fetchMe(), { name: "UnauthorizedError", status: 401, message: "Sesion expirada o no valida." });
   assert.equal(api.getToken(), null);
   assert.equal(notifications, 1);
 });
@@ -114,11 +114,14 @@ test("403 and 500 preserve the token", async () => {
 test("network failure preserves the token", async () => {
   api.setToken("valid-token");
   globalThis.fetch = async () => { throw new TypeError("Network unavailable"); };
-  await assert.rejects(api.fetchMe(), /Network unavailable/);
+  await assert.rejects(api.fetchMe(), {
+    name: "ApiError", status: 0,
+    message: "No se pudo conectar con el servicio. Intenta nuevamente.",
+  });
   assert.equal(api.getToken(), "valid-token");
 });
 
-test("registration sends JSON and exposes FastAPI validation messages", async () => {
+test("registration sends JSON and never exposes server validation details", async () => {
   globalThis.fetch = async (url, options) => {
     assert.equal(url, "/api/users");
     assert.equal(options.headers.get("Authorization"), null);
@@ -127,7 +130,16 @@ test("registration sends JSON and exposes FastAPI validation messages", async ()
     return Response.json({ detail: [{ msg: "Invalid email" }] }, { status: 422 });
   };
   await assert.rejects(api.register({ email: "person@example.com", password: "example" }), {
-    status: 422, message: "Invalid email",
+    status: 422, message: "Revisa los datos ingresados e intenta nuevamente.",
+  });
+});
+
+test("malformed successful JSON becomes a safe API error", async () => {
+  api.setToken("valid-token");
+  globalThis.fetch = async () => new Response("not-json", { status: 200 });
+  await assert.rejects(api.fetchMe(), {
+    name: "ApiError", status: 502,
+    message: "El servicio devolvio una respuesta no valida.",
   });
 });
 

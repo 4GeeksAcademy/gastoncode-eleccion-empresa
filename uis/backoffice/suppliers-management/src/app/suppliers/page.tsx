@@ -8,6 +8,7 @@ import {
   updateRate,
   updateStatus,
   deleteSupplier,
+  SupplierRequestError,
   type Supplier,
   type CreateSupplierInput,
 } from '../components/api';
@@ -34,6 +35,7 @@ function SuppliersDashboard() {
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
@@ -48,13 +50,16 @@ function SuppliersDashboard() {
   } | null>(null);
   const [searching, setSearching] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [updatingStatusIds, setUpdatingStatusIds] = useState<Set<number>>(
+    () => new Set()
+  );
 
   const handleFailure = useCallback(
     (err: unknown, fallback: string) => {
       if (err instanceof UnauthorizedError) {
         return;
       }
-      setError(err instanceof Error ? err.message : fallback);
+      setError(err instanceof SupplierRequestError ? err.message : fallback);
     },
     []
   );
@@ -65,6 +70,7 @@ function SuppliersDashboard() {
     try {
       const data = await fetchSuppliers();
       setSuppliers(data);
+      setHasLoaded(true);
     } catch (err) {
       handleFailure(err, 'No se pudo cargar la lista de proveedores.');
     } finally {
@@ -77,6 +83,7 @@ function SuppliersDashboard() {
     fetchSuppliers()
       .then((data) => {
         if (active) setSuppliers(data);
+        if (active) setHasLoaded(true);
       })
       .catch((err) => {
         if (active)
@@ -144,6 +151,7 @@ function SuppliersDashboard() {
     currentStatus: 'active' | 'suspended'
   ) {
     const next = currentStatus === 'active' ? 'suspended' : 'active';
+    setUpdatingStatusIds((current) => new Set(current).add(id));
     try {
       await updateStatus(id, next);
       flash(
@@ -152,17 +160,24 @@ function SuppliersDashboard() {
       await loadAll();
     } catch (err) {
       handleFailure(err, 'Error al cambiar el estado.');
+    } finally {
+      setUpdatingStatusIds((current) => {
+        const nextIds = new Set(current);
+        nextIds.delete(id);
+        return nextIds;
+      });
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: number): Promise<boolean> {
     try {
       await deleteSupplier(id);
       flash('Proveedor eliminado.');
-      setDeleteTarget(null);
       await loadAll();
+      return true;
     } catch (err) {
       handleFailure(err, 'Error al eliminar el proveedor.');
+      return false;
     }
   }
 
@@ -223,8 +238,8 @@ function SuppliersDashboard() {
           </div>
         )}
 
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-600/40 bg-red-900/30 px-4 py-3 text-sm text-red-300">
+        {error && (hasLoaded || loading) && (
+          <div role="alert" className="mb-6 rounded-xl border border-red-600/40 bg-red-900/30 px-4 py-3 text-sm text-red-300">
             {error}
           </div>
         )}
@@ -239,10 +254,22 @@ function SuppliersDashboard() {
           <div className="flex items-center justify-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-700 border-t-amber-500" />
           </div>
+        ) : !hasLoaded && error ? (
+          <div role="alert" className="rounded-xl border border-red-600/40 bg-red-900/20 p-8 text-center">
+            <p className="mb-4 text-red-300">No se pudo cargar la lista de proveedores.</p>
+            <button
+              type="button"
+              onClick={() => void loadAll()}
+              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-500"
+            >
+              Reintentar
+            </button>
+          </div>
         ) : (
           <SupplierList
             canWrite={canWrite}
             suppliers={suppliers}
+            updatingStatusIds={updatingStatusIds}
             onEditRate={(id, name) => {
               const s = suppliers.find((x) => x.id === id);
               if (s) setRateTarget({ id, name, rate: s.rate_per_unit });

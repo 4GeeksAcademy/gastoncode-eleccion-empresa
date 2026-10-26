@@ -7,6 +7,41 @@ import {
 
 type BreakdownValue = { count: number; percentage: number };
 
+export class IncidentsApiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "IncidentsApiError";
+  }
+}
+
+export function publicIncidentErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof UnauthorizedError) return "Tu sesión expiró. Inicia sesión nuevamente.";
+  if (error instanceof IncidentsApiError) return error.message;
+  return fallback;
+}
+
+const safeValidationMessages = new Set([
+  "El fichero está vacío.",
+  "El archivo está vacío.",
+  "El formato del archivo no es válido.",
+]);
+
+function publicValidationMessage(body: unknown): string | null {
+  if (!isObject(body)) return null;
+  const detail = body.detail;
+  const messages = typeof detail === "string"
+    ? [detail]
+    : Array.isArray(detail)
+      ? detail.flatMap((entry: unknown) => {
+          if (!isObject(entry)) return [];
+          const message = entry.message ?? entry.msg;
+          return typeof message === "string" ? [message] : [];
+        })
+      : [];
+  const safeMessage = messages.find((message) => safeValidationMessages.has(message));
+  return safeMessage ?? null;
+}
+
 export interface AnalysisResult {
   analysis_id: string;
   company: string;
@@ -82,28 +117,21 @@ async function request(path: string, options: RequestInit = {}): Promise<Respons
       cache: "no-store",
     });
   } catch {
-    throw new Error("No hay conexión con el servidor. Inténtalo de nuevo.");
+    throw new IncidentsApiError("No hay conexión con el servidor. Inténtalo de nuevo.");
   }
   if (response.status === 401) invalidateSession(token);
-  if (response.status === 403) throw new Error("No tienes permiso para analizar incidencias.");
+  if (response.status === 403) throw new IncidentsApiError("No tienes permiso para analizar incidencias.");
   if (response.status === 503) {
-    throw new Error("El servicio de identidad no está disponible. Inténtalo más tarde.");
+    throw new IncidentsApiError("El servicio de identidad no está disponible. Inténtalo más tarde.");
   }
   if (!response.ok) {
     if (response.status >= 500) {
-      throw new Error("No se pudo completar el análisis. Inténtalo más tarde.");
+      throw new IncidentsApiError("No se pudo completar el análisis. Inténtalo más tarde.");
     }
     const body: unknown = await readJson(response);
-    if (isObject(body) && typeof body.detail === "string") throw new Error(body.detail);
-    if (isObject(body) && Array.isArray(body.detail)) {
-      const messages = body.detail.flatMap((entry: unknown) => {
-        if (!isObject(entry)) return [];
-        const message = entry.message ?? entry.msg;
-        return typeof message === "string" ? [message] : [];
-      });
-      if (messages.length) throw new Error(messages.join("; "));
-    }
-    throw new Error("No se pudo completar la solicitud. Revisa el archivo e inténtalo de nuevo.");
+    const validationMessage = publicValidationMessage(body);
+    if (validationMessage) throw new IncidentsApiError(validationMessage);
+    throw new IncidentsApiError("No se pudo procesar la solicitud. Revisa el archivo e inténtalo de nuevo.");
   }
   return response;
 }
@@ -112,7 +140,7 @@ async function readJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
   } catch {
-    throw new Error("El servidor devolvió una respuesta no válida. Inténtalo de nuevo.");
+    throw new IncidentsApiError("El servidor devolvió una respuesta no válida. Inténtalo de nuevo.");
   }
 }
 
@@ -121,11 +149,11 @@ export async function analyzeFile(file: File): Promise<AnalysisResult> {
   data.append("file", file);
   const uploaded: unknown = await readJson(await request("/analyze", { method: "POST", body: data }));
   if (!isObject(uploaded) || typeof uploaded.analysis_id !== "string" || !uploaded.analysis_id) {
-    throw new Error("El servidor no devolvió un identificador de análisis válido.");
+    throw new IncidentsApiError("El servidor no devolvió un identificador de análisis válido.");
   }
   const result = await readJson(await request(`/results/${encodeURIComponent(uploaded.analysis_id)}`));
   if (!isAnalysis(result) || result.analysis_id !== uploaded.analysis_id) {
-    throw new Error("El servidor devolvió resultados de análisis no válidos.");
+    throw new IncidentsApiError("El servidor devolvió resultados de análisis no válidos.");
   }
   return result;
 }
@@ -133,5 +161,9 @@ export async function analyzeFile(file: File): Promise<AnalysisResult> {
 export async function exportAnalysis(analysisId: string): Promise<Blob> {
   const query = new URLSearchParams({ analysis_id: analysisId });
   const response = await request(`/results/export?${query}`);
-  return response.blob();
+  try {
+    return await response.blob();
+  } catch {
+    throw new IncidentsApiError("No se pudo preparar el archivo CSV. Inténtalo de nuevo.");
+  }
 }

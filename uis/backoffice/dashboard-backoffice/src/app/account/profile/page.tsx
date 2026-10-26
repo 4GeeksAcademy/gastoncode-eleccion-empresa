@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { ApiError, fetchProfile, updateProfile, type Profile } from "../../components/auth-api";
+import { ApiError, fetchProfile, publicErrorMessage, updateProfile, type Profile } from "../../components/auth-api";
 import { useAuth } from "../../components/auth-context";
 
 const fieldClassName = "mt-2 w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-3 text-base text-stone-100 outline-none focus:border-brasa-400 focus:ring-2 focus:ring-brasa-400/20 disabled:opacity-60";
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError && error.status === 403) return "No tienes permisos para consultar este perfil.";
-  return error instanceof Error ? error.message : "No se pudo cargar el perfil.";
+  return publicErrorMessage(error, "No se pudo cargar el perfil.");
 }
 
 export default function AccountProfilePage() {
@@ -49,19 +49,21 @@ export default function AccountProfilePage() {
     setError(null);
     setSuccess(null);
     setSaving(true);
+    let updatedSuccessfully = false;
     try {
       const updated = await updateProfile({ name, phone, address });
+      updatedSuccessfully = true;
       setProfile(updated);
       setName(updated.name ?? "");
       setPhone(updated.phone ?? "");
       setAddress(updated.address ?? "");
-      await refreshSession();
       setSuccess("El perfil se actualizó.");
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
       setSaving(false);
     }
+    if (updatedSuccessfully) await refreshSession();
   }
 
   function reset() {

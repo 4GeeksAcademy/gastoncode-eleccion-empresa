@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   ApiError,
   listUsers,
+  publicErrorMessage,
   updateUser,
   type PublicUser,
   type Role,
@@ -19,7 +20,7 @@ function roleLabel(role: Role): string {
 
 function errorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError && error.status === 403) return "No tienes permisos para realizar esta acción.";
-  return error instanceof Error ? error.message : fallback;
+  return publicErrorMessage(error, fallback);
 }
 
 function dateLabel(value: string): string {
@@ -95,9 +96,10 @@ export default function AccountPage() {
     }
 
     setSavingAccount(true);
+    let updated = false;
     try {
       await updateUser(user.id, changes);
-      await refreshSession();
+      updated = true;
       setPassword("");
       setPasswordConfirmation("");
       setAccountSuccess("Los datos de acceso se actualizaron.");
@@ -106,6 +108,7 @@ export default function AccountPage() {
     } finally {
       setSavingAccount(false);
     }
+    if (updated) await refreshSession();
   }
 
   function beginEditing(account: PublicUser) {
@@ -141,8 +144,10 @@ export default function AccountPage() {
     }
 
     setSavingUser(true);
+    let updatedOwnAccount = false;
     try {
       const updated = await updateUser(editingUser.id, changes);
+      updatedOwnAccount = updated.id === user?.id;
       setUsers((current) => current.map((account) => account.id === updated.id ? updated : account));
       setEditingUser(updated);
       setEditEmail(updated.email);
@@ -151,12 +156,12 @@ export default function AccountPage() {
       setEditPassword("");
       setEditPasswordConfirmation("");
       setDirectorySuccess("La cuenta se actualizó.");
-      if (updated.id === user?.id) await refreshSession();
     } catch (error) {
       setDirectoryError(errorMessage(error, "No se pudo actualizar la cuenta."));
     } finally {
       setSavingUser(false);
     }
+    if (updatedOwnAccount) await refreshSession();
   }
 
   return (
