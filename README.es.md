@@ -22,6 +22,10 @@ aplicaciones y APIs separadas (autenticación, proveedores e incidencias).
 Consulta la [guia de integracion](docs/BACKOFFICE_INTEGRATION.es.md) para datos
 persistentes, primer administrador, cierre coordinado y verificaciones.
 
+Las pruebas unitarias de la lógica de autenticación (pytest y Jest) se describen
+en [`TESTING.md`](./TESTING.md). La suite Python se ejecuta desde
+`services/api-auth` para evitar recolectar pruebas de otros proyectos del monorepo.
+
 ---
 
 ## Propósito

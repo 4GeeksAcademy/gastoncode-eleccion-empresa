@@ -134,6 +134,12 @@ cierre entre pestanas, token expirado, errores de red, permisos de cuenta/perfil
 capturas de escritorio/movil. Los contratos y permisos tambien se verificaron
 manualmente contra una instancia temporal de `api-auth` con TinyDB aislada.
 
+Adicionalmente, el paquete compartido `uis/backoffice/auth-shared` tiene pruebas
+unitarias Jest para sus funciones de cliente y navegación. Ejecutar desde la raíz
+con `npx jest --coverage`; el alcance se limita mediante `jest.config.cjs` a ese
+paquete. Las pruebas Python de lógica del servicio auth se documentan en
+[`TESTING.md`](../../../TESTING.md) y en el README de `services/api-auth`.
+
 La suite de navegador requiere Playwright y Chromium disponibles externamente;
 no se agregaron dependencias al workspace. Con el dashboard iniciado, el
 preparador temporal descarga ambos, ejecuta los tests y limpia al finalizar:

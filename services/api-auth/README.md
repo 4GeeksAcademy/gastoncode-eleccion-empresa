@@ -31,19 +31,23 @@ El servicio queda disponible en `http://localhost:8001`.
 
 ### Pruebas automatizadas
 
-La suite HTTP utiliza una base TinyDB temporal, no requiere credenciales ni
-servicios externos, y simula el envío de correo de restablecimiento. Instala las
-dependencias de test y ejecuta la suite desde la raíz del monorepo:
+La suite pytest prueba directamente la lógica de los endpoints (sin `TestClient`
+ni validación de serialización HTTP). Usa una base TinyDB temporal, no requiere
+credenciales ni servicios externos y simula el envío de correo de
+restablecimiento. Desde la raíz del monorepo:
 
 ```bash
 uv sync --project services/api-auth --group test
-uv run --project services/api-auth --group test -- python -m unittest discover -s services/api-auth/tests -v
+cd services/api-auth
+uv run pytest
 ```
 
-Las pruebas cubren registro, inicio de sesión y cuentas desactivadas, consulta y
-edición de perfiles, reglas de propietario/roles para usuarios, y los flujos de
-solicitud, canje e invalidación de tokens de restablecimiento y cambio de
-contraseña. La suite no realiza llamadas reales a Resend.
+La suite cubre salud, registro y rollback ante fallo de persistencia, login y
+cuentas desactivadas, identidad/JWT, perfiles, listado/consulta/edición/borrado
+de usuarios, reglas de roles y propietario, y solicitud, canje e invalidación de
+tokens de restablecimiento/cambio de contraseña. No realiza llamadas reales a
+Resend. Desde la raíz, pytest podría recoger otras suites del monorepo; por eso
+se recomienda ejecutar desde este directorio.
 
 ### Configuración
 

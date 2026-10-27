@@ -74,8 +74,7 @@ dist/
 *.manifest
 *.spec
 
-# uv lockfile (se regenera con `uv sync`, no debe trackearse)
-uv.lock
+# Lockfiles de uv: versionar el lockfile propio de cada proyecto
 
 
 # Entornos virtuales

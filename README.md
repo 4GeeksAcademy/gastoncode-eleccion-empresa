@@ -93,9 +93,14 @@ Examples of focused test commands from the repository root:
 # Integrated launcher and dashboard/API client tests
 node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/incidents-analyzer/tests/incidents-api.test.mjs uis/backoffice/incidents-manager/tests/incidents-api.test.mjs
 
-# Authentication API tests
+# Authentication API logic tests (pytest; run from the service directory)
 uv sync --project services/api-auth --group test
-uv run --project services/api-auth --group test -- python -m unittest discover -s services/api-auth/tests -v
+cd services/api-auth
+uv run pytest
+cd ../..
+
+# Shared TypeScript authentication client tests
+npx jest --coverage
 
 # Incidents API tests (PYTHONPATH is needed for the local analysis package)
 uv sync --project services/api-incidents --group test
@@ -106,6 +111,8 @@ python3 -m unittest discover -s .agents/skills/replenishment-planner/tests -v
 ```
 
 For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) and the [integration guide](./docs/BACKOFFICE_INTEGRATION.es.md) for test prerequisites and isolation guidance.
+
+See [`TESTING.md`](./TESTING.md) for the focused authentication test commands and setup details. The Jest configuration restricts test discovery to `uis/backoffice/auth-shared`.
 
 ## Repository map
 
