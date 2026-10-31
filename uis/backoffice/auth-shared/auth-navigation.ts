@@ -1,4 +1,4 @@
-export const EXTERNAL_APP_PREFIXES = ["/suppliers", "/incidents-manager", "/incidents-analyzer"] as const;
+export const EXTERNAL_APP_PREFIXES = ["/suppliers", "/incidents-manager", "/incidents-analyzer", "/inventory-management"] as const;
 
 /** Rutas servidas por otra app Next.js en este mismo origen; requieren recarga completa. */
 export function isExternalAppPath(pathname: string): boolean {

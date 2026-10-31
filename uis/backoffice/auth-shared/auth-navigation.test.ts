@@ -34,4 +34,13 @@ describe("auth navigation helpers", () => {
     );
     expect(loginDestination("https://evil.example/path")).toBe("/login?next=%2F");
   });
+
+  test.each([
+    "/inventory-management/products",
+    "/inventory-management/inbound",
+    "/inventory-management/outbound",
+    "/inventory-management/orders",
+  ])("conserva el destino de login para la página protegida %s", (path) => {
+    expect(loginDestination(path)).toBe(`/login?next=${encodeURIComponent(path)}`);
+  });
 });
