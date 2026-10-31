@@ -9,10 +9,11 @@ estan implementadas. Usan `AuthGuard`: `/`, `/account`, `/account/profile` y
 `/reset-password` no usan el guard. La cabecera muestra la identidad autenticada
 y permite cerrar sesion.
 
-Para levantar las cuatro interfaces y las tres APIs con un comando, consultar
+Para levantar las cinco interfaces y las cuatro APIs con un comando, consultar
 [integracion del backoffice](../../../docs/BACKOFFICE_INTEGRATION.es.md).
-`/suppliers`, `/incidents-manager` y `/incidents-analyzer` pertenecen a apps independientes
-expuestas por el proxy del dashboard; el catalogo de la portada enlaza a ellas. Tras el
+`/suppliers`, `/incidents-manager`, `/incidents-analyzer` y `/inventory-management`
+pertenecen a apps independientes expuestas por el proxy del dashboard; el catálogo
+de la portada enlaza a ellas. Tras el
 login, `next` admite esas rutas y navega a ellas con recarga completa.
 
 El registro pide email, contrasena, confirmacion y nombre opcional. Tras crear
@@ -32,6 +33,9 @@ Para el gestor de incidencias, `/incidents-manager` se reenvía a
 `INCIDENTS_API_URL` (`http://localhost:8002`).
 El analizador CSV y sus assets se publican en `/incidents-analyzer`, mediante
 `INCIDENTS_UI_URL` (`http://localhost:3002`).
+Inventario y sus assets se publican en `/inventory-management`, mediante
+`INVENTORY_UI_URL` (`http://localhost:3005`); `/api/inventory` se reenvía a
+`INVENTORY_API_URL` (`http://localhost:8003`).
 
 Desde la raiz del monorepo:
 
@@ -51,7 +55,7 @@ configurados fuera del frontend. Esta integracion no modifica la API ni sus perm
 - `login` del cliente devuelve el token; `login` del contexto lo guarda y valida
   la identidad mediante `/auth/me` antes de resolver satisfactoriamente.
 - Solo el JWT se guarda en `localStorage`, bajo `brasaland.backoffice.token`.
-- Cliente, contexto y guard viven en `../auth-shared`; las cuatro apps los reutilizan.
+- Cliente, contexto y guard viven en `../auth-shared`; las apps integradas del backoffice los reutilizan.
 - Cada llamada protegida agrega `Authorization: Bearer <token>` y usa `no-store`.
 - Un `401` protegido elimina el token usado, notifica al proveedor y redirige a
   `/login?next=...`, conservando solo el pathname validado, sin query ni

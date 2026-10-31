@@ -84,6 +84,28 @@ def get_profile_by_user_id(user_id: str):
     )
 
 
+def get_display_names_by_user_ids(user_ids: list[str]):
+    """Return only display names for the requested user IDs."""
+    requested_ids = set(user_ids)
+    if not requested_ids:
+        return []
+
+    profiles = profiles_table.search(Profile.user_id.one_of(list(requested_ids)))
+    names_by_user_id = {
+        profile["user_id"]: profile.get("name")
+        for profile in profiles
+        if profile.get("user_id") in requested_ids
+    }
+    users = users_table.search(User.id.one_of(list(requested_ids)))
+    return [
+        {
+            "id": user["id"],
+            "display_name": names_by_user_id.get(user["id"]) or "Usuario sin nombre",
+        }
+        for user in users
+    ]
+
+
 def update_profile(user_id: str, changes: dict):
     with _write_lock:
         profiles_table.update(

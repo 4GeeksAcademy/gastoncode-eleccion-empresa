@@ -47,6 +47,17 @@ export const SERVICES: BackofficeService[] = [
     url: "/incidents-manager",
   },
   {
+    id: "inventory-management",
+    name: "Gestión de inventario",
+    area: "Operaciones de Restaurante",
+    owner: "Felipe Guerrero",
+    description:
+      "Consulta existencias y registra entradas y salidas de productos por sede.",
+    icon: "📦",
+    path: "uis/backoffice/inventory-management",
+    url: "/inventory-management",
+  },
+  {
     id: "talent-pipeline-tracker",
     name: "Pipeline de talento",
     area: "Personas y Cultura",

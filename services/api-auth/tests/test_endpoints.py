@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import ValidationError
 
 
 def test_health_endpoint_returns_business_status(api):
@@ -152,6 +153,31 @@ def test_list_users_returns_empty_list_when_database_has_no_users(api, user_fact
     api["database"].users_table.truncate()
 
     assert api["users"].list_users(manager) == []
+
+
+def test_display_names_resolves_only_requested_users_with_safe_fallbacks(api, user_factory):
+    first, _ = user_factory(email="first@example.com")
+    second, _ = user_factory(email="second@example.com", profile=False)
+    ignored, _ = user_factory(email="ignored@example.com")
+
+    result = api["users"].display_names(
+        api["users"].DisplayNamesRequest(ids=[first["id"], second["id"]]),
+        {"id": ignored["id"], "role": "user"},
+    )
+
+    assert result == [
+        {"id": first["id"], "display_name": "Ana Test"},
+        {"id": second["id"], "display_name": "Usuario sin nombre"},
+    ]
+    assert all(set(item) == {"id", "display_name"} for item in result)
+    assert "@" not in " ".join(item["display_name"] for item in result)
+
+
+def test_display_names_rejects_empty_and_oversized_batches(api):
+    with pytest.raises(ValidationError):
+        api["users"].DisplayNamesRequest(ids=[])
+    with pytest.raises(ValidationError):
+        api["users"].DisplayNamesRequest(ids=[str(index) for index in range(501)])
 
 
 def test_list_users_rejects_non_privileged_role(api, user_factory):
