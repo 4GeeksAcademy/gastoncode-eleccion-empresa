@@ -3,7 +3,7 @@
 ## Arranque
 
 Requisitos: Node.js 22 o superior, npm y uv. Auth requiere Python >=3.14;
-suppliers e incidents requieren >=3.12. uv prepara entornos independientes por servicio.
+suppliers, incidents e inventory requieren >=3.12. uv prepara entornos independientes por servicio.
 
 Desde la raiz:
 
@@ -26,10 +26,11 @@ El lanzador no incluye talento y nunca ejecuta seeds.
 | Dashboard y gateway | 3000 | uis/backoffice/dashboard-backoffice |
 | Interfaz proveedores | 3001 | uis/backoffice/suppliers-management |
 | API incidents | 8002 | services/api-incidents |
+| API inventory | 8003 | services/api-inventory |
 | Gestor de incidencias | 3004 | uis/backoffice/incidents-manager |
 | Analizador CSV | 3002 | uis/backoffice/incidents-analyzer |
 
-Los siete puertos deben estar libres. El lanzador rechaza conflictos sin
+Los ocho puertos deben estar libres. El lanzador rechaza conflictos sin
 detener procesos existentes. Ctrl+C cierra todos los procesos; si uno falla,
 se cierra el conjunto. Espera disponibilidad hasta 120 segundos.
 Los logs se identifican por servicio.
@@ -38,18 +39,29 @@ Los logs se identifican por servicio.
 npm run backoffice:check
 ```
 
-Este comando comprueba disponibilidad y los proxies de auth e incidencias, no reemplaza pruebas
-funcionales ni una revision de permisos.
+Este comando comprueba disponibilidad, proxies de auth e incidencias, y que
+`GET /inventory/products` rechace una solicitud sin token con HTTP 401. No
+reemplaza pruebas funcionales ni una revision de permisos.
 
 ## Identidad y datos
 
-El lanzador entrega el mismo `JWT_SECRET` a las tres APIs. A la API de
+El lanzador entrega el mismo `JWT_SECRET` a las cuatro APIs. A la API de
 incidencias le añade `PYTHONPATH` con la raíz del monorepo para resolver
 `packages.incidents_analysis`. Usa el valor del entorno
 si existe; de lo contrario genera una clave local persistente en
 `~/.local/state/brasaland/<hash-del-workspace>/jwt-secret`, con permisos 0600.
 No escribe archivos `.env` ni muestra la clave. No usar este mecanismo local
 como gestion de secretos de produccion. Borrar la clave invalida tokens anteriores.
+
+La API de inventario usa `DATABASE_URL` para conectarse a PostgreSQL de Supabase;
+la variable se hereda del entorno del lanzador. Si la URL no especifica un modo
+SSL, el servicio fuerza `sslmode=require`. No incluir ni publicar el valor de la
+URL. Productos y movimientos se guardan en PostgreSQL; el stock se calcula como
+la suma de entradas menos salidas y no se almacena por separado. La API crea las
+tablas al arrancar (`SQLModel.metadata.create_all`): no hay migraciones
+versionadas todavía, por lo que no se debe tratar este mecanismo como proceso
+de despliegue de producción. El seed de inventario es independiente del
+lanzador y requiere UUID de usuarios existentes; el launcher no ejecuta seeds.
 
 Por defecto se conservan `services/api-auth/data/db.json`,
 `services/api-suppliers/db.json` y `services/api-incidents/incidents.json` /
@@ -96,10 +108,10 @@ Usar siempre el origen publico del dashboard. Acceder directamente al puerto
   `/login` sin retorno; el guard no compite con esa redireccion.
 - El gestor compara el token de cada solicitud con el actual antes de
   invalidarlo: un 401 tardio no elimina una sesion nueva.
-- Suppliers e incidents consultan `/auth/me` con el token antes de autorizar: cambios de rol,
+- Suppliers, incidents e inventory consultan `/auth/me` con el token antes de autorizar: cambios de rol,
   borrado o desactivacion se aplican en la siguiente llamada protegida.
-- Si auth no responde, ambos servicios deniegan la operacion con 503; no confian en un
-  rol antiguo ni elimina el token por una caida temporal del servicio.
+- Si auth no responde, los servicios deniegan la operacion con 503; no confian en un
+  rol antiguo ni eliminan el token por una caida temporal del servicio.
 
 El JWT sigue siendo accesible a JavaScript y no tiene refresh ni revocacion
 individual. Un origen compartido amplifica el impacto de XSS entre modulos.
@@ -147,9 +159,22 @@ y gestor. Ambas interceptan la API y no modifican bases reales. Cubren retorno
 tras expiracion, logout y tarifas de alta con centavos. Requisitos y limites
 en [scripts](../scripts/README.es.md#pruebas-de-navegador-con-instalacion-temporal).
 
-Con los siete puertos libres, `BACKOFFICE_LIFECYCLE=1 node --test
+Con los ocho puertos libres y `DATABASE_URL` configurada, `BACKOFFICE_LIFECYCLE=1 node --test
 scripts/backoffice.test.mjs` valida arranque y cierre coordinado por SIGINT.
-Esta prueba se omite en la ejecucion habitual para no interferir con servicios activos.
+Esta prueba se omite en la ejecucion habitual para no interferir con servicios activos. El
+test configura bases temporales (SQLite para inventario y archivos TinyDB
+aislados para los demás servicios), no escribe en Supabase. Para la suite propia
+de inventario, ejecutar desde la raíz:
+
+```bash
+uv sync --project services/api-inventory --group test
+uv run --directory services/api-inventory --group test pytest
+```
+
+Las 10 pruebas usan SQLite en memoria y autenticación simulada; no validan
+escrituras, migraciones ni concurrencia sobre Supabase. La comprobación manual
+de conectividad realizada consistió en `SELECT 1` con TLS activo y no prueba el
+flujo de negocio sobre la base remota.
 
 La auditoria npm detecto vulnerabilidades en dependencias actuales, incluida
 severidad critica en Next.js. Resolverlas requiere un incremento de actualizacion

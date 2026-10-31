@@ -16,15 +16,23 @@ npm run backoffice:dev
 
 Dashboard, login, cuentas, proveedores, el gestor de incidencias
 (`/incidents-manager`: formulario de registro y panel de resumen) y el analizador
-CSV (`/incidents-analyzer`) quedan
-accesibles en http://localhost:3000 con una sesión compartida, manteniendo
-aplicaciones y APIs separadas (autenticación, proveedores e incidencias).
-Consulta la [guia de integracion](docs/BACKOFFICE_INTEGRATION.es.md) para datos
-persistentes, primer administrador, cierre coordinado y verificaciones.
+CSV (`/incidents-analyzer`) quedan accesibles en http://localhost:3000 con una
+sesión compartida. El launcher inicia cuatro APIs (autenticación, proveedores,
+incidencias e inventario) y cuatro interfaces; inventario se expone por ahora
+como API protegida en el puerto 8003, sin interfaz propia. La API de inventario
+guarda productos y movimientos en PostgreSQL de Supabase y calcula las
+existencias a partir de estos movimientos. Requiere `DATABASE_URL` configurada
+en el entorno o en `.env`; nunca publiques ese valor. Consulta la
+[guía de integración](docs/BACKOFFICE_INTEGRATION.es.md) para persistencia,
+primer administrador, cierre coordinado y verificaciones.
 
 Las pruebas unitarias de la lógica de autenticación (pytest y Jest) se describen
 en [`TESTING.md`](./TESTING.md). La suite Python se ejecuta desde
 `services/api-auth` para evitar recolectar pruebas de otros proyectos del monorepo.
+La API de inventario tiene una suite pytest aislada con SQLite; puede ejecutarse
+con `uv sync --project services/api-inventory --group test` y
+`uv run --directory services/api-inventory --group test pytest` (no requiere
+conexión a Supabase).
 
 ---
 
@@ -41,7 +49,7 @@ Este repositorio es la **plantilla de inicio** para los proyectos transversales.
 ## Estado actual de la plantilla
 
 El repositorio conserva la estructura de la plantilla y contiene aplicaciones
-ejecutables de backoffice, APIs de autenticacion/proveedores/incidencias y
+ejecutables de backoffice, APIs de autenticación/proveedores/incidencias/inventario y
 scripts globales de desarrollo. El arranque integrado documentado arriba
 cubre dashboard, proveedores, gestor y analizador CSV de incidencias;
 el seguimiento de talento sigue separado.
