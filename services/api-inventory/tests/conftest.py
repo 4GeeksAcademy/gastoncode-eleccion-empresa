@@ -19,7 +19,7 @@ from auth import get_current_user  # noqa: E402
 
 @pytest.fixture
 
-def client():
+def client(request):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -37,7 +37,8 @@ def client():
             yield session
 
     app.dependency_overrides[get_session] = override_session
-    app.dependency_overrides[get_current_user] = lambda: {"id": "fixture-user-uuid", "role": "admin"}
+    role = getattr(request, "param", "admin")
+    app.dependency_overrides[get_current_user] = lambda: {"id": "fixture-user-uuid", "role": role}
     # Avoid app lifespan setup against the placeholder PostgreSQL URL.
     yield TestClient(app)
     app.dependency_overrides.clear()

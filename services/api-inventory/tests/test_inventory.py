@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_create_ingredient_returns_derived_stock_and_country(client):
     response = client.post(
         "/inventory/products",
@@ -6,6 +9,32 @@ def test_create_ingredient_returns_derived_stock_and_country(client):
     assert response.status_code == 201
     assert response.json()["country"] == "CO"
     assert response.json()["current_stock"] == 0
+
+
+def test_duplicate_sku_returns_conflict(client):
+    response = client.post(
+        "/inventory/products",
+        json={"name": "Another cut", "sku": "BEEF-1", "unit": "kg", "category": "meat", "country": "US"},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Ingredient SKU already exists"
+
+
+def test_get_missing_ingredient_returns_not_found(client):
+    response = client.get("/inventory/products/999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Ingredient not found"
+
+
+@pytest.mark.parametrize("client", ["staff"], indirect=True)
+def test_staff_can_read_but_cannot_write(client):
+    products = client.get("/inventory/products")
+    created = client.post(
+        "/inventory/orders/inbound",
+        json={"ingredient_id": 1, "quantity": 1, "supplier_name": "Supplier", "location_id": 1},
+    )
+    assert products.status_code == 200
+    assert created.status_code == 403
 
 
 def test_inbound_and_outbound_change_derived_stock(client):
@@ -53,6 +82,29 @@ def test_invalid_reason_and_location_are_rejected(client):
     )
     assert reason.status_code == 422
     assert location.status_code == 422
+
+
+def test_nonexistent_ingredient_orders_return_not_found(client):
+    inbound = client.post(
+        "/inventory/orders/inbound",
+        json={"ingredient_id": 999, "quantity": 1, "supplier_name": "Supplier", "location_id": 1},
+    )
+    outbound = client.post(
+        "/inventory/orders/outbound",
+        json={"ingredient_id": 999, "quantity": 1, "reason": "waste", "location_id": 1},
+    )
+    assert inbound.status_code == outbound.status_code == 404
+    assert inbound.json()["detail"] == outbound.json()["detail"] == "Ingredient not found"
+
+
+def test_invalid_request_does_not_echo_rejected_values(client):
+    rejected_value = "private-invalid-country"
+    response = client.post(
+        "/inventory/products",
+        json={"name": "Product", "sku": "PROD-3", "unit": "kg", "category": "meat", "country": rejected_value},
+    )
+    assert response.status_code == 422
+    assert rejected_value not in response.text
 
 
 def test_response_schemas_do_not_store_stock_field(client):
