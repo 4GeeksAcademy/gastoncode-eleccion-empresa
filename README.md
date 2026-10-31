@@ -2,23 +2,23 @@
 
 Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain’s internal workflows. It currently includes a coordinated backoffice for authentication, supplier management, and incident handling, plus separate prototypes and utilities for talent tracking, CSV analysis, and inventory replenishment.
 
-This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate, and the backend services currently persist data locally with TinyDB.
+This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate: auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
 
 ## What’s included
 
-- **Integrated backoffice:** dashboard and account management, supplier catalog, incident registration and summaries, and CSV incident analysis. The integrated launcher starts the dashboard, supplier interface, incident manager and analyzer, together with their authentication, supplier, and incidents APIs.
-- **Backend APIs:** FastAPI services for authentication, suppliers, and incidents. Authentication uses JWT; the APIs enforce their own authorization checks.
+- **Integrated backoffice:** dashboard and account management, supplier catalog, incident registration and summaries, and CSV incident analysis. The launcher starts four APIs (auth, suppliers, incidents, inventory) and four UIs. Inventory is currently exposed as a protected API, not as a backoffice UI.
+- **Backend APIs:** FastAPI services for authentication, suppliers, incidents, and inventory. Authentication uses JWT; each API enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
 - **Talent pipeline tracker:** a separate Next.js interface; it is not started by the integrated backoffice launcher.
 - **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
 - **Static website prototypes, shared UI/types/utilities, data and analysis packages, scripts, and project documentation.**
 
-The repository does not yet provide a central operational database, unified deployment, or integrated sales and telemetry pipeline. See [project status](./memory-bank/progress.md) and the [architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) for current scope and future plans.
+The repository does not yet provide an operational database shared across all domains, a unified deployment, or an integrated sales and telemetry pipeline. See [project status](./memory-bank/progress.md) and the [architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) for current scope and future plans.
 
 ## Requirements
 
 - Node.js 22 or later and npm.
 - [uv](https://docs.astral.sh/uv/) for Python environments.
-- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers` and `api-incidents`.
+- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers`, `api-incidents`, and `api-inventory`.
 
 Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
 
@@ -38,9 +38,9 @@ Open **<http://localhost:3000>**. The dashboard is the public origin for the int
 - `/incidents-manager` — incident registration and summary
 - `/incidents-analyzer` — upload and analyze incident CSV files
 
-The launcher starts seven processes and requires ports **3000, 3001, 3002, 3004, 8000, 8001, and 8002** to be free. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access the separate UI ports directly when you need the dashboard’s shared session.
+The launcher starts eight processes and requires ports **3000, 3001, 3002, 3004, 8000, 8001, 8002, and 8003** to be free. Port 8003 serves the inventory API. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access the separate UI ports directly when you need the dashboard’s shared session.
 
-`backoffice:setup` installs the npm workspace and syncs the three API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. The launcher’s local secret storage is for development only, not production secret management.
+`backoffice:setup` installs the npm workspace and syncs all four API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. Inventory requires `DATABASE_URL` for its Supabase PostgreSQL database; keep it in the root environment (for example, `.env`) or process environment and never commit or publish it. TLS is required by default. The launcher’s local JWT secret storage is for development only, not production secret management.
 
 To check that the integrated services and selected dashboard proxies respond while the stack is running:
 
@@ -108,6 +108,10 @@ PYTHONPATH="$PWD" uv run --project services/api-incidents --group test -- python
 
 # Inventory replenishment planner tests
 python3 -m unittest discover -s .agents/skills/replenishment-planner/tests -v
+
+# Inventory API unit tests (uses isolated SQLite; no Supabase writes)
+uv sync --project services/api-inventory --group test
+uv run --directory services/api-inventory --group test pytest
 ```
 
 For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) and the [integration guide](./docs/BACKOFFICE_INTEGRATION.es.md) for test prerequisites and isolation guidance.
@@ -123,7 +127,7 @@ See [`TESTING.md`](./TESTING.md) for the focused authentication test commands an
 ├── docs/                           # Architecture and integration documentation
 ├── packages/                       # Python analysis package and shared package areas
 ├── scripts/                        # Backoffice launcher, seeds, analysis, and test tools
-├── services/                       # FastAPI: api-auth, api-suppliers, api-incidents
+├── services/                       # FastAPI: auth, suppliers, incidents, inventory
 ├── uis/
 │   ├── backoffice/                  # Dashboard, suppliers, incidents, talent interfaces
 │   └── website/                     # Static website prototypes
@@ -134,7 +138,8 @@ See [`TESTING.md`](./TESTING.md) for the focused authentication test commands an
 
 ## Data and security notes
 
-- TinyDB files are local to each service and are not a shared transactional database. Do not run multiple instances or external writers against the same files.
+- TinyDB files used by auth, suppliers, and incidents are local to each service and are not a shared transactional database. Inventory instead uses Supabase PostgreSQL; its tables are currently created at startup with SQLModel `create_all` (no versioned migrations yet).
+- Inventory stock is derived as inbound quantity minus outbound quantity; `current_stock` is not stored independently. Unit tests substitute isolated SQLite and do not validate Supabase schema changes, production permissions, or concurrent operations. A manual `SELECT 1` connectivity check with TLS confirmed connection only; it did not exercise business writes.
 - The integrated launcher preserves local data and uses the same JWT secret for the related APIs. Keep secrets out of source control; configure production secrets through an appropriate secret manager.
 - Avoid using real or sensitive data in development and tests. Use isolated database paths for tests and seeds.
 - The replenishment planner produces suggestions only. A responsible person must review them before any purchasing decision.

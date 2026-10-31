@@ -7,15 +7,16 @@ import path from "node:path";
 import test from "node:test";
 import { assertPortAvailable, root, services } from "./backoffice.mjs";
 
-test("launcher contains three APIs and four UIs with unique ports", () => {
-  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 3004, 3002]);
-  assert.equal(new Set(services.map((service) => service.port)).size, 7);
+test("launcher contains four APIs and four UIs with unique ports", () => {
+  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 8003, 3004, 3002]);
+  assert.equal(new Set(services.map((service) => service.port)).size, 8);
   assert.equal(services[0].cwd, "services/api-auth");
   assert.equal(services[1].cwd, "services/api-suppliers");
   assert.equal(services[4].cwd, "services/api-incidents");
   assert.equal(services[4].env.PYTHONPATH, root);
+  assert.equal(services[5].cwd, "services/api-inventory");
   assert.deepEqual(services[4].args.slice(-2), ["--workers", "1"]);
-  assert.equal(services[6].health, "http://127.0.0.1:3002/incidents-analyzer");
+  assert.equal(services[7].health, "http://127.0.0.1:3002/incidents-analyzer");
 });
 
 test("occupied ports are rejected without stopping the existing server", async () => {
@@ -37,6 +38,7 @@ test("SIGINT closes all services", { skip: process.env.BACKOFFICE_LIFECYCLE !== 
       SUPPLIERS_DB_PATH: path.join(directory, "suppliers.json"),
       INCIDENTS_DB_PATH: path.join(directory, "incidents.json"),
       ANALYSES_DB_PATH: path.join(directory, "analyses.json"),
+      DATABASE_URL: `sqlite:///${path.join(directory, "inventory.db")}`,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

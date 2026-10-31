@@ -14,6 +14,7 @@ export const services = [
   { name: "proveedores", cwd: ".", command: "npm", args: ["run", "dev:suppliers"], port: 3001, health: "http://127.0.0.1:3001/suppliers" },
   // PYTHONPATH apunta a la raiz para resolver packages.incidents_analysis.
   { name: "incidents", cwd: "services/api-incidents", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8002", "--workers", "1"], port: 8002, health: "http://127.0.0.1:8002/", env: { PYTHONPATH: root } },
+  { name: "inventory", cwd: "services/api-inventory", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8003"], port: 8003, health: "http://127.0.0.1:8003/" },
   { name: "incidencias", cwd: ".", command: "npm", args: ["run", "dev:incidents-manager"], port: 3004, health: "http://127.0.0.1:3004/incidents-manager" },
   { name: "analizador", cwd: ".", command: "npm", args: ["run", "dev:incidents"], port: 3002, health: "http://127.0.0.1:3002/incidents-analyzer" },
 ];
@@ -65,7 +66,7 @@ export async function main(action) {
   }
   if (action === "setup") {
     await run("npm", ["install", "--package-lock=false"]);
-    for (const directory of ["services/api-auth", "services/api-suppliers", "services/api-incidents"]) {
+    for (const directory of ["services/api-auth", "services/api-suppliers", "services/api-incidents", "services/api-inventory"]) {
       await run("uv", ["sync"], path.join(root, directory));
     }
     console.log("Entornos preparados. No se modificaron bases ni se ejecutaron seeds.");
@@ -80,7 +81,10 @@ export async function main(action) {
     if (response.status !== 401) throw new Error("Proxy auth: esperaba 401 sin token");
     const incidents = await fetch("http://127.0.0.1:3000/api/incidents/summary", { signal: AbortSignal.timeout(5000) });
     if (incidents.status !== 401) throw new Error("Proxy incidencias: esperaba 401 sin token");
+    const inventory = await fetch("http://127.0.0.1:8003/inventory/products", { signal: AbortSignal.timeout(5000) });
+    if (inventory.status !== 401) throw new Error("API inventario: esperaba 401 sin token");
     console.log("OK proxy incidencias");
+    console.log("OK API inventario protegido");
     console.log("OK proxy auth. Las pruebas funcionales requieren cuentas de prueba aisladas.");
     return;
   }
@@ -92,6 +96,7 @@ export async function main(action) {
     AUTH_SERVICE_URL: "http://127.0.0.1:8001",
     AUTH_API_URL: "http://127.0.0.1:8001",
     SUPPLIERS_API_URL: "http://127.0.0.1:8000",
+    INVENTORY_API_URL: "http://127.0.0.1:8003",
     SUPPLIERS_UI_URL: "http://127.0.0.1:3001",
     INCIDENTS_API_URL: "http://127.0.0.1:8002",
     INCIDENTS_MANAGER_UI_URL: "http://127.0.0.1:3004",
@@ -127,7 +132,7 @@ export async function main(action) {
     if (stopping) return;
     try {
       await Promise.all(services.map((service) => health(service.health)));
-      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer). Ctrl+C cierra los ${services.length} procesos.`);
+      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, API inventario: :8003). Ctrl+C cierra los ${services.length} procesos.`);
     } catch {
       if (stopping) return;
       if (Date.now() >= deadline) { console.error("El conjunto no estuvo disponible en 120 segundos."); stop(1); }

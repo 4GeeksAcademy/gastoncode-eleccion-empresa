@@ -39,7 +39,7 @@ La solución debe servir a los equipos de operaciones, compras, personas, formac
 El repositorio organiza el trabajo en varias áreas, no en una única aplicación:
 
 - `uis/backoffice/` reúne interfaces para el dashboard ejecutivo, la gestión de proveedores, el análisis y la gestión centralizada de incidencias, y el seguimiento de talento.
-- `services/` contiene servicios de API, incluidos los dominios de autenticación, incidencias y proveedores.
+- `services/` contiene servicios de API por dominio: autenticación, incidencias, proveedores e inventario. El servicio de inventario registra productos y movimientos en PostgreSQL de Supabase y calcula existencias a partir de esos movimientos; aún es un prototipo sin migraciones versionadas.
 - `packages/`, `src/` y `shared/` alojan tipos, utilidades y convenciones compartidas.
 - `data/`, `scripts/`, `skills/`, `agents/`, `mcps/` y `workflows/` proporcionan espacio para análisis de datos, automatización y capacidades de IA. Además, `.agents/skills/` contiene skills operativas con scripts y pruebas; entre ellas, un planificador determinista que sugiere reposición a partir de inventario validado.
 - `docs/` y `memory-bank/` documentan la arquitectura, el contexto y el avance del proyecto.
