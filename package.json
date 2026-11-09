@@ -2,7 +2,8 @@
   "name": "brasaland-digital",
   "private": true,
   "workspaces": [
-    "uis/backoffice/*"
+    "uis/backoffice/*",
+    "uis/website"
   ],
   "scripts": {
     "backoffice:setup": "node scripts/backoffice.mjs setup",
@@ -16,6 +17,7 @@
     "dev:incidents-manager": "npm run dev -w incidents-manager",
     "dev:inventory-management": "npm run dev -w inventory-management",
     "dev:talent": "npm run dev -w talent-pipeline-tracker",
+    "dev:website": "npm run dev -w brasaland-website",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test:auth:ts": "jest --coverage --config jest.config.cjs"
