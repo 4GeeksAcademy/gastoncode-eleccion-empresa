@@ -17,6 +17,7 @@ export const services = [
   { name: "inventory", cwd: "services/api-inventory", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8003"], port: 8003, health: "http://127.0.0.1:8003/" },
   { name: "incidencias", cwd: ".", command: "npm", args: ["run", "dev:incidents-manager"], port: 3004, health: "http://127.0.0.1:3004/incidents-manager" },
   { name: "analizador", cwd: ".", command: "npm", args: ["run", "dev:incidents"], port: 3002, health: "http://127.0.0.1:3002/incidents-analyzer" },
+  { name: "inventario", cwd: ".", command: "npm", args: ["run", "dev:inventory-management"], port: 3005, health: "http://127.0.0.1:3005/inventory-management" },
 ];
 
 export async function assertPortAvailable(port) {
@@ -101,6 +102,7 @@ export async function main(action) {
     INCIDENTS_API_URL: "http://127.0.0.1:8002",
     INCIDENTS_MANAGER_UI_URL: "http://127.0.0.1:3004",
     INCIDENTS_UI_URL: "http://127.0.0.1:3002",
+    INVENTORY_UI_URL: "http://127.0.0.1:3005",
     NEXT_PUBLIC_DASHBOARD_URL: "http://localhost:3000",
     NEXT_PUBLIC_SUPPLIERS_UI_URL: "/suppliers",
   };
@@ -132,7 +134,7 @@ export async function main(action) {
     if (stopping) return;
     try {
       await Promise.all(services.map((service) => health(service.health)));
-      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, API inventario: :8003). Ctrl+C cierra los ${services.length} procesos.`);
+      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, inventario: /inventory-management; API inventario: :8003). Ctrl+C cierra los ${services.length} procesos.`);
     } catch {
       if (stopping) return;
       if (Date.now() >= deadline) { console.error("El conjunto no estuvo disponible en 120 segundos."); stop(1); }

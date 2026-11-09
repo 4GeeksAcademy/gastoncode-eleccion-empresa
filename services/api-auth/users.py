@@ -4,14 +4,15 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 from passlib.hash import bcrypt
-from pydantic import BaseModel
 
 from auth import get_current_user, require_roles
 from services import (
     create_user,
     delete_user,
     get_all_users,
+    get_display_names_by_user_ids,
     get_profile_by_user_id,
     get_user_by_email,
     get_user_by_id,
@@ -44,6 +45,12 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[Role] = None
     is_active: Optional[bool] = None
+
+
+class DisplayNamesRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    ids: list[str] = Field(min_length=1, max_length=500)
 
 
 def public_user(user: dict):
@@ -121,6 +128,15 @@ def list_users(
         public_user(user)
         for user in get_all_users()
     ]
+
+
+@router.post("/display-names")
+def display_names(
+    data: DisplayNamesRequest,
+    _current_user: dict = Depends(get_current_user),
+):
+    """Resolve display names in batch without exposing account or profile fields."""
+    return get_display_names_by_user_ids(data.ids)
 
 
 @router.get("/{user_id}")

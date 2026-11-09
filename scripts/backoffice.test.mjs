@@ -7,9 +7,9 @@ import path from "node:path";
 import test from "node:test";
 import { assertPortAvailable, root, services } from "./backoffice.mjs";
 
-test("launcher contains four APIs and four UIs with unique ports", () => {
-  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 8003, 3004, 3002]);
-  assert.equal(new Set(services.map((service) => service.port)).size, 8);
+test("launcher contains four APIs and five UIs with unique ports", () => {
+  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 8003, 3004, 3002, 3005]);
+  assert.equal(new Set(services.map((service) => service.port)).size, 9);
   assert.equal(services[0].cwd, "services/api-auth");
   assert.equal(services[1].cwd, "services/api-suppliers");
   assert.equal(services[4].cwd, "services/api-incidents");
@@ -17,6 +17,9 @@ test("launcher contains four APIs and four UIs with unique ports", () => {
   assert.equal(services[5].cwd, "services/api-inventory");
   assert.deepEqual(services[4].args.slice(-2), ["--workers", "1"]);
   assert.equal(services[7].health, "http://127.0.0.1:3002/incidents-analyzer");
+  assert.equal(services[8].cwd, ".");
+  assert.deepEqual(services[8].args, ["run", "dev:inventory-management"]);
+  assert.equal(services[8].health, "http://127.0.0.1:3005/inventory-management");
 });
 
 test("occupied ports are rejected without stopping the existing server", async () => {

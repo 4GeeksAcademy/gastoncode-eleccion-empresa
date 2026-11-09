@@ -1,12 +1,12 @@
 # Brasaland Digital
 
-Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain’s internal workflows. It currently includes a coordinated backoffice for authentication, supplier management, and incident handling, plus separate prototypes and utilities for talent tracking, CSV analysis, and inventory replenishment.
+Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain’s internal workflows. It currently includes a coordinated backoffice for authentication, supplier management, incident handling, and inventory management, plus separate prototypes and utilities for talent tracking, CSV analysis, and inventory replenishment.
 
 This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate: auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
 
 ## What’s included
 
-- **Integrated backoffice:** dashboard and account management, supplier catalog, incident registration and summaries, and CSV incident analysis. The launcher starts four APIs (auth, suppliers, incidents, inventory) and four UIs. Inventory is currently exposed as a protected API, not as a backoffice UI.
+- **Integrated backoffice:** dashboard and account management, supplier catalog, incident registration and summaries, CSV incident analysis, and inventory management (products/stock, inbound/outbound movements, and order history). The launcher starts four APIs (auth, suppliers, incidents, inventory) and five UIs (dashboard, suppliers, incident manager, incident analyzer, inventory).
 - **Backend APIs:** FastAPI services for authentication, suppliers, incidents, and inventory. Authentication uses JWT; each API enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
 - **Talent pipeline tracker:** a separate Next.js interface; it is not started by the integrated backoffice launcher.
 - **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
@@ -37,8 +37,9 @@ Open **<http://localhost:3000>**. The dashboard is the public origin for the int
 - `/suppliers` — supplier management
 - `/incidents-manager` — incident registration and summary
 - `/incidents-analyzer` — upload and analyze incident CSV files
+- `/inventory-management` — protected inventory pages: products, inbound orders, outbound orders, and order history
 
-The launcher starts eight processes and requires ports **3000, 3001, 3002, 3004, 8000, 8001, 8002, and 8003** to be free. Port 8003 serves the inventory API. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access the separate UI ports directly when you need the dashboard’s shared session.
+The launcher starts nine processes and requires ports **3000, 3001, 3002, 3004, 3005, 8000, 8001, 8002, and 8003** to be free. Port 3005 serves the inventory UI behind the dashboard rewrite; port 8003 serves its API. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access the separate UI ports directly when you need the dashboard’s shared session.
 
 `backoffice:setup` installs the npm workspace and syncs all four API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. Inventory requires `DATABASE_URL` for its Supabase PostgreSQL database; keep it in the root environment (for example, `.env`) or process environment and never commit or publish it. TLS is required by default. The launcher’s local JWT secret storage is for development only, not production secret management.
 
@@ -73,6 +74,7 @@ npm run dev:dashboard
 npm run dev:suppliers
 npm run dev:incidents
 npm run dev:incidents-manager
+npm run dev:inventory-management
 npm run dev:talent
 ```
 
@@ -99,7 +101,7 @@ cd services/api-auth
 uv run pytest
 cd ../..
 
-# Shared TypeScript authentication client tests
+# Shared auth and inventory TypeScript tests
 npx jest --coverage
 
 # Incidents API tests (PYTHONPATH is needed for the local analysis package)
@@ -116,7 +118,7 @@ uv run --directory services/api-inventory --group test pytest
 
 For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) and the [integration guide](./docs/BACKOFFICE_INTEGRATION.es.md) for test prerequisites and isolation guidance.
 
-See [`TESTING.md`](./TESTING.md) for the focused authentication test commands and setup details. The Jest configuration restricts test discovery to `uis/backoffice/auth-shared`.
+See [`TESTING.md`](./TESTING.md) for focused test commands and setup details. Jest covers `uis/backoffice/auth-shared` and the inventory API client/stock helpers.
 
 ## Repository map
 

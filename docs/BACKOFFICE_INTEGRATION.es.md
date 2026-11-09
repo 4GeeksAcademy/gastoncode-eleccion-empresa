@@ -13,8 +13,9 @@ npm run backoffice:dev
 ```
 
 Abrir http://localhost:3000. Login, registro y cuentas pertenecen al dashboard;
-proveedores se sirve en `/suppliers` y el gestor de incidencias en
-`/incidents-manager`; el analizador CSV se sirve en `/incidents-analyzer`.
+proveedores se sirve en `/suppliers`, el gestor de incidencias en
+`/incidents-manager`, el analizador CSV en `/incidents-analyzer` y la gestión de
+inventario en `/inventory-management` (productos, entradas, salidas e historial).
 Cada interfaz es una app Next.js independiente.
 El lanzador no incluye talento y nunca ejecuta seeds.
 `setup` instala las versiones declaradas, no corrige automaticamente vulnerabilidades.
@@ -29,8 +30,9 @@ El lanzador no incluye talento y nunca ejecuta seeds.
 | API inventory | 8003 | services/api-inventory |
 | Gestor de incidencias | 3004 | uis/backoffice/incidents-manager |
 | Analizador CSV | 3002 | uis/backoffice/incidents-analyzer |
+| Interfaz de inventario | 3005 | uis/backoffice/inventory-management |
 
-Los ocho puertos deben estar libres. El lanzador rechaza conflictos sin
+Los nueve puertos deben estar libres. El lanzador rechaza conflictos sin
 detener procesos existentes. Ctrl+C cierra todos los procesos; si uno falla,
 se cierra el conjunto. Espera disponibilidad hasta 120 segundos.
 Los logs se identifican por servicio.
@@ -98,7 +100,11 @@ Usar siempre el origen publico del dashboard. Acceder directamente al puerto
   de incidencias.
 - Dashboard reenvia `/incidents-analyzer` y subrutas (incluidos sus assets)
   a `INCIDENTS_UI_URL` (`http://localhost:3002` por defecto).
-- Las cuatro apps usan `uis/backoffice/auth-shared`.
+- Dashboard reenvía `/inventory-management` y subrutas a `INVENTORY_UI_URL`
+  (`http://localhost:3005` por defecto). La app usa `basePath`; las llamadas a
+  `/api/inventory/*` se reenvían al API del puerto 8003 y la resolución de nombres
+  consulta `/api/users/display-names` en auth.
+- Las cinco apps usan `uis/backoffice/auth-shared`.
 - La clave de localStorage es `brasaland.backoffice.token`; las sesiones previas
   de las apps separadas requieren volver a iniciar sesion.
 - La navegacion entre zonas es completa, no una transicion de Next Link.
@@ -119,6 +125,13 @@ El frontend de proveedores oculta escritura a `user`; FastAPI aplica los permiso
 efectivos. Incidencias conserva sus permisos: sus operaciones requieren una
 cuenta activa, sin restricciones nuevas por rol.
 
+Inventario requiere sesión para consultar productos e historial; las vistas de
+entrada y salida se limitan a `admin`/`manager`, además de la autorización que
+aplica la API. El historial combina entradas y salidas y muestra tipo, producto,
+cantidad, local, nombre e UUID del autor y fecha. El catálogo distingue sin stock,
+stock bajo (50 o menos) y suficiente. Estos flujos no crean órdenes de compra ni
+sincronizan el catálogo de proveedores.
+
 El analizador sube el CSV autenticado, obtiene el `analysis_id`, consulta el
 resultado completo y exporta usando ese identificador y el mismo token.
 Analizar no inserta incidencias en el gestor; para importar historicos existe
@@ -133,10 +146,12 @@ npm run lint -w dashboard-backoffice
 npm run lint -w suppliers-backoffice
 npm run lint -w incidents-manager
 npm run lint -w incidents-analyzer
+npm run lint -w inventory-management
 npm run build -w dashboard-backoffice
 npm run build -w suppliers-backoffice
 npm run build -w incidents-manager
 npm run build -w incidents-analyzer
+npm run build -w inventory-management
 ```
 
 Detener desarrollo antes de compilar. Para E2E real, iniciar con archivos
@@ -159,7 +174,7 @@ y gestor. Ambas interceptan la API y no modifican bases reales. Cubren retorno
 tras expiracion, logout y tarifas de alta con centavos. Requisitos y limites
 en [scripts](../scripts/README.es.md#pruebas-de-navegador-con-instalacion-temporal).
 
-Con los ocho puertos libres y `DATABASE_URL` configurada, `BACKOFFICE_LIFECYCLE=1 node --test
+Con los nueve puertos libres y `DATABASE_URL` configurada, `BACKOFFICE_LIFECYCLE=1 node --test
 scripts/backoffice.test.mjs` valida arranque y cierre coordinado por SIGINT.
 Esta prueba se omite en la ejecucion habitual para no interferir con servicios activos. El
 test configura bases temporales (SQLite para inventario y archivos TinyDB

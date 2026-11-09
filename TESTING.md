@@ -21,4 +21,13 @@ npm install
 npx jest --coverage
 ```
 
-Jest está limitado al paquete `uis/backoffice/auth-shared`; las pruebas simulan `fetch` y el almacenamiento local del navegador. La cobertura HTML se genera en `coverage/auth-shared/`. También se puede usar `npm run test:auth:ts`.
+Jest descubre pruebas en `uis/backoffice/auth-shared` y `lib/`. Incluye pruebas de navegación/guard de autenticación, cliente de inventario (cabeceras Bearer, payload e historial) y clasificación de stock; las pruebas simulan `fetch` y el almacenamiento local del navegador. La cobertura HTML se genera en `coverage/`. El comando existente es `npm run test:auth:ts` (el nombre se conserva por compatibilidad aunque ya cubre también `lib/`); para una ejecución serial se puede usar `npm run test:auth:ts -- --runInBand`.
+
+Las comprobaciones de integración de las UIs de inventario son independientes:
+
+```bash
+npm run lint -w inventory-management
+npm run build -w inventory-management
+```
+
+La compilación valida tipos y rutas de la aplicación; las pruebas Jest no reemplazan una prueba E2E con servicios y base de datos reales.
