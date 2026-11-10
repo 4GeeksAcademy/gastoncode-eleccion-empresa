@@ -1,8 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { TRACKER_API_URL } from "@/utils/api";
+import { publicErrorMessage, trackerFetch } from "@/utils/api";
 
 type FormValues = {
   full_name: string;
@@ -20,8 +19,6 @@ type Feedback = {
   type: "success" | "error";
   message: string;
 };
-
-const API_BASE_URL = TRACKER_API_URL;
 
 const INITIAL_VALUES: FormValues = {
   full_name: "",
@@ -72,8 +69,7 @@ function validate(values: FormValues): FormErrors {
   return errors;
 }
 
-export function NewCandidateSection() {
-  const router = useRouter();
+export function NewCandidateSection({ onCreated }: { onCreated: () => void }) {
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -121,7 +117,7 @@ export function NewCandidateSection() {
     if (linkedin) payload.linkedin_url = linkedin;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/records`, {
+      const response = await trackerFetch("/records", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,17 +132,17 @@ export function NewCandidateSection() {
         });
         setValues(INITIAL_VALUES);
         setErrors({});
-        router.refresh();
+        onCreated();
       } else {
         setFeedback({
           type: "error",
           message: "No se pudo crear la candidatura. Revisa los datos e inténtalo nuevamente.",
         });
       }
-    } catch {
+    } catch (error) {
       setFeedback({
         type: "error",
-        message: "No se pudo crear la candidatura por un error de red. Intenta nuevamente.",
+        message: publicErrorMessage(error),
       });
     } finally {
       setSubmitting(false);

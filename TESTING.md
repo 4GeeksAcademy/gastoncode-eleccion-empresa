@@ -31,3 +31,20 @@ npm run build -w inventory-management
 ```
 
 La compilación valida tipos y rutas de la aplicación; las pruebas Jest no reemplazan una prueba E2E con servicios y base de datos reales.
+
+## Talento integrado
+
+```bash
+node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/talent-pipeline-tracker/tests/talent-api.test.mjs
+uv sync --project services/api-talent --group test
+uv run --directory services/api-talent --group test python -m unittest discover -s tests -v
+npm run lint -w talent-pipeline-tracker
+npm run build -w talent-pipeline-tracker
+node scripts/browser-tests.mjs scripts/talent.browser.test.mjs
+```
+
+La API simula identidad y proveedor; el cliente simula fetch y localStorage.
+El navegador requiere dashboard y tracker iniciados, simula las APIs y genera
+capturas en /tmp. No envía candidatos a 4Geeks ni toca bases reales. Chromium
+necesita sus bibliotecas del sistema: la ejecución actual quedó bloqueada por
+libatk-1.0.so.0 ausente. Detener desarrollo antes del build.

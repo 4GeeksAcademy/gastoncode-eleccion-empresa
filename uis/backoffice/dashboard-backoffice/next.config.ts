@@ -8,10 +8,15 @@ const INCIDENTS_MANAGER_UI_URL = process.env.INCIDENTS_MANAGER_UI_URL ?? "http:/
 const INCIDENTS_UI_URL = process.env.INCIDENTS_UI_URL ?? "http://localhost:3002";
 const INVENTORY_API_URL = process.env.INVENTORY_API_URL ?? "http://localhost:8003";
 const INVENTORY_UI_URL = process.env.INVENTORY_UI_URL ?? "http://localhost:3005";
+const TALENT_UI_URL = process.env.TALENT_UI_URL ?? "http://localhost:3003";
+const TALENT_API_URL = process.env.TALENT_API_URL ?? "http://localhost:8004";
 
 const nextConfig: NextConfig = {
 	async rewrites() {
 		return [
+		{ source: "/talent-pipeline-tracker", destination: `${TALENT_UI_URL}/talent-pipeline-tracker` },
+		{ source: "/talent-pipeline-tracker/:path+", destination: `${TALENT_UI_URL}/talent-pipeline-tracker/:path+` },
+		{ source: "/api/talent/:path+", destination: `${TALENT_API_URL}/talent/:path+` },
 		{ source: "/suppliers", destination: `${SUPPLIERS_UI_URL}/suppliers` },
 		{ source: "/suppliers/:path+", destination: `${SUPPLIERS_UI_URL}/suppliers/:path+` },
 		{ source: "/suppliers-static/:path+", destination: `${SUPPLIERS_UI_URL}/suppliers-static/:path+` },

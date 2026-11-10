@@ -1,14 +1,14 @@
 # Brasaland Digital
 
-Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain’s internal workflows. It currently includes a coordinated backoffice for authentication, supplier management, incident handling, and inventory management, plus separate prototypes and utilities for talent tracking, CSV analysis, and inventory replenishment.
+Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain's internal workflows. It includes a coordinated backoffice for authentication, suppliers, incidents, inventory, and a synthetic-data talent tracking prototype, plus inventory replenishment utilities.
 
 This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate: auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
 
 ## What’s included
 
-- **Integrated backoffice:** dashboard and account management, supplier catalog, incident registration and summaries, CSV incident analysis, and inventory management (products/stock, inbound/outbound movements, and order history). The launcher starts four APIs (auth, suppliers, incidents, inventory) and five UIs (dashboard, suppliers, incident manager, incident analyzer, inventory).
+- **Integrated backoffice:** dashboard and account management, suppliers, incidents, CSV incident analysis, inventory, and talent. The launcher starts five APIs (auth, suppliers, incidents, inventory, talent) and six UIs (dashboard, suppliers, incident manager, incident analyzer, inventory, talent).
 - **Backend APIs:** FastAPI services for authentication, suppliers, incidents, and inventory. Authentication uses JWT; each API enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
-- **Talent pipeline tracker:** a separate Next.js interface; it is not started by the integrated backoffice launcher.
+- **Talent pipeline tracker:** integrated at `/talent-pipeline-tracker`, restricted to admin/manager. Its API adapter uses the external 4Geeks prototype: synthetic data only, no local candidate persistence, vacancies, or onboarding.
 - **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
 - **Static website prototypes, shared UI/types/utilities, data and analysis packages, scripts, and project documentation.**
 
@@ -18,7 +18,7 @@ The repository does not yet provide an operational database shared across all do
 
 - Node.js 22 or later and npm.
 - [uv](https://docs.astral.sh/uv/) for Python environments.
-- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers`, `api-incidents`, and `api-inventory`.
+- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers`, `api-incidents`, `api-inventory`, and `api-talent`.
 
 Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
 
@@ -38,10 +38,11 @@ Open **<http://localhost:3000>**. The dashboard is the public origin for the int
 - `/incidents-manager` — incident registration and summary
 - `/incidents-analyzer` — upload and analyze incident CSV files
 - `/inventory-management` — protected inventory pages: products, inbound orders, outbound orders, and order history
+- `/talent-pipeline-tracker` — synthetic candidate tracking, details, stages/statuses, and notes, restricted to admin/manager
 
-The launcher starts nine processes and requires ports **3000, 3001, 3002, 3004, 3005, 8000, 8001, 8002, and 8003** to be free. Port 3005 serves the inventory UI behind the dashboard rewrite; port 8003 serves its API. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access the separate UI ports directly when you need the dashboard’s shared session.
+The launcher starts eleven processes and requires ports **3000-3005 and 8000-8004** to be free. Talent uses UI port 3003 and API port 8004. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access separate UI ports when you need the dashboard's shared session.
 
-`backoffice:setup` installs the npm workspace and syncs all four API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. Inventory requires `DATABASE_URL` for its Supabase PostgreSQL database; keep it in the root environment (for example, `.env`) or process environment and never commit or publish it. TLS is required by default. The launcher’s local JWT secret storage is for development only, not production secret management.
+`backoffice:setup` installs the npm workspace and syncs all five API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. Inventory requires `DATABASE_URL` for its Supabase PostgreSQL database; keep it in the root environment (for example, `.env`) or process environment and never commit or publish it. TLS is required by default. The launcher's local JWT secret storage is for development only, not production secret management.
 
 To check that the integrated services and selected dashboard proxies respond while the stack is running:
 
@@ -78,7 +79,7 @@ npm run dev:inventory-management
 npm run dev:talent
 ```
 
-The talent tracker runs on port 3003 and is not part of the integrated dashboard/session. For the usual integrated workflow, use `npm run backoffice:dev` instead. Each UI and API has its own README with standalone configuration and details.
+The talent tracker runs on port 3003 behind the integrated dashboard/session. Use `npm run backoffice:dev` for that workflow. Its external provider is configured server-side through `TRACKER_API_URL`; never send real candidate data to this prototype. Each UI and API has its own README.
 
 ## Tests and quality checks
 

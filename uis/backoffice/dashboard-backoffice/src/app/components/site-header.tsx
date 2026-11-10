@@ -23,15 +23,17 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-stone-800/80 bg-stone-950/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-4 px-6 py-4">
-        <BrasaMark />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold tracking-wide text-stone-100">
-            Brasaland <span className="text-brasa-400">Backoffice</span>
-          </p>
-          <p className="truncate text-xs text-stone-500">
-            Brasaland Digital · Medellín + Miami
-          </p>
-        </div>
+        <Link href="/" aria-label="Volver al dashboard" className="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-brasa-400">
+          <BrasaMark />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold tracking-wide text-stone-100">
+              Brasaland <span className="text-brasa-400">Backoffice</span>
+            </p>
+            <p className="truncate text-xs text-stone-500">
+              Brasaland Digital · Medellín + Miami
+            </p>
+          </div>
+        </Link>
         <div className="ml-auto flex max-w-full items-center gap-3">
           <div className="hidden lg:block"><Badge>14 locales · 2 países</Badge></div>
             <Link href="/account" aria-label={`Gestionar cuenta de ${identity}`} className="group inline-flex min-w-0 items-center gap-3 rounded-full focus-visible:outline-2 focus-visible:outline-brasa-400">

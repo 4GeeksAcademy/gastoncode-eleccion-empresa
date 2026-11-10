@@ -8,7 +8,7 @@
 - Las aplicaciones usan Next.js 16.3.x y React 19.2.x. Los manifiestos declaran TypeScript 5 y ESLint 9; todas salvo `incidents-manager` declaran Tailwind CSS 4. El gestor de incidencias usa CSS plano con `@brasaland/theme`.
 - Las aplicaciones de dashboard, proveedores, análisis y gestor de incidencias declaran Next.js 16.3.1; el tracker de talento declara 16.3.0.
 - `uis/backoffice/shared/` provee el paquete visual compartido `@brasaland/theme`; `auth-shared` provee sesión (token en `localStorage`) usada por las apps integradas del backoffice, incluida inventory-management.
-- Puertos de desarrollo: dashboard 3000, proveedores 3001, analizador de incidencias 3002, talento 3003, gestor de incidencias 3004 e inventario 3005. APIs: proveedores 8000, autenticación 8001, incidencias 8002 e inventario 8003.
+- Puertos de desarrollo: dashboard 3000, proveedores 3001, analizador de incidencias 3002, talento 3003, gestor de incidencias 3004 e inventario 3005. APIs: proveedores 8000, autenticación 8001, incidencias 8002, inventario 8003 y talento 8004.
 
 ### Servicios y herramientas
 
@@ -19,7 +19,8 @@
 - `api-auth` mantiene un grupo `test` con pytest separado de las dependencias de producción. Sus pruebas llaman directamente a la lógica de los endpoints, usan TinyDB temporal y no prueban serialización HTTP ni realizan llamadas reales de correo. Ejecutar desde `services/api-auth` con `uv run pytest` (tras `uv sync --project services/api-auth --group test`). `api-incidents` mantiene una suite `unittest` de pruebas HTTP mediante Starlette TestClient y `httpx2`; instalar su grupo `test` por separado.
 - La lógica TypeScript compartida de autenticación y el cliente/helpers de inventario (`lib/`) se prueban con Jest y ts-jest. `jest.config.cjs` incluye esos roots y usa entorno Node con `window`, `localStorage` y `fetch` simulados. Instalar dependencias npm en raíz y ejecutar `npx jest --coverage` o `npm run test:auth:ts`.
 - `scripts/seed_incidents.py` carga incidencias desde CSV de forma idempotente (salta las existentes) y reutiliza la validación del analizador.
-- `scripts/backoffice.mjs` (`npm run backoffice:setup|dev|check|admin`) prepara con `uv` los entornos de las cuatro APIs y arranca de forma coordinada nueve procesos: auth, proveedores, incidencias e inventario (APIs) más dashboard, proveedores, gestor de incidencias, analizador e inventory-management (UIs). La UI de inventario usa el puerto 3005 tras el dashboard; la API usa 8003. `backoffice:check` comprueba que la ruta de productos devuelve 401 sin token.
+- `scripts/backoffice.mjs` (`npm run backoffice:setup|dev|check|admin`) prepara con `uv` cinco APIs y coordina once procesos: auth, proveedores, incidencias, inventario y talento (APIs), y seis UIs. `backoffice:check` comprueba productos sin token y el proxy `/api/talent/records` con HTTP 401.
+- `api-talent` es un adaptador FastAPI sin persistencia local: valida JWT y cuenta vigente mediante auth; requiere admin/manager en todas las operaciones. TRACKER_API_URL vive solo en servidor y el JWT de Brasaland nunca se reenvía al proveedor. Admite candidaturas, etapas/estados y notas. Solo datos sintéticos: el proxy no garantiza privacidad ni aislamiento de 4Geeks.
 - `api-inventory` tiene pruebas pytest con SQLite aislado y autenticación simulada. Cubren productos, unicidad de SKU, entradas/salidas y stock derivado, stock insuficiente, validaciones, recursos inexistentes, RBAC y no inclusión de valores rechazados en errores. No requieren ni escriben en Supabase.
 - La skill `.agents/skills/replenishment-planner/` incluye un script determinista basado en `Decimal` y una suite `unittest`. Calcula sugerencias de reposición a partir de un CSV de inventario validado; no pronostica demanda ni realiza pedidos.
 - La raíz define scripts de npm para iniciar cada interfaz, así como tareas de build y lint de los workspaces. El manifiesto raíz declara TypeScript 6 y `uv`; las aplicaciones frontend declaran TypeScript 5.
@@ -36,9 +37,19 @@
 - **Autenticación basada en tokens:** `api-auth` emite JWT bearer de duración configurable por entorno e incluye el rol del usuario. Revalida que la cuenta exista y esté activa al autenticar cada solicitud; las rutas aplican permisos de propietario, administrador o roles permitidos según operación. Incidencias verifica el JWT compartiendo `JWT_SECRET`.
 - **Inventario relacional:** la API de inventario crea las tablas SQLModel durante el startup (prototipo, sin migraciones aún), aplica restricciones de dominio en modelos y calcula stock bajo demanda. Las salidas solicitan bloqueo de la fila del ingrediente con `SELECT ... FOR UPDATE` antes de comprobar stock; la efectividad de ese bloqueo depende del motor PostgreSQL y requiere validación de concurrencia en un entorno real.
 - **Pruebas de autenticación:** la suite pytest de `api-auth` cubre los endpoints de salud, registro, login, identidad actual, perfiles, gestión de usuarios, permisos y ciclo de contraseñas, además de rollback de creación. El cliente TypeScript cubre llamadas API, almacenamiento de sesión, errores de red/JSON, invalidación de sesión y destinos de navegación. Son pruebas unitarias de lógica (no pruebas de transporte HTTP). La guía común está en `TESTING.md`.
-- **Pruebas de cliente y launcher:** Jest incluye navegación/guard compartidos, cabeceras Bearer y payload/historial de inventory client, además de los estados de stock. `scripts/backoffice.test.mjs` verifica cuatro APIs y cinco UIs (nueve procesos); la prueba de ciclo de vida es opcional vía `BACKOFFICE_LIFECYCLE=1`.
+- **Pruebas de cliente y launcher:** Jest incluye navegación/guard compartidos, cabeceras Bearer y payload/historial de inventory client, además de los estados de stock. `scripts/backoffice.test.mjs` verifica cinco APIs y seis UIs (once procesos); la prueba de ciclo de vida es opcional vía `BACKOFFICE_LIFECYCLE=1`.
 - **Restablecimiento de contraseña integrado:** `api-auth` implementa tres endpoints para el ciclo completo de restablecimiento: `/auth/forgot-password` (solicitud con envío de email transaccional mediante **Resend**), `/auth/reset-password` (canjeo de token con hash SHA-256 y expiración de 30 minutos por entorno), y `/auth/change-password` (cambio desde sesión activa). Los tokens se persisten en una tabla TinyDB `reset_tokens` con campos `token_hash`, `user_id`, `expires_at` y `used`. Las contraseñas nuevas se hashean con bcrypt. La variable `RESEND_API_KEY` es necesaria solo si se desea enviar correos; sin ella el servicio responde igual pero registra una advertencia en los logs.
 - **Propuesta, aún no asumida como implementada:** `docs/ARCHITECTURE_PROPOSAL.md` recomienda una API central FastAPI en capas, con routers, servicios, repositorios, modelos y dominios para locales, ventas, proveedores, clientes, personal y formación. También propone SQLAlchemy, PostgreSQL, migraciones, telemetría y WebSockets; esos elementos deben tratarse como diseño futuro, no como stack confirmado por los manifiestos revisados.
+
+### Integración de talento
+
+`/talent-pipeline-tracker` usa basePath, rewrites, auth-shared y navegación completa
+entre zonas. Consultas y mutaciones usan `/api/talent/*` desde cliente, después del
+guard; no hay lecturas de candidatos durante SSR. Se conserva el pathname tras login
+y se reconsultan datos tras mutaciones. Build, tipos y lint pasaron; nueve pruebas
+HTTP aisladas y pruebas Node cubren contratos/sesión. Smoke real: UI 200 y proxy
+401 sin token. Playwright bloqueado por libatk ausente; no se validó 4Geeks real
+ni el launcher completo.
 
 ## Restricciones y riesgos técnicos identificados
 

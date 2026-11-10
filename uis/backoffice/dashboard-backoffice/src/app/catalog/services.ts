@@ -63,9 +63,9 @@ export const SERVICES: BackofficeService[] = [
     area: "Personas y Cultura",
     owner: "Ashley Turner",
     description:
-      "Seguimiento de vacantes, candidaturas y onboarding de personal de cocina y sala.",
+      "Seguimiento de candidaturas, etapas del proceso y notas de reclutamiento con datos sintéticos.",
     icon: "🧑‍🤝‍🧑",
     path: "uis/backoffice/talent-pipeline-tracker",
-    url: process.env.NEXT_PUBLIC_TALENT_UI_URL ?? "http://localhost:3003",
+    url: "/talent-pipeline-tracker",
   },
 ];

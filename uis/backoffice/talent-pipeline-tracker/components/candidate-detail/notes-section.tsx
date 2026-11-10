@@ -2,15 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CandidateNote } from "@/types/candidate-detail";
-import { TRACKER_API_URL } from "@/utils/api";
+import { publicErrorMessage, trackerFetch } from "@/utils/api";
 import { dateLabel } from "./date-label";
 import { SectionCard } from "./section-card";
 
 type NotesSectionProps = {
   recordId: string;
 };
-
-const API_BASE_URL = TRACKER_API_URL;
 
 function parseNotes(payload: unknown): CandidateNote[] {
   if (Array.isArray(payload)) return payload as CandidateNote[];
@@ -37,7 +35,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
 
   const refreshNotes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/records/${recordId}/notes`, {
+      const response = await trackerFetch(`/records/${encodeURIComponent(recordId)}/notes`, {
         method: "GET",
         cache: "no-store",
       });
@@ -49,8 +47,8 @@ export function NotesSection({ recordId }: NotesSectionProps) {
       const payload = (await response.json()) as unknown;
       setNotes(parseNotes(payload));
       setError("");
-    } catch {
-      setError("No se pudieron cargar las notas.");
+    } catch (error) {
+      setError(publicErrorMessage(error));
     }
   };
 
@@ -59,7 +57,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
 
     const loadNotes = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/records/${recordId}/notes`, {
+        const response = await trackerFetch(`/records/${encodeURIComponent(recordId)}/notes`, {
           method: "GET",
           cache: "no-store",
         });
@@ -74,9 +72,9 @@ export function NotesSection({ recordId }: NotesSectionProps) {
           setError("");
           setNotesLoadFailed(false);
         }
-      } catch {
+      } catch (error) {
         if (!ignore) {
-          setError("No se pudieron cargar las notas.");
+          setError(publicErrorMessage(error));
           setNotesLoadFailed(true);
         }
       } finally {
@@ -106,7 +104,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/records/${recordId}/notes`, {
+      const response = await trackerFetch(`/records/${encodeURIComponent(recordId)}/notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,8 +118,8 @@ export function NotesSection({ recordId }: NotesSectionProps) {
 
       setContent("");
       await refreshNotes();
-    } catch {
-      setError("No se pudo agregar la nota. Intenta otra vez.");
+    } catch (error) {
+      setError(publicErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +132,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/records/${recordId}/notes/${noteId}`, {
+      const response = await trackerFetch(`/records/${encodeURIComponent(recordId)}/notes/${encodeURIComponent(noteId)}`, {
         method: "DELETE",
       });
 
@@ -143,8 +141,8 @@ export function NotesSection({ recordId }: NotesSectionProps) {
       }
 
       await refreshNotes();
-    } catch {
-      setError("No se pudo eliminar la nota. Intenta otra vez.");
+    } catch (error) {
+      setError(publicErrorMessage(error));
     } finally {
       setDeletingId(null);
     }

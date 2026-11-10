@@ -210,3 +210,22 @@ test("expiration destinations preserve only validated paths, never query strings
     assert.equal(loginDestination(pathname), "/login?next=%2F");
   }
 });
+
+test("talent routes retain their login destination without allowing similar prefixes", () => {
+  const pathname = "/talent-pipeline-tracker/candidates/demo";
+  assert.equal(safeAuthDestination(pathname), pathname);
+  assert.equal(loginDestination(`${pathname}?email=private#notes`), `/login?next=${encodeURIComponent(pathname)}`);
+  assert.equal(safeAuthDestination("/talent-pipeline-tracker-other"), "/");
+});
+
+test("dashboard proxies talent pages and assets and the authenticated API", async () => {
+  const configSource = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+  const { outputText } = ts.transpileModule(configSource, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
+  });
+  const { default: config } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
+  const routes = await config.rewrites();
+  assert.ok(routes.some((route) => route.source === "/talent-pipeline-tracker"));
+  assert.ok(routes.some((route) => route.source === "/talent-pipeline-tracker/:path+"));
+  assert.ok(routes.some((route) => route.source === "/api/talent/:path+"));
+});

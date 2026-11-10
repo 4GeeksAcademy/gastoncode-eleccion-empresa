@@ -1,19 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toLabel } from "@/components/candidates/labels";
 import { stageOptions, statusOptions } from "@/types/candidates";
-import { TRACKER_API_URL } from "@/utils/api";
+import { publicErrorMessage, trackerFetch } from "@/utils/api";
 
 type ActionsCardProps = {
   id: string;
   status: string;
   stage: string;
+  onUpdated: () => void;
 };
 
-export function ActionsCard({ id, status, stage }: ActionsCardProps) {
-  const router = useRouter();
+export function ActionsCard({ id, status, stage, onUpdated }: ActionsCardProps) {
   const [currentStatus, setCurrentStatus] = useState(status);
   const [currentStage, setCurrentStage] = useState(stage);
   const [pending, setPending] = useState(false);
@@ -32,7 +31,7 @@ export function ActionsCard({ id, status, stage }: ActionsCardProps) {
     setMessage("");
 
     try {
-      const response = await fetch(`${TRACKER_API_URL}/records/${id}`, {
+      const response = await trackerFetch(`/records/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -50,9 +49,9 @@ export function ActionsCard({ id, status, stage }: ActionsCardProps) {
       setCurrentStatus(nextStatus);
       setCurrentStage(nextStage);
       setMessage("Actualizado correctamente");
-      router.refresh();
-    } catch {
-      setMessage("Error al actualizar. Intenta otra vez.");
+      onUpdated();
+    } catch (error) {
+      setMessage(publicErrorMessage(error));
     } finally {
       setPending(false);
     }
