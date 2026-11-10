@@ -72,7 +72,7 @@ export class ApiError extends Error {
 }
 
 export class UnauthorizedError extends ApiError {
-  constructor(message = "Sesion expirada o no valida.") {
+  constructor(message = "Sesión expirada o no válida.") {
     super(401, message);
     this.name = "UnauthorizedError";
   }
@@ -80,11 +80,11 @@ export class UnauthorizedError extends ApiError {
 
 function publicStatusMessage(status: number): string {
   if (status === 400 || status === 422) return "Revisa los datos ingresados e intenta nuevamente.";
-  if (status === 401) return "Sesion expirada o no valida.";
-  if (status === 403) return "No tienes permiso para realizar esta accion.";
-  if (status === 404) return "No se encontro el recurso solicitado.";
+  if (status === 401) return "Sesión expirada o no válida.";
+  if (status === 403) return "No tienes permiso para realizar esta acción.";
+  if (status === 404) return "No se encontró el recurso solicitado.";
   if (status === 409) return "La solicitud entra en conflicto con los datos existentes.";
-  if (status >= 500) return "El servicio no pudo completar la solicitud. Intenta mas tarde.";
+  if (status >= 500) return "El servicio no pudo completar la solicitud. Intenta más tarde.";
   return "No se pudo completar la solicitud.";
 }
 
@@ -92,7 +92,7 @@ function publicStatusMessage(status: number): string {
 export function publicErrorMessage(error: unknown, fallback = "No se pudo completar la solicitud."): string {
   if (error instanceof ApiError) {
     if (error.status === 0) return "No se pudo conectar con el servicio. Intenta nuevamente.";
-    if (error.status === 502) return "El servicio devolvio una respuesta no valida.";
+    if (error.status === 502) return "El servicio devolvió una respuesta no válida.";
     return publicStatusMessage(error.status);
   }
   if (error instanceof TypeError) return "No se pudo conectar con el servicio. Intenta nuevamente.";
@@ -140,7 +140,7 @@ async function request<Result>(
   try {
     return await response.json() as Result;
   } catch {
-    throw new ApiError(502, "El servicio devolvio una respuesta no valida.");
+    throw new ApiError(502, "El servicio devolvió una respuesta no válida.");
   }
 }
 

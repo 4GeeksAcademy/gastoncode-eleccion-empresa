@@ -23,12 +23,12 @@ export default function ChangePasswordPage() {
     setSuccess(null);
 
     if (newPassword !== confirmation) {
-      setError("Las contrase\u00f1as no coinciden.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("La contrase\u00f1a debe tener al menos 8 caracteres.");
+      setError("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
 
@@ -37,12 +37,12 @@ export default function ChangePasswordPage() {
     try {
       await changePassword(currentPassword, newPassword);
       updatedSuccessfully = true;
-      setSuccess("Contrase\u00f1a actualizada correctamente.");
+      setSuccess("Contraseña actualizada correctamente.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmation("");
     } catch (failure) {
-      setError(publicErrorMessage(failure, "No se pudo actualizar la contrase\u00f1a."));
+      setError(publicErrorMessage(failure, "No se pudo actualizar la contraseña."));
     } finally {
       setSaving(false);
     }
@@ -56,10 +56,10 @@ export default function ChangePasswordPage() {
           Acceso y permisos
         </p>
         <h1 className="mt-2 text-2xl font-semibold text-stone-50">
-          Cambiar contrase\u00f1a
+          Cambiar contraseña
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-stone-400">
-          Introduce tu contrase\u00f1a actual y una nueva para actualizar tus credenciales.
+          Introduce tu contraseña actual y una nueva para actualizar tus credenciales.
         </p>
       </header>
 
@@ -72,7 +72,7 @@ export default function ChangePasswordPage() {
       <form onSubmit={handleSubmit} aria-busy={saving} className="space-y-5">
         <div>
           <label htmlFor="change-current-password" className="text-sm text-stone-300">
-            Contrase\u00f1a actual
+            Contraseña actual
           </label>
           <input
             id="change-current-password"
@@ -88,7 +88,7 @@ export default function ChangePasswordPage() {
 
         <div>
           <label htmlFor="change-new-password" className="text-sm text-stone-300">
-            Nueva contrase\u00f1a
+            Nueva contraseña
           </label>
           <input
             id="change-new-password"
@@ -104,7 +104,7 @@ export default function ChangePasswordPage() {
 
         <div>
           <label htmlFor="change-confirmation" className="text-sm text-stone-300">
-            Confirmar nueva contrase\u00f1a
+            Confirmar nueva contraseña
           </label>
           <input
             id="change-confirmation"
@@ -130,7 +130,7 @@ export default function ChangePasswordPage() {
             disabled={saving}
             className="rounded-lg bg-brasa-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brasa-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brasa-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? "Guardando..." : "Actualizar contrase\u00f1a"}
+            {saving ? "Guardando..." : "Actualizar contraseña"}
           </button>
 
           <Link

@@ -26,12 +26,12 @@ function ResetPasswordForm() {
     setError(null);
 
     if (password !== confirmation) {
-      setError("Las contrase\u00f1as no coinciden.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
     if (password.length < 8) {
-      setError("La contrase\u00f1a debe tener al menos 8 caracteres.");
+      setError("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
 
@@ -61,15 +61,15 @@ function ResetPasswordForm() {
           </header>
 
           <h1 className="mb-6 text-2xl font-semibold text-stone-50">
-            {"Enlace no v\u00e1lido"}
+            {"Enlace no válido"}
           </h1>
 
           <div className="border-l-2 border-red-500 pl-4">
             <p className="text-sm leading-6 text-red-300">
-              {"El enlace de restablecimiento no es v\u00e1lido o ha expirado."}
+              {"El enlace de restablecimiento no es válido o ha expirado."}
             </p>
             <p className="mt-2 text-sm text-stone-400">
-              {"Solicita un nuevo enlace para restablecer tu contrase\u00f1a."}
+              {"Solicita un nuevo enlace para restablecer tu contraseña."}
             </p>
           </div>
 
@@ -98,17 +98,17 @@ function ResetPasswordForm() {
         </header>
 
         <h1 className="mb-6 text-2xl font-semibold text-stone-50">
-          {"Nueva contrase\u00f1a"}
+          Nueva contraseña
         </h1>
 
         <p className="mb-6 text-sm leading-6 text-stone-400">
-          Establece una contrase\u00f1a nueva para tu cuenta.
+          Establece una contraseña nueva para tu cuenta.
         </p>
 
         <form onSubmit={handleSubmit} aria-busy={submitting} className="space-y-5">
           <fieldset disabled={submitting} className="min-w-0 space-y-5">
             <div>
-              <label htmlFor="reset-password" className="text-sm text-stone-300">Nueva contrase\u00f1a</label>
+              <label htmlFor="reset-password" className="text-sm text-stone-300">Nueva contraseña</label>
               <input
                 id="reset-password"
                 name="password"
@@ -122,7 +122,7 @@ function ResetPasswordForm() {
             </div>
 
             <div>
-              <label htmlFor="reset-confirmation" className="text-sm text-stone-300">Confirmar contrase\u00f1a</label>
+              <label htmlFor="reset-confirmation" className="text-sm text-stone-300">Confirmar contraseña</label>
               <input
                 id="reset-confirmation"
                 name="confirmation"
@@ -144,7 +144,7 @@ function ResetPasswordForm() {
                 onChange={(event) => setShowPassword(event.target.checked)}
                 className="size-4 accent-brasa-500"
               />
-              {"Mostrar contrase\u00f1a"}
+              {"Mostrar contraseña"}
             </label>
           </fieldset>
 
@@ -159,7 +159,7 @@ function ResetPasswordForm() {
             disabled={submitting}
             className="w-full rounded-lg bg-brasa-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brasa-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brasa-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {submitting ? "Restableciendo..." : "Restablecer contrase\u00f1a"}
+            {submitting ? "Restableciendo..." : "Restablecer contraseña"}
           </button>
         </form>
       </div>

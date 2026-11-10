@@ -43,13 +43,13 @@ export default function ForgotPasswordPage() {
         </header>
 
         <h1 className="mb-6 text-2xl font-semibold text-stone-50">
-          {"Restablecer contrase\u00f1a"}
+          Restablecer contraseña
         </h1>
 
         {!sent ? (
           <>
             <p className="mb-6 text-sm leading-6 text-stone-400">
-              Introduce tu email y te enviaremos un enlace para restablecer tu contrase\u00f1a.
+              Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
             </p>
 
             <form onSubmit={handleSubmit} aria-busy={submitting} className="space-y-5">
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
           <div className="space-y-5">
             <div className="border-l-2 border-emerald-500 pl-4">
               <p className="text-sm leading-6 text-emerald-300">
-                {"Si el email existe, recibir\u00e1s un enlace para restablecer tu contrase\u00f1a."}
+                {"Si el email existe, recibirás un enlace para restablecer tu contraseña."}
               </p>
               <p className="mt-2 text-sm text-stone-400">
                 {"Revisa tu bandeja de entrada y sigue las instrucciones."}
@@ -100,12 +100,12 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className="mt-6 text-center text-sm text-stone-500">
-          {"\u00bfRecordaste tu contrase\u00f1a? "}
+          {"¿Recordaste tu contraseña? "}
           <Link
             href="/login"
             className="text-brasa-400 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-brasa-400"
           >
-            Iniciar sesi\u00f3n
+            Iniciar sesión
           </Link>
         </p>
       </div>

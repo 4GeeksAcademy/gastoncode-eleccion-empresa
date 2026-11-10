@@ -44,7 +44,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     if (submitting) return;
     setError(null);
     if (isRegister && password !== confirmation) {
-      setError("Las contrase\u00f1as no coinciden.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -81,18 +81,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </header>
 
         <h1 className="mb-6 text-2xl font-semibold text-stone-50">
-          {isRegister ? "Crear cuenta" : "Iniciar sesi\u00f3n"}
+          {isRegister ? "Crear cuenta" : "Iniciar sesión"}
         </h1>
 
         {!isRegister && searchParams.get("registered") === "1" && (
           <p className="mb-6 border-l-2 border-emerald-500 pl-3 text-sm text-emerald-300" role="status">
-            {"Cuenta creada. Ya puedes iniciar sesi\u00f3n."}
+            {"Cuenta creada. Ya puedes iniciar sesión."}
           </p>
         )}
 
         {!isRegister && searchParams.get("reset") === "1" && (
           <p className="mb-6 border-l-2 border-emerald-500 pl-3 text-sm text-emerald-300" role="status">
-            {"Contrase\u00f1a restablecida correctamente. Ahora puedes iniciar sesi\u00f3n."}
+            {"Contraseña restablecida correctamente. Ahora puedes iniciar sesión."}
           </p>
         )}
 
@@ -111,12 +111,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </div>
 
             <div>
-              <label htmlFor="auth-password" className="text-sm text-stone-300">{"Contrase\u00f1a"}</label>
+              <label htmlFor="auth-password" className="text-sm text-stone-300">Contraseña</label>
               <input id="auth-password" name="password" type={showPassword ? "text" : "password"} required autoComplete={isRegister ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} className={inputClassName} />
               {!isRegister && (
                 <p className="mt-2">
                   <Link href="/forgot-password" className="text-xs text-stone-400 underline-offset-2 hover:text-brasa-400 hover:underline focus-visible:outline-2 focus-visible:outline-brasa-400">
-                    {"\u00bfOlvidaste tu contrase\u00f1a?"}
+                    {"¿Olvidaste tu contraseña?"}
                   </Link>
                 </p>
               )}
@@ -124,14 +124,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
             {isRegister && (
               <div>
-                <label htmlFor="auth-confirmation" className="text-sm text-stone-300">{"Confirmar contrase\u00f1a"}</label>
+                <label htmlFor="auth-confirmation" className="text-sm text-stone-300">Confirmar contraseña</label>
                 <input id="auth-confirmation" name="confirmation" type={showPassword ? "text" : "password"} required autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} aria-invalid={Boolean(error && password !== confirmation)} aria-describedby={error ? "auth-error" : undefined} className={inputClassName} />
               </div>
             )}
 
             <label className="flex items-center gap-2 text-sm text-stone-400">
               <input type="checkbox" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} className="size-4 accent-brasa-500" />
-              {"Mostrar contrase\u00f1a"}
+              {"Mostrar contraseña"}
             </label>
           </fieldset>
 
@@ -139,20 +139,20 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
           {!error && sessionError && (
             <div className="space-y-2">
-              <p role="alert" className="text-sm text-red-300">{"No se pudo validar la sesi\u00f3n guardada."}</p>
-              <button type="button" onClick={() => void refreshSession()} className="text-sm text-brasa-400 underline underline-offset-4">{"Reintentar validaci\u00f3n"}</button>
+              <p role="alert" className="text-sm text-red-300">{"No se pudo validar la sesión guardada."}</p>
+              <button type="button" onClick={() => void refreshSession()} className="text-sm text-brasa-400 underline underline-offset-4">Reintentar validación</button>
             </div>
           )}
 
           <button type="submit" disabled={submitting} className="w-full rounded-lg bg-brasa-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brasa-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brasa-400 disabled:cursor-not-allowed disabled:opacity-60">
-            {submitting ? (isRegister ? "Creando cuenta..." : "Ingresando...") : (isRegister ? "Crear cuenta" : "Iniciar sesi\u00f3n")}
+            {submitting ? (isRegister ? "Creando cuenta..." : "Ingresando...") : (isRegister ? "Crear cuenta" : "Iniciar sesión")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-stone-500">
-          {isRegister ? "\u00bfYa tienes cuenta? " : "\u00bfNo tienes cuenta? "}
+          {isRegister ? "¿Ya tienes cuenta? " : "¿No tienes cuenta? "}
           <Link href={alternative} className="text-brasa-400 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-brasa-400">
-            {isRegister ? "Iniciar sesi\u00f3n" : "Crear cuenta"}
+            {isRegister ? "Iniciar sesión" : "Crear cuenta"}
           </Link>
         </p>
       </div>
