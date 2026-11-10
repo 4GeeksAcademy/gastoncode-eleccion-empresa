@@ -3,7 +3,7 @@
 ## Arranque
 
 Requisitos: Node.js 22 o superior, npm y uv. Auth requiere Python >=3.14;
-suppliers, incidents e inventory requieren >=3.12. uv prepara entornos independientes por servicio.
+suppliers, incidents, inventory y talent requieren >=3.12. uv prepara entornos independientes por servicio.
 
 Desde la raiz:
 
@@ -15,9 +15,11 @@ npm run backoffice:dev
 Abrir http://localhost:3000. Login, registro y cuentas pertenecen al dashboard;
 proveedores se sirve en `/suppliers`, el gestor de incidencias en
 `/incidents-manager`, el analizador CSV en `/incidents-analyzer` y la gestión de
-inventario en `/inventory-management` (productos, entradas, salidas e historial).
+inventario en `/inventory-management` (productos, entradas, salidas e historial)
+y talento en `/talent-pipeline-tracker` (candidaturas, etapas, estados y notas).
 Cada interfaz es una app Next.js independiente.
-El lanzador no incluye talento y nunca ejecuta seeds.
+El lanzador incluye talento y nunca ejecuta seeds. Talento es un prototipo
+solo para datos sintéticos, restringido a admin/manager.
 `setup` instala las versiones declaradas, no corrige automaticamente vulnerabilidades.
 
 | Proceso | Puerto local | Directorio |
@@ -31,8 +33,10 @@ El lanzador no incluye talento y nunca ejecuta seeds.
 | Gestor de incidencias | 3004 | uis/backoffice/incidents-manager |
 | Analizador CSV | 3002 | uis/backoffice/incidents-analyzer |
 | Interfaz de inventario | 3005 | uis/backoffice/inventory-management |
+| Interfaz de talento | 3003 | uis/backoffice/talent-pipeline-tracker |
+| API talent | 8004 | services/api-talent |
 
-Los nueve puertos deben estar libres. El lanzador rechaza conflictos sin
+Los once puertos deben estar libres. El lanzador rechaza conflictos sin
 detener procesos existentes. Ctrl+C cierra todos los procesos; si uno falla,
 se cierra el conjunto. Espera disponibilidad hasta 120 segundos.
 Los logs se identifican por servicio.
@@ -42,12 +46,12 @@ npm run backoffice:check
 ```
 
 Este comando comprueba disponibilidad, proxies de auth e incidencias, y que
-`GET /inventory/products` rechace una solicitud sin token con HTTP 401. No
+`GET /inventory/products` y el proxy `GET /api/talent/records` rechacen solicitudes sin token con HTTP 401. No
 reemplaza pruebas funcionales ni una revision de permisos.
 
 ## Identidad y datos
 
-El lanzador entrega el mismo `JWT_SECRET` a las cuatro APIs. A la API de
+El lanzador entrega el mismo `JWT_SECRET` a las cinco APIs. A la API de
 incidencias le añade `PYTHONPATH` con la raíz del monorepo para resolver
 `packages.incidents_analysis`. Usa el valor del entorno
 si existe; de lo contrario genera una clave local persistente en
@@ -90,7 +94,7 @@ El acceso local al terminal y las bases concede privilegios de administracion.
 ## Origen y sesion
 
 Usar siempre el origen publico del dashboard. Acceder directamente al puerto
-3001, 3002 o 3004 mantiene otro origen de localStorage y no proporciona sesion compartida.
+3001, 3002, 3003, 3004 o 3005 mantiene otro origen de localStorage y no proporciona sesion compartida.
 
 - Dashboard reenvia `/suppliers` a la otra app y `/suppliers-static/*` a sus assets.
 - `/api/auth`, `/api/users`, `/api/profiles`, `/auth/forgot-password`, `/auth/reset-password` y `/auth/change-password` se reenvian a auth (cubiertos por el patrón `/api/auth/:path*`).
@@ -104,7 +108,10 @@ Usar siempre el origen publico del dashboard. Acceder directamente al puerto
   (`http://localhost:3005` por defecto). La app usa `basePath`; las llamadas a
   `/api/inventory/*` se reenvían al API del puerto 8003 y la resolución de nombres
   consulta `/api/users/display-names` en auth.
-- Las cinco apps usan `uis/backoffice/auth-shared`.
+- Dashboard reenvía `/talent-pipeline-tracker` y subrutas, incluidos assets,
+  a TALENT_UI_URL (3003). `/api/talent/*` se reenvía a TALENT_API_URL (8004).
+  La UI usa basePath y consultas cliente, sin candidaturas durante SSR.
+- Las seis apps usan `uis/backoffice/auth-shared`.
 - La clave de localStorage es `brasaland.backoffice.token`; las sesiones previas
   de las apps separadas requieren volver a iniciar sesion.
 - La navegacion entre zonas es completa, no una transicion de Next Link.
@@ -118,6 +125,16 @@ Usar siempre el origen publico del dashboard. Acceder directamente al puerto
   borrado o desactivacion se aplican en la siguiente llamada protegida.
 - Si auth no responde, los servicios deniegan la operacion con 503; no confian en un
   rol antiguo ni eliminan el token por una caida temporal del servicio.
+
+Talento valida JWT y cuenta vigente mediante auth antes de contactar al proveedor.
+Lecturas y escrituras requieren admin/manager. Conserva el pathname tras login y
+usa enlaces completos para Backoffice y Cuenta. Alta y cambios reconsultan datos;
+un 401 tardío no invalida un token nuevo. TRACKER_API_URL vive solo en api-talent,
+nunca en NEXT_PUBLIC. No se reenvía el JWT de Brasaland a 4Geeks ni se persisten
+candidatos localmente. Un 401/403 externo devuelve 502, no expira la sesión local.
+El proxy no garantiza privacidad ni aislamiento de la fuente externa: solo datos
+sintéticos. Vacantes y onboarding quedan fuera de alcance.
+Contrato completo en [api-talent](../services/api-talent/README.md).
 
 El JWT sigue siendo accesible a JavaScript y no tiene refresh ni revocacion
 individual. Un origen compartido amplifica el impacto de XSS entre modulos.
@@ -174,7 +191,7 @@ y gestor. Ambas interceptan la API y no modifican bases reales. Cubren retorno
 tras expiracion, logout y tarifas de alta con centavos. Requisitos y limites
 en [scripts](../scripts/README.es.md#pruebas-de-navegador-con-instalacion-temporal).
 
-Con los nueve puertos libres y `DATABASE_URL` configurada, `BACKOFFICE_LIFECYCLE=1 node --test
+Con los once puertos libres y `DATABASE_URL` configurada, `BACKOFFICE_LIFECYCLE=1 node --test
 scripts/backoffice.test.mjs` valida arranque y cierre coordinado por SIGINT.
 Esta prueba se omite en la ejecucion habitual para no interferir con servicios activos. El
 test configura bases temporales (SQLite para inventario y archivos TinyDB
@@ -194,3 +211,20 @@ flujo de negocio sobre la base remota.
 La auditoria npm detecto vulnerabilidades en dependencias actuales, incluida
 severidad critica en Next.js. Resolverlas requiere un incremento de actualizacion
 y nueva validacion; esta integracion no aplica `audit fix --force`.
+
+## Verificación de talento
+
+```bash
+node --test uis/backoffice/talent-pipeline-tracker/tests/talent-api.test.mjs
+uv sync --project services/api-talent --group test
+uv run --directory services/api-talent --group test python -m unittest discover -s tests -v
+npm run lint -w talent-pipeline-tracker
+npm run build -w talent-pipeline-tracker
+node scripts/browser-tests.mjs scripts/talent.browser.test.mjs
+```
+
+El navegador necesita dashboard y talento iniciados y las bibliotecas de Chromium;
+intercepta todas las APIs. Su sintaxis se validó, pero la ejecución en el contenedor
+actual quedó bloqueada por libatk-1.0.so.0 ausente. No se verificó 4Geeks real.
+Build y nueve pruebas HTTP aisladas pasaron; el smoke real confirmó UI 200, assets
+prefijados y proxy 401 sin token. No se ejecutó el ciclo de los once procesos.

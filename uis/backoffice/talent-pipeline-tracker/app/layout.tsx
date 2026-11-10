@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk, Libre_Caslon_Text } from "next/font/google";
 import "./globals.css";
+import { TalentShell } from "@/components/talent-shell";
 
 const heading = Libre_Caslon_Text({
   variable: "--font-brand",
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" data-theme="dark" className={`${heading.variable} ${ui.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><TalentShell>{children}</TalentShell></body>
     </html>
   );
 }

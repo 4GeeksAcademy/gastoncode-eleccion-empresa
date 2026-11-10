@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SessionControls } from "../session-controls";
 
 type DetailTopBarProps = {
   brand: string;
@@ -25,7 +26,7 @@ export function DetailTopBar({ brand }: DetailTopBarProps) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border-strong)] bg-[var(--background)]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-4xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex min-h-16 w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -36,6 +37,7 @@ export function DetailTopBar({ brand }: DetailTopBarProps) {
           </Link>
           <p className="font-brand text-3xl tracking-[0.12em] text-[var(--text-accent)] sm:text-4xl">{brand}</p>
         </div>
+        <SessionControls />
         <button
           type="button"
           onClick={toggleTheme}

@@ -16,10 +16,11 @@ npm run backoffice:dev
 
 dashboard, login, cuentas, proveedores, el gestor de incidencias
 (`/incidents-manager`: formulario de registro y panel de resumen), el analizador
-CSV (`/incidents-analyzer`) y la gestión de inventario
-(`/inventory-management`: productos/stock, entradas, salidas e historial) quedan
+CSV (`/incidents-analyzer`), la gestión de inventario
+(`/inventory-management`: productos/stock, entradas, salidas e historial) y talento
+(`/talent-pipeline-tracker`: candidaturas y notas sintéticas, solo admin/manager) quedan
 accesibles en http://localhost:3000 con una sesión compartida. El launcher inicia
-cuatro APIs (autenticación, proveedores, incidencias e inventario) y cinco
+cinco APIs (autenticación, proveedores, incidencias, inventario y talento) y seis
 interfaces. La API de inventario guarda productos y movimientos en PostgreSQL de
 Supabase y calcula las existencias a partir de estos movimientos. Requiere
 `DATABASE_URL` configurada en el entorno o en `.env`; nunca publiques ese valor. Consulta la
@@ -51,8 +52,9 @@ Este repositorio es la **plantilla de inicio** para los proyectos transversales.
 El repositorio conserva la estructura de la plantilla y contiene aplicaciones
 ejecutables de backoffice, APIs de autenticación/proveedores/incidencias/inventario y
 scripts globales de desarrollo. El arranque integrado documentado arriba cubre
-dashboard, proveedores, gestor, analizador CSV de incidencias e inventario; el
-seguimiento de talento sigue separado.
+dashboard, proveedores, gestor, analizador CSV de incidencias, inventario y
+seguimiento de talento. El adaptador de talento no persiste candidatos localmente
+ni convierte al proveedor externo en una fuente privada: usar solo datos sintéticos.
 
 - `CONTEXT.md` es un placeholder y debe sustituirse por el contexto de la empresa asignada.
 - `AGENTS.md` define las reglas de trabajo y las rutas protegidas.

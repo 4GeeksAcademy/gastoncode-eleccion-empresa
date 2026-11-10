@@ -18,6 +18,8 @@ export const services = [
   { name: "incidencias", cwd: ".", command: "npm", args: ["run", "dev:incidents-manager"], port: 3004, health: "http://127.0.0.1:3004/incidents-manager" },
   { name: "analizador", cwd: ".", command: "npm", args: ["run", "dev:incidents"], port: 3002, health: "http://127.0.0.1:3002/incidents-analyzer" },
   { name: "inventario", cwd: ".", command: "npm", args: ["run", "dev:inventory-management"], port: 3005, health: "http://127.0.0.1:3005/inventory-management" },
+  { name: "talento", cwd: ".", command: "npm", args: ["run", "dev:talent"], port: 3003, health: "http://127.0.0.1:3003/talent-pipeline-tracker" },
+  { name: "talent", cwd: "services/api-talent", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8004"], port: 8004, health: "http://127.0.0.1:8004/" },
 ];
 
 export async function assertPortAvailable(port) {
@@ -67,7 +69,7 @@ export async function main(action) {
   }
   if (action === "setup") {
     await run("npm", ["install", "--package-lock=false"]);
-    for (const directory of ["services/api-auth", "services/api-suppliers", "services/api-incidents", "services/api-inventory"]) {
+    for (const directory of ["services/api-auth", "services/api-suppliers", "services/api-incidents", "services/api-inventory", "services/api-talent"]) {
       await run("uv", ["sync"], path.join(root, directory));
     }
     console.log("Entornos preparados. No se modificaron bases ni se ejecutaron seeds.");
@@ -84,6 +86,9 @@ export async function main(action) {
     if (incidents.status !== 401) throw new Error("Proxy incidencias: esperaba 401 sin token");
     const inventory = await fetch("http://127.0.0.1:8003/inventory/products", { signal: AbortSignal.timeout(5000) });
     if (inventory.status !== 401) throw new Error("API inventario: esperaba 401 sin token");
+    const talent = await fetch("http://127.0.0.1:3000/api/talent/records", { signal: AbortSignal.timeout(5000) });
+    if (talent.status !== 401) throw new Error("Proxy talento: esperaba 401 sin token");
+    console.log("OK proxy talento protegido");
     console.log("OK proxy incidencias");
     console.log("OK API inventario protegido");
     console.log("OK proxy auth. Las pruebas funcionales requieren cuentas de prueba aisladas.");
@@ -103,6 +108,8 @@ export async function main(action) {
     INCIDENTS_MANAGER_UI_URL: "http://127.0.0.1:3004",
     INCIDENTS_UI_URL: "http://127.0.0.1:3002",
     INVENTORY_UI_URL: "http://127.0.0.1:3005",
+    TALENT_UI_URL: "http://127.0.0.1:3003",
+    TALENT_API_URL: "http://127.0.0.1:8004",
     NEXT_PUBLIC_DASHBOARD_URL: "http://localhost:3000",
     NEXT_PUBLIC_SUPPLIERS_UI_URL: "/suppliers",
   };
@@ -134,7 +141,7 @@ export async function main(action) {
     if (stopping) return;
     try {
       await Promise.all(services.map((service) => health(service.health)));
-      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, inventario: /inventory-management; API inventario: :8003). Ctrl+C cierra los ${services.length} procesos.`);
+      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, inventario: /inventory-management, talento: /talent-pipeline-tracker; APIs inventario: :8003, talento: :8004). Ctrl+C cierra los ${services.length} procesos.`);
     } catch {
       if (stopping) return;
       if (Date.now() >= deadline) { console.error("El conjunto no estuvo disponible en 120 segundos."); stop(1); }
