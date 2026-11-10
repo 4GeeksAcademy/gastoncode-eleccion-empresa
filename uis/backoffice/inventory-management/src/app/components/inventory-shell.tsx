@@ -37,7 +37,9 @@ function ProtectedInventoryShell({ children, allowedRoles }: { children: ReactNo
           </>}
           <Link href="/orders">Órdenes</Link>
           <SessionMenu />
-          <Link href="/" className="backLink">← Backoffice</Link>
+          {/* This root link exits the app's basePath and returns to the dashboard. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/" className="backLink">← Backoffice</a>
         </div>
       </div>
     </nav>

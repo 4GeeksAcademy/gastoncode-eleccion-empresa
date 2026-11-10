@@ -32,6 +32,13 @@ export function DetailTopBar({ brand }: DetailTopBarProps) {
             href="/"
             className="rounded-md p-2 text-[var(--text-accent)] transition hover:bg-[var(--surface-pill)]"
             aria-label="Volver"
+            onClick={(event) => {
+              const previousUrl = document.referrer;
+              if (previousUrl && new URL(previousUrl).origin === window.location.origin) {
+                event.preventDefault();
+                window.history.back();
+              }
+            }}
           >
             ←
           </Link>
