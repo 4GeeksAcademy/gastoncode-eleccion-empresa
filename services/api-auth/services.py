@@ -14,20 +14,23 @@ logger = logging.getLogger("api-auth.persistence")
 _write_lock = RLock()
 
 
+class DuplicateEmailError(Exception):
+    pass
+
+
 def get_user_by_id(user_id: str):
-    return users_table.get(
-        User.id == user_id
-    )
+    with _write_lock:
+        return users_table.get(User.id == user_id)
 
 
 def get_user_by_email(email: str):
-    return users_table.get(
-        User.email == email
-    )
+    with _write_lock:
+        return users_table.get(User.email == email)
 
 
 def get_all_users():
-    return users_table.all()
+    with _write_lock:
+        return users_table.all()
 
 
 def create_user(user: dict, profile: dict):
@@ -38,6 +41,8 @@ def create_user(user: dict, profile: dict):
     cross-process atomicity.
     """
     with _write_lock:
+        if users_table.get(User.email == user["email"]):
+            raise DuplicateEmailError()
         user_doc_id = users_table.insert(user)
         try:
             profiles_table.insert(profile)
@@ -58,12 +63,15 @@ def create_user(user: dict, profile: dict):
 
 def update_user(user_id: str, changes: dict):
     with _write_lock:
+        if "email" in changes:
+            existing = users_table.get(User.email == changes["email"])
+            if existing and existing["id"] != user_id:
+                raise DuplicateEmailError()
         users_table.update(
             changes,
             User.id == user_id
         )
-
-    return get_user_by_id(user_id)
+        return get_user_by_id(user_id)
 
 
 def delete_user(user_id: str):
@@ -79,9 +87,8 @@ def delete_user(user_id: str):
 
 
 def get_profile_by_user_id(user_id: str):
-    return profiles_table.get(
-        Profile.user_id == user_id
-    )
+    with _write_lock:
+        return profiles_table.get(Profile.user_id == user_id)
 
 
 def get_display_names_by_user_ids(user_ids: list[str]):
@@ -90,13 +97,14 @@ def get_display_names_by_user_ids(user_ids: list[str]):
     if not requested_ids:
         return []
 
-    profiles = profiles_table.search(Profile.user_id.one_of(list(requested_ids)))
+    with _write_lock:
+        profiles = profiles_table.search(Profile.user_id.one_of(list(requested_ids)))
+        users = users_table.search(User.id.one_of(list(requested_ids)))
     names_by_user_id = {
         profile["user_id"]: profile.get("name")
         for profile in profiles
         if profile.get("user_id") in requested_ids
     }
-    users = users_table.search(User.id.one_of(list(requested_ids)))
     return [
         {
             "id": user["id"],
@@ -112,8 +120,7 @@ def update_profile(user_id: str, changes: dict):
             changes,
             Profile.user_id == user_id
         )
-
-    return get_profile_by_user_id(user_id)
+        return get_profile_by_user_id(user_id)
 
 
 # ── Reset de contraseña ──────────────────────────────────────
@@ -126,9 +133,8 @@ def create_reset_token(token_data: dict):
 
 def get_reset_token(token_hash: str):
     """Busca un token de restablecimiento por su hash."""
-    return reset_tokens_table.get(
-        ResetToken.token_hash == token_hash
-    )
+    with _write_lock:
+        return reset_tokens_table.get(ResetToken.token_hash == token_hash)
 
 
 def mark_reset_token_used(token_hash: str):

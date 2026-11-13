@@ -4,12 +4,24 @@ from auth import get_current_user, require_roles
 from database import suppliers_table
 from models import SupplierCreateInput, SupplierRateUpdate, SupplierStatusUpdate, SupplierResponse
 from datetime import datetime, timezone
+from functools import wraps
+from threading import RLock
 
 
 router = APIRouter(
     prefix="/suppliers",
     tags=["Suppliers"]
 )
+
+_database_lock = RLock()
+
+
+def synchronized(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        with _database_lock:
+            return function(*args, **kwargs)
+    return wrapper
 
 
 def serialize_document(document):
@@ -19,7 +31,7 @@ def serialize_document(document):
     }
 
 @router.post("", response_model=SupplierResponse)
-
+@synchronized
 def create_supplier(supplier: SupplierCreateInput, current_user: dict = Depends(require_roles(["admin", "manager"]))):
 
     supplier_data = supplier.model_dump()
@@ -34,6 +46,7 @@ def create_supplier(supplier: SupplierCreateInput, current_user: dict = Depends(
 
 
 @router.get("", response_model=list[SupplierResponse])
+@synchronized
 def get_suppliers(current_user: dict = Depends(get_current_user)):
 
     documents = suppliers_table.all()
@@ -45,6 +58,7 @@ def get_suppliers(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/search", response_model=list[SupplierResponse])
+@synchronized
 def search_suppliers(
     country: str | None = None,
     categories: str | None = None,
@@ -85,6 +99,7 @@ def search_suppliers(
 
 
 @router.get("/{supplier_id}", response_model=SupplierResponse)
+@synchronized
 def get_supplier(supplier_id: int, current_user: dict = Depends(get_current_user)):
 
     document = suppliers_table.get(
@@ -101,6 +116,7 @@ def get_supplier(supplier_id: int, current_user: dict = Depends(get_current_user
 
 
 @router.patch("/{supplier_id}/rate", response_model=SupplierResponse)
+@synchronized
 def update_supplier_rate(
     supplier_id: int,
     supplier_rate: SupplierRateUpdate,
@@ -141,6 +157,7 @@ def update_supplier_rate(
 
 
 @router.patch("/{supplier_id}/status", response_model=SupplierResponse)
+@synchronized
 def update_supplier_status(
     supplier_id: int,
     supplier_status: SupplierStatusUpdate,
@@ -182,6 +199,7 @@ def update_supplier_status(
 
 
 @router.delete("/{supplier_id}")
+@synchronized
 def delete_supplier(supplier_id: int, current_user: dict = Depends(require_roles(["admin", "manager"]))):
 
     document = suppliers_table.get(

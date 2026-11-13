@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
@@ -9,6 +10,7 @@ from passlib.hash import bcrypt
 
 from auth import get_current_user, require_roles
 from services import (
+    DuplicateEmailError,
     create_user,
     delete_user,
     get_all_users,
@@ -24,6 +26,11 @@ router = APIRouter(
     prefix="/users",
     tags=["users"]
 )
+
+approval_setting = os.getenv("REQUIRE_ACCOUNT_APPROVAL", "false").strip().lower()
+if approval_setting not in ("true", "false"):
+    raise RuntimeError("REQUIRE_ACCOUNT_APPROVAL debe ser 'true' o 'false'.")
+REQUIRE_ACCOUNT_APPROVAL = approval_setting == "true"
 
 
 class Role(str, Enum):
@@ -95,7 +102,7 @@ def register(data: UserCreate):
         # bcrypt genera y guarda el hash.
         "hashed_password": bcrypt.hash(data.password),
 
-        "is_active": True,
+        "is_active": not REQUIRE_ACCOUNT_APPROVAL,
         "role": "user",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "password_changed_at": None
@@ -109,10 +116,10 @@ def register(data: UserCreate):
         "address": data.address
     }
 
-    create_user(
-        user,
-        profile
-    )
+    try:
+        create_user(user, profile)
+    except DuplicateEmailError as error:
+        raise HTTPException(status_code=400, detail="El email ya está registrado") from error
 
     return {
         "user": public_user(user),
@@ -210,10 +217,10 @@ def edit_user(
             detail="Solo un admin puede cambiar el estado de la cuenta"
         )
 
-    user = update_user(
-        user_id,
-        changes
-    )
+    try:
+        user = update_user(user_id, changes)
+    except DuplicateEmailError as error:
+        raise HTTPException(status_code=400, detail="El email ya está registrado") from error
 
     return public_user(user)
 

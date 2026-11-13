@@ -98,6 +98,13 @@ python services/api-suppliers/seed.py
 Fuera del lanzador, define `JWT_SECRET` con la misma clave de auth y
 `AUTH_SERVICE_URL=http://localhost:8001`. No hay clave JWT predeterminada.
 El lanzador integrado configura ambos valores sin modificar archivos `.env`.
+`CORS_ORIGINS` admite una lista de orígenes separados por comas; si no se
+configura, se permite cualquier origen. En producción debe indicarse el origen
+HTTPS autorizado.
+
+Las operaciones HTTP sobre TinyDB se serializan dentro de un proceso. Ejecutar
+un solo worker y una sola instancia por archivo; no ejecutar el seed ni otro
+escritor sobre la base mientras la API esté activa.
 
 > El `.env` ya está en `.gitignore` para evitar commits accidentales.
 

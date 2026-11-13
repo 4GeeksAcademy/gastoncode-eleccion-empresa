@@ -1,0 +1,60 @@
+services:
+  backend:
+    image: gastoncode15/brasaland-backend:1.0.0
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      AUTH_SERVICE_URL: http://127.0.0.1:8001
+      REQUIRE_ACCOUNT_APPROVAL: "true"
+      AUTH_DB_PATH: /data/auth/db.json
+      SUPPLIERS_DB_PATH: /data/suppliers/db.json
+      INCIDENTS_DB_PATH: /data/incidents/incidents.json
+      ANALYSES_DB_PATH: /data/incidents/analyses.json
+      CORS_ORIGINS: ${BACKOFFICE_URL:-https://206.189.176.237:8000}
+      FRONTEND_URL: ${BACKOFFICE_URL:-https://206.189.176.237:8000}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_ADDRESS: ${RESEND_FROM_ADDRESS:-onboarding@resend.dev}
+    volumes:
+      - auth-data:/data/auth
+      - suppliers-data:/data/suppliers
+      - incidents-data:/data/incidents
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  frontend:
+    image: gastoncode15/brasaland-frontend:1.0.0
+    build:
+      context: .
+      dockerfile: deploy/frontend.Dockerfile
+      args:
+        BACKOFFICE_URL: ${BACKOFFICE_URL:-https://206.189.176.237:8000}
+    environment:
+      AUTH_API_URL: http://backend:8001
+      SUPPLIERS_API_URL: http://backend:8000
+      INCIDENTS_API_URL: http://backend:8002
+      SUPPLIERS_UI_URL: http://127.0.0.1:3001
+      INCIDENTS_MANAGER_UI_URL: http://127.0.0.1:3004
+      NEXT_PUBLIC_DASHBOARD_URL: ${BACKOFFICE_URL:-https://206.189.176.237:8000}
+    ports:
+      - "127.0.0.1:13000:3000"
+      - "127.0.0.1:13006:3006"
+    depends_on:
+      backend:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  auth-data:
+  suppliers-data:
+  incidents-data:

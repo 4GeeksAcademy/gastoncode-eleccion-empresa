@@ -1,4 +1,5 @@
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -7,12 +8,27 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 
 def test_health_endpoint_returns_business_status(api):
     main = __import__("main")
     assert main.home() == {"message": "API funcionando"}
+
+
+def test_cors_allows_only_configured_origins(api, monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", "https://backoffice.example.test")
+    main = __import__("main")
+    client = TestClient(main.app)
+    headers = {"Access-Control-Request-Method": "GET"}
+
+    allowed = client.options("/", headers={**headers, "Origin": "https://backoffice.example.test"})
+    rejected = client.options("/", headers={**headers, "Origin": "https://other.example.test"})
+
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "https://backoffice.example.test"
+    assert rejected.status_code == 400
 
 
 def test_register_creates_user_and_profile_with_safe_defaults(api):
@@ -45,6 +61,50 @@ def test_register_rejects_duplicate_email(api, user_factory):
             api["users"].UserCreate(email="ana@example.com", password="another-pass")
         )
     assert error.value.status_code == 400
+
+
+def test_registration_can_require_administrator_approval(api, monkeypatch):
+    monkeypatch.setattr(api["users"], "REQUIRE_ACCOUNT_APPROVAL", True)
+    result = api["users"].register(
+        api["users"].UserCreate(email="pending@example.com", password="clave-segura-123")
+    )
+    form = OAuth2PasswordRequestForm(username="pending@example.com", password="clave-segura-123")
+
+    assert result["user"]["is_active"] is False
+    with pytest.raises(HTTPException) as error:
+        api["auth"].login(form)
+    assert error.value.status_code == 401
+
+    api["services"].update_user(result["user"]["id"], {"is_active": True})
+    assert api["auth"].login(form)["access_token"]
+
+
+def test_concurrent_user_creation_enforces_email_uniqueness(api):
+    services = api["services"]
+
+    def create(index):
+        user = {"id": str(index), "email": "same@example.com"}
+        profile = {"id": str(index), "user_id": str(index)}
+        try:
+            services.create_user(user, profile)
+            return True
+        except services.DuplicateEmailError:
+            return False
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(create, range(32)))
+
+    assert sum(results) == 1
+    assert len(services.get_all_users()) == 1
+
+
+def test_update_rechecks_email_uniqueness_in_persistence(api, user_factory):
+    first, _ = user_factory(email="first@example.com")
+    second, _ = user_factory(email="second@example.com")
+
+    with pytest.raises(api["services"].DuplicateEmailError):
+        api["services"].update_user(second["id"], {"email": first["email"]})
+    assert api["services"].get_user_by_id(second["id"])["email"] == "second@example.com"
 
 
 def test_login_returns_token_for_valid_credentials(api, user_factory):

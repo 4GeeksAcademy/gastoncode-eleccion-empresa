@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -10,9 +11,11 @@ from routers.suppliers import router as suppliers_router
 logger = logging.getLogger(__name__)
 app = FastAPI()
 
+cors_origins = os.getenv("CORS_ORIGINS", "*")
+origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

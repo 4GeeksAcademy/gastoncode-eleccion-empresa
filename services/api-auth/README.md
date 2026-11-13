@@ -59,6 +59,8 @@ se recomienda ejecutar desde este directorio.
 | `RESEND_FROM_ADDRESS` | No | `onboarding@resend.dev` | Dirección de origen para los correos electrónicos enviados mediante Resend (debe estar verificada en la cuenta de Resend). |
 | `FRONTEND_URL` | No | `http://localhost:3000` | URL base del frontend, utilizada para construir el enlace de restablecimiento que se envía por email (ruta `/reset-password?token=...`). |
 | `RESET_TOKEN_EXPIRE_MINUTES` | No | `30` | Minutos de validez del token de restablecimiento de contraseña. |
+| `CORS_ORIGINS` | No | `*` | Orígenes CORS permitidos, separados por comas. Usar una lista explícita en producción. |
+| `REQUIRE_ACCOUNT_APPROVAL` | No | `false` | Con `true`, las cuentas registradas quedan inactivas hasta que un administrador las habilita. Solo acepta `true` o `false`. |
 
 La aplicación carga también un archivo `.env` situado en el directorio de trabajo desde el que se ejecuta.
 
@@ -117,7 +119,10 @@ Comprobación sencilla de disponibilidad.
 
 ### `POST /users` — Registrar usuario
 
-No requiere autenticación. El usuario se crea con rol `user` y estado activo, y se crea su perfil en la misma operación.
+No requiere autenticación. El usuario se crea con rol `user`, y se crea su
+perfil en la misma operación. Está activo por defecto; con
+`REQUIRE_ACCOUNT_APPROVAL=true` queda inactivo hasta que un administrador lo
+habilita. Este ajuste no modifica cuentas ya existentes.
 
 **Body (`application/json`):**
 
@@ -352,4 +357,5 @@ Las respuestas de error siguen el formato habitual de FastAPI:
 
 ## CORS
 
-La configuración actual permite cualquier origen, método y cabecera (`allow_origins=["*"]`). Antes de publicar el servicio, conviene sustituir esta configuración por una lista explícita de orígenes confiables.
+Por defecto se permite cualquier origen. En producción, configurar
+`CORS_ORIGINS` con los orígenes confiables, incluidos esquema y puerto.

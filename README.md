@@ -14,6 +14,10 @@ This repository contains working prototypes, not a production-ready unified plat
 
 The repository does not yet provide an operational database shared across all domains, a unified deployment, or an integrated sales and telemetry pipeline. See [project status](./memory-bank/progress.md) and the [architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) for current scope and future plans.
 
+A two-container VPS pilot configuration is being prepared; see the
+[deployment guide](./deploy/README.es.md) for its scope and unresolved
+validation and reproducibility limitations.
+
 ## Requirements
 
 - Node.js 22 or later and npm.
