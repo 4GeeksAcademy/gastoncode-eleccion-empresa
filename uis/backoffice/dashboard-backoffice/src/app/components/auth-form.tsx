@@ -20,10 +20,10 @@ export function AuthLoading() {
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const isRegister = mode === "register";
-  const { user, initializing, error: sessionError, login, refreshSession } = useAuth();
+  const { homePath, user, initializing, error: sessionError, login, refreshSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const destination = safeAuthDestination(searchParams.get("next"));
+  const destination = safeAuthDestination(searchParams.get("next"), homePath);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

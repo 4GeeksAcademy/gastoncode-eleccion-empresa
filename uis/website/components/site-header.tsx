@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "./brand-logo";
 
 const navigation = [
   { href: "#nosotros", label: "Nosotros" },

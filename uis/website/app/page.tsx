@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { BenefitCard } from "@/components/benefit-card";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { BenefitCard } from "../components/benefit-card";
+import { SiteFooter } from "../components/site-footer";
+import { SiteHeader } from "../components/site-header";
 
 const benefits = [
   {

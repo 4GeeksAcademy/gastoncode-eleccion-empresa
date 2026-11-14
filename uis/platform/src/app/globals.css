@@ -1,0 +1,12 @@
+@import "tailwindcss" source(none);
+@import "@brasaland/theme/tailwind.css";
+
+@source "../";
+@source "../../../website/app";
+@source "../../../website/components";
+@source "../../../backoffice/dashboard-backoffice/src/app";
+@source "../../../backoffice/auth-shared";
+
+@theme inline {
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+}

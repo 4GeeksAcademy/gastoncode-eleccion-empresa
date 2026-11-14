@@ -43,4 +43,25 @@ describe("auth navigation helpers", () => {
   ])("conserva el destino de login para la página protegida %s", (path) => {
     expect(loginDestination(path)).toBe(`/login?next=${encodeURIComponent(path)}`);
   });
+
+  test.each([null, "", "/", "/unknown", "//evil.example", "/\\evil", "/backoffice-old"])(
+    "usa el inicio de platform para destinos ausentes o rechazados: %s",
+    (path) => expect(safeAuthDestination(path, "/backoffice")).toBe("/backoffice"),
+  );
+
+  test("permite el dashboard nuevo solo cuando la aplicación lo configura", () => {
+    expect(safeAuthDestination("/backoffice?tab=tools#catalog", "/backoffice")).toBe(
+      "/backoffice?tab=tools#catalog",
+    );
+    expect(safeAuthDestination("/backoffice")).toBe("/");
+  });
+
+  test("conserva cuenta y elimina query/hash al invalidar una sesión de platform", () => {
+    expect(safeAuthDestination("/account/profile?tab=details", "/backoffice")).toBe(
+      "/account/profile?tab=details",
+    );
+    expect(loginDestination("/backoffice?tab=tools#catalog", "/backoffice")).toBe(
+      "/login?next=%2Fbackoffice",
+    );
+  });
 });

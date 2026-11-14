@@ -2,7 +2,7 @@
 
 Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain's internal workflows. It includes a coordinated backoffice for authentication, suppliers, incidents, inventory, and a synthetic-data talent tracking prototype, plus inventory replenishment utilities.
 
-This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate: auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
+This repository contains working prototypes, not a production-ready unified platform. A transitional Next.js frontend now combines the website, protected dashboard, and authentication/account pages; the original applications remain available, and business modules and APIs are still separate. Auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
 
 ## What’s included
 
@@ -21,6 +21,44 @@ The repository does not yet provide an operational database shared across all do
 - Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers`, `api-incidents`, `api-inventory`, and `api-talent`.
 
 Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
+
+## Transitional unified frontend (phase 2)
+
+`uis/platform` uses App Router and runs alongside the original interfaces on
+**<http://localhost:3007>**:
+
+- `/` and `/application`: public website, without initializing backoffice auth.
+- `/backoffice`: protected dashboard.
+- `/login`, `/register`, `/forgot-password`, `/reset-password`, and `/account/*`:
+  reused authentication and account views, with `/backoffice` as the new home.
+
+With the existing workspace dependencies available:
+
+```bash
+npm run dev:platform
+# Or validate and run a production build:
+npm run lint:platform
+npm run build:platform
+npm run typecheck:platform
+npm run start -w brasaland-platform
+```
+
+`AUTH_API_URL` defaults to `http://localhost:8001`; the frontend does not start
+that API. `LEGACY_BACKOFFICE_URL` defaults to `http://localhost:3000`. Module
+cards and temporary redirects lead to that original backoffice until the
+modules are migrated. Both settings must be supplied at build time for production.
+Ports 3000 and 3007 are different origins: their sessions are not transferred,
+and entering the original backoffice may require another login. The existing
+`backoffice:dev` launcher is unchanged.
+
+**Dependency integration remains pending:** organizational content exclusions
+prevented updating the root lockfile. No repository dependency installation or
+clean `npm ci` validation was performed for this increment. An authorized
+maintainer must reconcile the lockfile in a permitted environment before relying
+on a clean install or publishing this transition.
+
+See the [phase 2 report](./docs/FRONTEND_PHASE2.es.md) for scope, checks, limitations,
+and browser test instructions.
 
 ## Start the integrated backoffice
 

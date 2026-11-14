@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ApplicationForm } from "@/components/application-form";
-import { BrandLogo } from "@/components/brand-logo";
+import { ApplicationForm } from "../../components/application-form";
+import { BrandLogo } from "../../components/brand-logo";
 
 export const metadata: Metadata = {
   title: "Formulario de Interés | Brasaland",

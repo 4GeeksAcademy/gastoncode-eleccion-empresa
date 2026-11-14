@@ -20,9 +20,10 @@ import {
   UnauthorizedError,
   type AuthUser,
 } from "./auth-api";
-import { loginDestination } from "./auth-navigation";
+import { loginDestination, type BackofficeHome } from "./auth-navigation";
 
 interface AuthContextValue {
+  homePath: BackofficeHome;
   user: AuthUser | null;
   initializing: boolean;
   error: string | null;
@@ -37,7 +38,7 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "No se pudo validar la sesion.";
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, homePath = "/" }: { children: ReactNode; homePath?: BackofficeHome }) {
   const [session, setSession] = useState<{ token: string; user: AuthUser } | null>(null);
   const user = session?.token === getToken() ? session.user : null;
   const [initializing, setInitializing] = useState(true);
@@ -51,9 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Evita que el guard compita con la redireccion que ya esta en curso.
     setInitializing(true);
     window.location.replace(
-      preserveDestination ? loginDestination(window.location.pathname) : "/login",
+      preserveDestination ? loginDestination(window.location.pathname, homePath) : "/login",
     );
-  }, []);
+  }, [homePath]);
 
   const resolveSession = useCallback(() => {
     const currentGeneration = ++generation.current;
@@ -143,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [endSession]);
 
   return (
-    <AuthContext value={{ user, initializing, error, login, logout, refreshSession }}>
+    <AuthContext value={{ homePath, user, initializing, error, login, logout, refreshSession }}>
       {children}
     </AuthContext>
   );

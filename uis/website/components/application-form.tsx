@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import { FieldError, SelectInput, TextareaInput, TextInput } from "@/components/form-field";
+import { FieldError, SelectInput, TextareaInput, TextInput } from "./form-field";
 
 type ApplicationValues = {
   nombre: string;

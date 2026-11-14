@@ -12,13 +12,13 @@ export function AuthGuard({
   children: ReactNode;
   allowedRoles?: readonly Role[];
 }) {
-  const { user, initializing, error, refreshSession } = useAuth();
+  const { homePath, user, initializing, error, refreshSession } = useAuth();
 
   useEffect(() => {
     if (!initializing && !error && !user) {
-      window.location.replace(loginDestination(window.location.pathname));
+      window.location.replace(loginDestination(window.location.pathname, homePath));
     }
-  }, [initializing, error, user]);
+  }, [homePath, initializing, error, user]);
 
   if (!user && (initializing || !error)) {
     return (
