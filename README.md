@@ -2,11 +2,11 @@
 
 Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain's internal workflows. It includes a coordinated backoffice for authentication, suppliers, incidents, inventory, and a synthetic-data talent tracking prototype, plus inventory replenishment utilities.
 
-This repository contains working prototypes, not a production-ready unified platform. A transitional Next.js frontend now combines the website, protected dashboard, and authentication/account pages; the original applications remain available, and business modules and APIs are still separate. Auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
+This repository contains working prototypes, not a production-ready deployment. One Next.js App Router frontend now combines the website, protected dashboard, authentication/account pages, and all five business modules. The original interfaces remain available for transition; the five backend APIs are still separate. Auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
 
 ## What’s included
 
-- **Integrated backoffice:** dashboard and account management, suppliers, incidents, CSV incident analysis, inventory, and talent. The launcher starts five APIs (auth, suppliers, incidents, inventory, talent) and six UIs (dashboard, suppliers, incident manager, incident analyzer, inventory, talent).
+- **Unified frontend:** website, dashboard and account management, suppliers, incidents, CSV incident analysis, inventory, and talent, served by one Next.js process. The launcher supports this frontend plus five APIs, or the original six-UI backoffice.
 - **Backend APIs:** FastAPI services for authentication, suppliers, incidents, and inventory. Authentication uses JWT; each API enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
 - **Talent pipeline tracker:** integrated at `/talent-pipeline-tracker`, restricted to admin/manager. Its API adapter uses the external 4Geeks prototype: synthetic data only, no local candidate persistence, vacancies, or onboarding.
 - **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
@@ -22,7 +22,7 @@ The repository does not yet provide an operational database shared across all do
 
 Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
 
-## Transitional unified frontend (phase 2)
+## Unified frontend (phase 3, including module migration)
 
 `uis/platform` uses App Router and runs alongside the original interfaces on
 **<http://localhost:3007>**:
@@ -31,6 +31,12 @@ Python environments are managed separately for each API. The integrated developm
 - `/backoffice`: protected dashboard.
 - `/login`, `/register`, `/forgot-password`, `/reset-password`, and `/account/*`:
   reused authentication and account views, with `/backoffice` as the new home.
+- `/suppliers`, `/incidents-analyzer`, `/incidents-manager`,
+  `/inventory-management`, and `/talent-pipeline-tracker`: real App Router
+  modules, including their existing subroutes. No original UI server is needed.
+
+All backoffice routes share one session provider. Module links stay on port
+3007 and return to `/backoffice`; `/` remains the public website.
 
 With the existing workspace dependencies available:
 
@@ -43,13 +49,26 @@ npm run typecheck:platform
 npm run start -w brasaland-platform
 ```
 
-`AUTH_API_URL` defaults to `http://localhost:8001`; the frontend does not start
-that API. `LEGACY_BACKOFFICE_URL` defaults to `http://localhost:3000`. Module
-cards and temporary redirects lead to that original backoffice until the
-modules are migrated. Both settings must be supplied at build time for production.
-Ports 3000 and 3007 are different origins: their sessions are not transferred,
-and entering the original backoffice may require another login. The existing
-`backoffice:dev` launcher is unchanged.
+Frontend-only commands do not start APIs. The server-side proxy settings are
+`AUTH_API_URL` (8001), `SUPPLIERS_API_URL` (8000), `INCIDENTS_API_URL` (8002),
+`INVENTORY_API_URL` (8003), and `TALENT_API_URL` (8004), defaulting to local
+services. Supply these settings at build time for production.
+`LEGACY_BACKOFFICE_URL` is no longer used by platform.
+
+With the existing API environments and required database configuration available,
+start one frontend and five APIs, without the original UI servers:
+
+```bash
+node scripts/backoffice.mjs platform-dev
+# In a second terminal:
+node scripts/backoffice.mjs platform-check
+```
+
+This mode uses **3007 and 8000-8004** and retains the launcher's local development
+JWT configuration. `Ctrl+C` stops its six processes. It does not configure or
+migrate a database. The original `backoffice:dev` mode remains available below.
+Sessions are not transferred between the original origin on 3000 and platform
+on 3007.
 
 **Dependency integration remains pending:** organizational content exclusions
 prevented updating the root lockfile. No repository dependency installation or
@@ -57,10 +76,11 @@ clean `npm ci` validation was performed for this increment. An authorized
 maintainer must reconcile the lockfile in a permitted environment before relying
 on a clean install or publishing this transition.
 
-See the [phase 2 report](./docs/FRONTEND_PHASE2.es.md) for scope, checks, limitations,
-and browser test instructions.
+See the [phase 3 report](./docs/FRONTEND_PHASE3.es.md) for implementation,
+verification results, remaining limitations, and browser test instructions.
+The [phase 2 report](./docs/FRONTEND_PHASE2.es.md) is historical.
 
-## Start the integrated backoffice
+## Start the original integrated backoffice (transition)
 
 From the repository root:
 

@@ -15,7 +15,7 @@ import {
   exportAnalysis,
   publicIncidentErrorMessage,
   type AnalysisResult,
-} from "@/lib/incidents-api";
+} from "../../lib/incidents-api";
 
 
 export default function IncidentsPage() {

@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ActionsCard } from "@/components/candidate-detail/actions-card";
-import { DetailTopBar } from "@/components/candidate-detail/detail-topbar";
-import { GeneralInfo } from "@/components/candidate-detail/general-info";
-import { HeroCard } from "@/components/candidate-detail/hero-card";
-import { NotesSection } from "@/components/candidate-detail/notes-section";
-import { ProcessInfo } from "@/components/candidate-detail/process-info";
-import { CandidateDetail } from "@/types/candidate-detail";
-import { publicErrorMessage, trackerFetch } from "@/utils/api";
+import { ActionsCard } from "../../../components/candidate-detail/actions-card";
+import { DetailTopBar } from "../../../components/candidate-detail/detail-topbar";
+import { GeneralInfo } from "../../../components/candidate-detail/general-info";
+import { HeroCard } from "../../../components/candidate-detail/hero-card";
+import { NotesSection } from "../../../components/candidate-detail/notes-section";
+import { ProcessInfo } from "../../../components/candidate-detail/process-info";
+import { CandidateDetail } from "../../../types/candidate-detail";
+import { publicErrorMessage, trackerFetch } from "../../../utils/api";
 
 export default function CandidateDetailPage() {
   const { id } = useParams<{ id: string }>();

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { toLabel } from "@/components/candidates/labels";
-import { stageOptions, statusOptions } from "@/types/candidates";
-import { publicErrorMessage, trackerFetch } from "@/utils/api";
+import { toLabel } from "../candidates/labels";
+import { stageOptions, statusOptions } from "../../types/candidates";
+import { publicErrorMessage, trackerFetch } from "../../utils/api";
 
 type ActionsCardProps = {
   id: string;

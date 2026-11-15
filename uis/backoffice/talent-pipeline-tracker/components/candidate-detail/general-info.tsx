@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import { CandidateDetail } from "@/types/candidate-detail";
+import { CandidateDetail } from "../../types/candidate-detail";
 import { SectionCard } from "./section-card";
 
 type GeneralInfoProps = {

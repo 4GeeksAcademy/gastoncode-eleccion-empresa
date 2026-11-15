@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { assertPortAvailable, root, services } from "./backoffice.mjs";
+import { assertPortAvailable, root, services, platformServices } from "./backoffice.mjs";
 
 test("launcher contains five APIs and six UIs with unique ports", () => {
   assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 8003, 3004, 3002, 3005, 3003, 8004]);
@@ -33,6 +33,51 @@ test("occupied ports are rejected without stopping the existing server", async (
     await assert.rejects(assertPortAvailable(server.address().port), /ocupado/);
     assert.equal(server.listening, true);
   } finally { await new Promise((resolve) => server.close(resolve)); }
+});
+
+test("platform-dev starts one frontend and five APIs, then SIGINT closes the set", { timeout: 30000 }, async () => {
+  for (const service of platformServices) await assertPortAvailable(service.port);
+  const directory = await mkdtemp(path.join(os.tmpdir(), "brasaland-platform-lifecycle-"));
+  const executable = `#!/usr/bin/env node
+const {createServer} = require("node:http");
+const args = process.argv.slice(2);
+const port = args.includes("--port") ? Number(args[args.indexOf("--port") + 1]) : 3007;
+if (!args.includes("--port") && args.join(" ") !== "run dev:platform") process.exit(2);
+createServer((req, res) => res.end("synthetic service")).listen(port, "127.0.0.1");
+`;
+  for (const name of ["npm", "uv"]) await writeFile(path.join(directory, name), executable, { mode: 0o700 });
+  const coordinator = spawn(process.execPath, ["scripts/backoffice.mjs", "platform-dev"], {
+    cwd: root,
+    env: { ...process.env, PATH: `${directory}${path.delimiter}${process.env.PATH}`, JWT_SECRET: "synthetic-lifecycle-secret" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let output = "";
+  let ready = false;
+  const finished = new Promise((resolve, reject) => {
+    coordinator.once("error", reject);
+    coordinator.once("exit", (code) => {
+      if (!ready || code !== 0) reject(new Error(`Platform lifecycle failed: ${output}`));
+      else resolve();
+    });
+  });
+  for (const stream of [coordinator.stdout, coordinator.stderr]) stream.on("data", (chunk) => {
+    output += chunk;
+    if (!ready && output.includes("Plataforma lista:")) {
+      ready = true;
+      coordinator.kill("SIGINT");
+    }
+  });
+  try {
+    await finished;
+    assert.match(output, /los 6 procesos/);
+    for (const service of platformServices) await assertPortAvailable(service.port);
+  } finally {
+    if (coordinator.exitCode === null) {
+      coordinator.kill("SIGTERM");
+      await new Promise((resolve) => coordinator.once("close", resolve));
+    }
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("SIGINT closes all services", { skip: process.env.BACKOFFICE_LIFECYCLE !== "1", timeout: 150000 }, async () => {

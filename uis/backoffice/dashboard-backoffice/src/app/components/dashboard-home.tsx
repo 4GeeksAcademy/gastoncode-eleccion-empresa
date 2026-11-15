@@ -7,7 +7,7 @@ import { SERVICES } from "../catalog/services";
 
 const AREAS = new Set(SERVICES.map((service) => service.area));
 
-export function DashboardHome({ serviceOrigin }: { serviceOrigin?: string }) {
+export function DashboardHome({ serviceOrigin, internalNavigation = false }: { serviceOrigin?: string; internalNavigation?: boolean }) {
   const services = serviceOrigin
     ? SERVICES.map((service) => ({ ...service, url: new URL(service.url, serviceOrigin).href }))
     : SERVICES;
@@ -47,12 +47,12 @@ export function DashboardHome({ serviceOrigin }: { serviceOrigin?: string }) {
         <section className="mt-12">
           <SectionHeading
             title="Servicios del backoffice"
-            subtitle="Cada tarjeta abre la app correspondiente en su propio origen."
+            subtitle={internalNavigation ? "Todas las herramientas comparten la misma aplicación y sesión." : "Cada tarjeta abre la app correspondiente en su propio origen."}
           />
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
-              <ServiceCard key={service.id} service={service} />
+              <ServiceCard key={service.id} service={service} internalNavigation={internalNavigation} />
             ))}
           </div>
         </section>

@@ -21,6 +21,10 @@ export const services = [
   { name: "talento", cwd: ".", command: "npm", args: ["run", "dev:talent"], port: 3003, health: "http://127.0.0.1:3003/talent-pipeline-tracker" },
   { name: "talent", cwd: "services/api-talent", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8004"], port: 8004, health: "http://127.0.0.1:8004/" },
 ];
+export const platformServices = [
+  ...services.filter((service) => service.port >= 8000),
+  { name: "platform", cwd: ".", command: "npm", args: ["run", "dev:platform"], port: 3007, health: "http://127.0.0.1:3007/" },
+];
 
 export async function assertPortAvailable(port) {
   await new Promise((resolve, reject) => {
@@ -60,6 +64,10 @@ async function health(url) {
 }
 
 export async function main(action) {
+  const unified = action === "platform-dev" || action === "platform-check";
+  const activeServices = unified ? platformServices : services;
+  const frontendUrl = unified ? "http://127.0.0.1:3007" : "http://127.0.0.1:3000";
+  if (unified) action = action.slice("platform-".length);
   if (action === "admin") {
     const email = process.argv[3];
     if (!email) throw new Error("Uso: npm run backoffice:admin -- email-de-cuenta-existente");
@@ -76,17 +84,17 @@ export async function main(action) {
     return;
   }
   if (action === "check") {
-    for (const service of services) {
+    for (const service of activeServices) {
       await health(service.health);
       console.log(`OK ${service.name}`);
     }
-    const response = await fetch("http://127.0.0.1:3000/api/auth/me", { signal: AbortSignal.timeout(5000) });
+    const response = await fetch(`${frontendUrl}/api/auth/me`, { signal: AbortSignal.timeout(5000) });
     if (response.status !== 401) throw new Error("Proxy auth: esperaba 401 sin token");
-    const incidents = await fetch("http://127.0.0.1:3000/api/incidents/summary", { signal: AbortSignal.timeout(5000) });
+    const incidents = await fetch(`${frontendUrl}/api/incidents/summary`, { signal: AbortSignal.timeout(5000) });
     if (incidents.status !== 401) throw new Error("Proxy incidencias: esperaba 401 sin token");
     const inventory = await fetch("http://127.0.0.1:8003/inventory/products", { signal: AbortSignal.timeout(5000) });
     if (inventory.status !== 401) throw new Error("API inventario: esperaba 401 sin token");
-    const talent = await fetch("http://127.0.0.1:3000/api/talent/records", { signal: AbortSignal.timeout(5000) });
+    const talent = await fetch(`${frontendUrl}/api/talent/records`, { signal: AbortSignal.timeout(5000) });
     if (talent.status !== 401) throw new Error("Proxy talento: esperaba 401 sin token");
     console.log("OK proxy talento protegido");
     console.log("OK proxy incidencias");
@@ -94,8 +102,8 @@ export async function main(action) {
     console.log("OK proxy auth. Las pruebas funcionales requieren cuentas de prueba aisladas.");
     return;
   }
-  if (action !== "dev") throw new Error("Uso: backoffice.mjs setup|dev|check|admin");
-  for (const service of services) await assertPortAvailable(service.port);
+  if (action !== "dev") throw new Error("Uso: backoffice.mjs setup|dev|check|admin|platform-dev|platform-check");
+  for (const service of activeServices) await assertPortAvailable(service.port);
   const env = {
     ...process.env,
     JWT_SECRET: await secret(),
@@ -110,7 +118,7 @@ export async function main(action) {
     INVENTORY_UI_URL: "http://127.0.0.1:3005",
     TALENT_UI_URL: "http://127.0.0.1:3003",
     TALENT_API_URL: "http://127.0.0.1:8004",
-    NEXT_PUBLIC_DASHBOARD_URL: "http://localhost:3000",
+    NEXT_PUBLIC_DASHBOARD_URL: unified ? "http://localhost:3007" : "http://localhost:3000",
     NEXT_PUBLIC_SUPPLIERS_UI_URL: "/suppliers",
   };
   const children = [];
@@ -127,7 +135,7 @@ export async function main(action) {
   };
   process.once("SIGINT", () => stop(0));
   process.once("SIGTERM", () => stop(0));
-  for (const service of services) {
+  for (const service of activeServices) {
     const child = spawn(service.command, service.args, { cwd: path.join(root, service.cwd), env: { ...env, ...service.env }, detached: true, stdio: ["ignore", "pipe", "pipe"] });
     children.push(child);
     for (const stream of [child.stdout, child.stderr]) {
@@ -140,8 +148,10 @@ export async function main(action) {
   const verify = async () => {
     if (stopping) return;
     try {
-      await Promise.all(services.map((service) => health(service.health)));
-      console.log(`Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, inventario: /inventory-management, talento: /talent-pipeline-tracker; APIs inventario: :8003, talento: :8004). Ctrl+C cierra los ${services.length} procesos.`);
+      await Promise.all(activeServices.map((service) => health(service.health)));
+      console.log(unified
+        ? `Plataforma lista: http://localhost:3007 (website: /; dashboard: /backoffice; cinco módulos y sesión única). Ctrl+C cierra los ${activeServices.length} procesos.`
+        : `Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, inventario: /inventory-management, talento: /talent-pipeline-tracker; APIs inventario: :8003, talento: :8004). Ctrl+C cierra los ${activeServices.length} procesos.`);
     } catch {
       if (stopping) return;
       if (Date.now() >= deadline) { console.error("El conjunto no estuvo disponible en 120 segundos."); stop(1); }

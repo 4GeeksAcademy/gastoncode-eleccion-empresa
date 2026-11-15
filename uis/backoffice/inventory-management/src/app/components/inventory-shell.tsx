@@ -8,14 +8,16 @@ import { useAuth } from "./auth-context";
 import { AuthProvider } from "./auth-context";
 import { AuthGuard } from "./auth-guard";
 import { SessionMenu } from "./session-menu";
+import { ModuleLink } from "../../../../auth-shared/module-link";
 
 const WRITE_ROLES: readonly Role[] = ["admin", "manager"];
 
-export function InventoryShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+export function InventoryShell({ children, embedded = false }: { children: ReactNode; embedded?: boolean }) {
+  const pathname = usePathname().replace(/^\/inventory-management(?=\/|$)/, "") || "/";
   const isLogin = pathname === "/login";
   const canWrite = pathname === "/inbound" || pathname.startsWith("/inbound/") || pathname === "/outbound" || pathname.startsWith("/outbound/");
   const allowedRoles = canWrite ? WRITE_ROLES : undefined;
+  if (embedded) return <ProtectedInventoryShell allowedRoles={allowedRoles}>{children}</ProtectedInventoryShell>;
   return (
     <AuthProvider>
       {isLogin ? children : <ProtectedInventoryShell allowedRoles={allowedRoles}>{children}</ProtectedInventoryShell>}
@@ -24,22 +26,21 @@ export function InventoryShell({ children }: { children: ReactNode }) {
 }
 
 function ProtectedInventoryShell({ children, allowedRoles }: { children: ReactNode; allowedRoles?: readonly Role[] }) {
-  const { user } = useAuth();
+  const { homePath, internalNavigation, user } = useAuth();
+  const HomeLink = internalNavigation ? Link : "a";
   return <AuthGuard allowedRoles={allowedRoles}>
     <nav className="navbar">
       <div className="navContent">
-        <Link href="/products" className="logo">BRASALAND</Link>
+        <ModuleLink basePath="/inventory-management" href="/products" className="logo">BRASALAND</ModuleLink>
         <div className="navLinks">
-          <Link href="/products">Productos</Link>
+          <ModuleLink basePath="/inventory-management" href="/products">Productos</ModuleLink>
           {(user?.role === "admin" || user?.role === "manager") && <>
-            <Link href="/inbound">Entrada</Link>
-            <Link href="/outbound">Salida</Link>
+            <ModuleLink basePath="/inventory-management" href="/inbound">Entrada</ModuleLink>
+            <ModuleLink basePath="/inventory-management" href="/outbound">Salida</ModuleLink>
           </>}
-          <Link href="/orders">Órdenes</Link>
+          <ModuleLink basePath="/inventory-management" href="/orders">Órdenes</ModuleLink>
           <SessionMenu />
-          {/* This root link exits the app's basePath and returns to the dashboard. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/" className="backLink">← Backoffice</a>
+          <HomeLink href={homePath} className="backLink">← Backoffice</HomeLink>
         </div>
       </div>
     </nav>

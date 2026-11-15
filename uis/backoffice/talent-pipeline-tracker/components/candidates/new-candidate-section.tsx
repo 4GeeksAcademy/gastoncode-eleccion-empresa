@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
-import { publicErrorMessage, trackerFetch } from "@/utils/api";
+import { publicErrorMessage, trackerFetch } from "../../utils/api";
 
 type FormValues = {
   full_name: string;

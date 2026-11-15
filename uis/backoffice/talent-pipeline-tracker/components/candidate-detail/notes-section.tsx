@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CandidateNote } from "@/types/candidate-detail";
-import { publicErrorMessage, trackerFetch } from "@/utils/api";
+import { CandidateNote } from "../../types/candidate-detail";
+import { publicErrorMessage, trackerFetch } from "../../utils/api";
 import { dateLabel } from "./date-label";
 import { SectionCard } from "./section-card";
 

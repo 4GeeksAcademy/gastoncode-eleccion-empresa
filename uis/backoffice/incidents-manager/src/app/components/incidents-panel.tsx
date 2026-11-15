@@ -10,13 +10,13 @@ import {
   type IncidentBranch,
   type IncidentOrigin,
   type IncidentStatus,
-} from "@/lib/incidents";
+} from "../../lib/incidents";
 import {
   fetchIncidents,
   IncidentRequestError,
   updateIncidentStatus,
   type IncidentFilters,
-} from "@/lib/incidents-api";
+} from "../../lib/incidents-api";
 
 type LoadState =
   | { kind: "loading" }

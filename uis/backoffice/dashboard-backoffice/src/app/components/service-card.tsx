@@ -2,8 +2,10 @@ import type { BackofficeService } from "../catalog/services";
 import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
 import { IconTile } from "./ui/icon-tile";
+import Link from "next/link";
 
-export function ServiceCard({ service }: { service: BackofficeService }) {
+export function ServiceCard({ service, internalNavigation = false }: { service: BackofficeService; internalNavigation?: boolean }) {
+  const ServiceLink = internalNavigation ? Link : "a";
   return (
     <Card className="group relative flex h-full flex-col gap-4 overflow-hidden p-5 transition hover:border-brasa-600/50 hover:bg-stone-900">
       <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-brasa-500/50 to-transparent opacity-0 transition group-hover:opacity-100" />
@@ -29,12 +31,12 @@ export function ServiceCard({ service }: { service: BackofficeService }) {
             {service.path}
           </p>
         </div>
-        <a
+        <ServiceLink
           href={service.url}
           className="shrink-0 rounded-lg bg-brasa-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-brasa-500"
         >
           Abrir
-        </a>
+        </ServiceLink>
       </div>
     </Card>
   );

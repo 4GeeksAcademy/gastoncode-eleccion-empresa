@@ -1,24 +1,27 @@
 import type { NextConfig } from "next";
 import path from "node:path";
-import { EXTERNAL_APP_PREFIXES } from "../backoffice/auth-shared/auth-navigation";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const authApiUrl = process.env.AUTH_API_URL ?? "http://localhost:8001";
-const legacyBackofficeUrl = process.env.LEGACY_BACKOFFICE_URL ?? "http://localhost:3000";
+const suppliersApiUrl = process.env.SUPPLIERS_API_URL ?? "http://localhost:8000";
+const incidentsApiUrl = process.env.INCIDENTS_API_URL ?? "http://127.0.0.1:8002";
+const inventoryApiUrl = process.env.INVENTORY_API_URL ?? "http://127.0.0.1:8003";
+const talentApiUrl = process.env.TALENT_API_URL ?? "http://127.0.0.1:8004";
 
 const nextConfig: NextConfig = {
   turbopack: { root },
   outputFileTracingRoot: root,
-  async redirects() {
-    return EXTERNAL_APP_PREFIXES.flatMap((prefix) => [
-      { source: prefix, destination: new URL(prefix, legacyBackofficeUrl).href, permanent: false },
-      { source: `${prefix}/:path+`, destination: new URL(`${prefix}/:path+`, legacyBackofficeUrl).href, permanent: false },
-    ]);
-  },
   async rewrites() {
-    return ["auth", "users", "profiles"].flatMap((resource) => [
-      { source: `/api/${resource}`, destination: `${authApiUrl}/${resource}` },
-      { source: `/api/${resource}/:path+`, destination: `${authApiUrl}/${resource}/:path+` },
+    const resources = [
+      ...["auth", "users", "profiles"].map((resource) => [resource, `${authApiUrl}/${resource}`]),
+      ["suppliers", `${suppliersApiUrl}/suppliers`],
+      ["incidents", `${incidentsApiUrl}/api/incidents`],
+      ["inventory", `${inventoryApiUrl}/inventory`],
+      ["talent", `${talentApiUrl}/talent`],
+    ];
+    return resources.flatMap(([resource, destination]) => [
+      { source: `/api/${resource}`, destination },
+      { source: `/api/${resource}/:path+`, destination: `${destination}/:path+` },
     ]);
   },
 };

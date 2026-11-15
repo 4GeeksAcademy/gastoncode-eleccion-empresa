@@ -1,5 +1,32 @@
 # Pruebas
 
+## Frontend unificado
+
+Con las dependencias existentes, desde la raiz:
+
+```bash
+npm run typecheck:platform
+npm run lint:platform
+npm run build:platform
+npm run start -w brasaland-platform
+# En otra terminal:
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
+# Solo con 8000-8004 libres y destinos locales en el build:
+node --test scripts/platform-proxy.test.mjs
+```
+
+El navegador usa APIs sinteticas: no necesita las UIs originales ni APIs
+reales. La suite contiene 72 casos y puede guardar 46 capturas con
+`PLATFORM_OUTPUT=/ruta/fuera/del/repositorio`. La suite HTTP crea cinco APIs
+sinteticas y contiene 19 casos; no debe ejecutarse junto a APIs reales.
+Para probar el launcher con `node --test scripts/backoffice.test.mjs`, detener
+tambien platform: su prueba sintetica de ciclo de vida reserva 3007 y 8000-8004.
+
+Resultados, diferencias visuales y fallos previos:
+[informe de fase 3](./docs/FRONTEND_PHASE3.es.md).
+El lockfile sigue pendiente de sincronizacion por un responsable autorizado;
+esta fase no acredita una instalacion limpia mediante `npm ci`.
+
 ## API de autenticación (Python)
 
 Requiere Python 3.14+ y `uv`. Desde la raíz del monorepo, prepara las dependencias. Ejecuta pytest desde el directorio del servicio para limitar la colección a esta API:

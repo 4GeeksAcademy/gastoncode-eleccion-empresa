@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ModuleLink } from "../../../auth-shared/module-link";
 
 
 export default function Home() {
@@ -26,12 +26,13 @@ export default function Home() {
         </p>
 
 
-        <Link
+        <ModuleLink
+          basePath="/incidents-analyzer"
           href="/incidents"
           className="button"
         >
           Analizar incidencias
-        </Link>
+        </ModuleLink>
 
       </section>
 

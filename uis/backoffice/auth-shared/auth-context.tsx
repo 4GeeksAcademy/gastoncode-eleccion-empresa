@@ -24,6 +24,7 @@ import { loginDestination, type BackofficeHome } from "./auth-navigation";
 
 interface AuthContextValue {
   homePath: BackofficeHome;
+  internalNavigation: boolean;
   user: AuthUser | null;
   initializing: boolean;
   error: string | null;
@@ -38,7 +39,7 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "No se pudo validar la sesion.";
 }
 
-export function AuthProvider({ children, homePath = "/" }: { children: ReactNode; homePath?: BackofficeHome }) {
+export function AuthProvider({ children, homePath = "/", internalNavigation = false }: { children: ReactNode; homePath?: BackofficeHome; internalNavigation?: boolean }) {
   const [session, setSession] = useState<{ token: string; user: AuthUser } | null>(null);
   const user = session?.token === getToken() ? session.user : null;
   const [initializing, setInitializing] = useState(true);
@@ -144,7 +145,7 @@ export function AuthProvider({ children, homePath = "/" }: { children: ReactNode
   }, [endSession]);
 
   return (
-    <AuthContext value={{ homePath, user, initializing, error, login, logout, refreshSession }}>
+    <AuthContext value={{ homePath, internalNavigation, user, initializing, error, login, logout, refreshSession }}>
       {children}
     </AuthContext>
   );

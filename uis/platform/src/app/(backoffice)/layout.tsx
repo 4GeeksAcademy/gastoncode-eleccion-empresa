@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function BackofficeLayout({ children }: { children: React.ReactNode }) {
   return (
     <div data-platform-area="backoffice" className={`${styles.backoffice} ${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col bg-stone-950 text-stone-200 antialiased`}>
-      <AuthProvider homePath="/backoffice">{children}</AuthProvider>
+      <AuthProvider homePath="/backoffice" internalNavigation>{children}</AuthProvider>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import SupplierList from '../components/supplier-list';
 import SupplierForm from '../components/supplier-form';
 import RateDialog from '../components/rate-dialog';
 import DeleteDialog from '../components/delete-dialog';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -30,7 +31,8 @@ export default function Home() {
 }
 
 function SuppliersDashboard() {
-  const { user, logout } = useAuth();
+  const { homePath, internalNavigation, user, logout } = useAuth();
+  const HomeLink = internalNavigation ? Link : 'a';
   const canWrite = user?.role === 'admin' || user?.role === 'manager';
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -196,15 +198,15 @@ function SuppliersDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="/"
+            <HomeLink
+              href={homePath}
               aria-label="Volver al backoffice"
               title="Volver al backoffice"
               className="rounded-lg border border-stone-700 px-3 py-2 text-sm font-medium text-stone-300 transition hover:bg-stone-800"
             >
               <span className="sm:hidden" aria-hidden="true">←</span>
               <span className="hidden sm:inline">← Backoffice</span>
-            </a>
+            </HomeLink>
             <span className="hidden text-xs text-stone-500 sm:inline">
               {user?.email}
               <span className="ml-2 rounded bg-stone-800 px-1.5 py-0.5 uppercase tracking-wide text-stone-400">

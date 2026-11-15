@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Candidate } from "@/types/candidates";
+import { ModuleLink } from "../../../auth-shared/module-link";
+import { Candidate } from "../../types/candidates";
 import { initials, timeAgo } from "./labels";
 import { StatusPill } from "./status-pill";
 
@@ -9,7 +9,7 @@ type CandidateCardProps = {
 
 export function CandidateCard({ item }: CandidateCardProps) {
   return (
-    <Link href={`/candidates/${item.id}`} className="block">
+    <ModuleLink basePath="/talent-pipeline-tracker" href={`/candidates/${item.id}`} className="block">
       <article className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface-2)] p-5 shadow-[0_16px_40px_var(--shadow-card)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-3)]">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -31,6 +31,6 @@ export function CandidateCard({ item }: CandidateCardProps) {
           <StatusPill value={item.status} />
         </div>
       </article>
-    </Link>
+    </ModuleLink>
   );
 }

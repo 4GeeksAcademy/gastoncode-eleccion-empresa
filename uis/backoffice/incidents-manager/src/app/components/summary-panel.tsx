@@ -7,8 +7,8 @@ import {
   ORIGIN_OPTIONS,
   STATUS_OPTIONS,
   type IncidentSummary,
-} from "@/lib/incidents";
-import { IncidentRequestError, fetchSummary } from "@/lib/incidents-api";
+} from "../../lib/incidents";
+import { IncidentRequestError, fetchSummary } from "../../lib/incidents-api";
 
 type LoadState =
   | { kind: "loading" }

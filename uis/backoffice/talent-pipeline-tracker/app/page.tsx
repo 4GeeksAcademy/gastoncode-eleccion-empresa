@@ -2,15 +2,15 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CandidateGrid } from "@/components/candidates/candidate-grid";
-import { NewCandidateSection } from "@/components/candidates/new-candidate-section";
-import { PageHeader } from "@/components/candidates/page-header";
-import { TopBar } from "@/components/candidates/top-bar";
-import { RecordsResponse } from "@/types/candidates";
-import { publicErrorMessage, trackerFetch } from "@/utils/api";
-import { FilterBar } from "@/utils/candidates/filter-bar";
-import { Pagination } from "@/utils/candidates/pagination";
-import { paginationParams } from "@/utils/candidates/pagination-params";
+import { CandidateGrid } from "../components/candidates/candidate-grid";
+import { NewCandidateSection } from "../components/candidates/new-candidate-section";
+import { PageHeader } from "../components/candidates/page-header";
+import { TopBar } from "../components/candidates/top-bar";
+import { RecordsResponse } from "../types/candidates";
+import { publicErrorMessage, trackerFetch } from "../utils/api";
+import { FilterBar } from "../utils/candidates/filter-bar";
+import { Pagination } from "../utils/candidates/pagination";
+import { paginationParams } from "../utils/candidates/pagination-params";
 
 export default function Home() {
   return <Suspense fallback={<p role="status">Cargando candidaturas...</p>}><CandidatesPage /></Suspense>;

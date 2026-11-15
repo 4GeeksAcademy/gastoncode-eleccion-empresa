@@ -7,8 +7,8 @@ import {
   ORIGIN_OPTIONS,
   type IncidentField,
   type IncidentInput,
-} from "@/lib/incidents";
-import { GENERIC_ERROR, IncidentRequestError, createIncident } from "@/lib/incidents-api";
+} from "../../lib/incidents";
+import { GENERIC_ERROR, IncidentRequestError, createIncident } from "../../lib/incidents-api";
 
 type FormValues = Record<IncidentField, string>;
 type FieldErrors = Partial<Record<IncidentField, string>>;

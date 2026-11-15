@@ -1,5 +1,5 @@
-import { toLabel } from "@/components/candidates/labels";
-import { CandidateDetail } from "@/types/candidate-detail";
+import { toLabel } from "../candidates/labels";
+import { CandidateDetail } from "../../types/candidate-detail";
 import { dateLabel } from "./date-label";
 import { SectionCard } from "./section-card";
 

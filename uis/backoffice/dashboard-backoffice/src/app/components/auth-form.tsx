@@ -20,7 +20,7 @@ export function AuthLoading() {
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const isRegister = mode === "register";
-  const { homePath, user, initializing, error: sessionError, login, refreshSession } = useAuth();
+  const { homePath, internalNavigation, user, initializing, error: sessionError, login, refreshSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const destination = safeAuthDestination(searchParams.get("next"), homePath);
@@ -34,10 +34,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   useEffect(() => {
     if (!initializing && user) {
-      if (isExternalAppPath(new URL(destination, window.location.origin).pathname)) window.location.replace(destination);
+      if (!internalNavigation && isExternalAppPath(new URL(destination, window.location.origin).pathname)) window.location.replace(destination);
       else router.replace(destination);
     }
-  }, [initializing, user, destination, router]);
+  }, [homePath, internalNavigation, initializing, user, destination, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

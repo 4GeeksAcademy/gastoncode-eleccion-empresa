@@ -1,0 +1,5 @@
+import { moduleLogin } from "@/lib/module-login";
+
+export default function ManagerLogin({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
+  return moduleLogin(searchParams, "/incidents-manager");
+}

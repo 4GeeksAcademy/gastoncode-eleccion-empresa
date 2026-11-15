@@ -1,23 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useTrackerTheme } from "../../utils/use-tracker-theme";
 import { SessionControls } from "../session-controls";
 
-const THEME_KEY = "brasaland-theme";
-
 export function TopBar() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    window.localStorage.setItem(THEME_KEY, next);
-  };
+  const { theme, toggleTheme } = useTrackerTheme();
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border-strong)] bg-[var(--background)]/95 backdrop-blur">

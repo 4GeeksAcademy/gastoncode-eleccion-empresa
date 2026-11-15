@@ -2,7 +2,7 @@ export const EXTERNAL_APP_PREFIXES = ["/suppliers", "/incidents-manager", "/inci
 
 export type BackofficeHome = "/" | "/backoffice";
 
-/** Rutas servidas por otra app Next.js en este mismo origen; requieren recarga completa. */
+/** Solo las UIs originales necesitan recarga completa al entrar en estos módulos. */
 export function isExternalAppPath(pathname: string): boolean {
   return EXTERNAL_APP_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }

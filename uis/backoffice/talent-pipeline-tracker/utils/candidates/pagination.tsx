@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ModuleLink } from "../../../auth-shared/module-link";
 
 type PaginationProps = {
   page: number;
@@ -18,9 +18,9 @@ export function Pagination(props: PaginationProps) {
 
   return (
     <nav className="mt-6 flex items-center justify-between rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] p-3 text-sm text-[var(--text-muted)]">
-      <Link className={linkClass(page <= 1)} href={makeUrl({ page: prev, limit, stage, status, search, email })}>Anterior</Link>
+      <ModuleLink basePath="/talent-pipeline-tracker" className={linkClass(page <= 1)} href={makeUrl({ page: prev, limit, stage, status, search, email })}>Anterior</ModuleLink>
       <p>Página {page} de {totalPages}</p>
-      <Link className={linkClass(page >= totalPages)} href={makeUrl({ page: next, limit, stage, status, search, email })}>Siguiente</Link>
+      <ModuleLink basePath="/talent-pipeline-tracker" className={linkClass(page >= totalPages)} href={makeUrl({ page: next, limit, stage, status, search, email })}>Siguiente</ModuleLink>
     </nav>
   );
 }

@@ -21,11 +21,45 @@ resultados, defectos previos, aislamiento y comandos de reproduccion.
 - `baseline-recovery.py`: ensayo offline de copia, corrupcion y restauracion de
   cuatro archivos TinyDB generados temporalmente. No acepta bases existentes.
 
-`platform.browser.test.mjs` valida el frontend unificado de transicion en el
-puerto 3007: website, dashboard protegido, puente de sesion/cuenta y enlaces a
-los modulos originales. Usa APIs sinteticas y permite guardar 22 capturas fuera
-del repositorio con `PLATFORM_OUTPUT`. Requisitos y resultados en el
-[informe de fase 2](../docs/FRONTEND_PHASE2.es.md).
+`platform.browser.test.mjs` valida el frontend unificado en 3007: website,
+dashboard, sesion/cuenta y los cinco modulos reales. Comprueba navegacion SPA,
+roles, acceso directo/recarga, escrituras con contratos existentes, upload y
+descarga CSV, logout entre pestanas y aislamiento de estilos/tema. Usa APIs
+sinteticas y permite guardar 46 capturas fuera del repositorio con
+`PLATFORM_OUTPUT`. Comparte fixtures sinteticos con la linea base mediante
+`backoffice-fixtures.mjs`.
+
+`platform-proxy.test.mjs` comprueba el transporte HTTP real desde platform a
+cinco servidores sinteticos locales: rutas exactas/subrutas, query, Bearer,
+PATCH JSON, multipart, descarga, 401 y `platform-check`. Requiere platform ya
+iniciado y los puertos **8000-8004 libres**; rechaza puertos ocupados y cierra
+los servidores que crea. No ejecutarlo contra una plataforma conectada a APIs
+reales ni simultaneamente con el launcher integrado.
+
+```bash
+npm run build:platform
+npm run start -w brasaland-platform
+# En otra terminal, solo con las APIs reales detenidas:
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
+node --test scripts/platform-proxy.test.mjs
+```
+
+`PLATFORM_URL` permite cambiar el origen (3007 por defecto). Para las pruebas de
+proxy, el build debe usar los destinos locales predeterminados.
+Los resultados y limites se documentan en el
+[informe de fase 3](../docs/FRONTEND_PHASE3.es.md).
+
+## Launcher unificado
+
+`node scripts/backoffice.mjs platform-dev` inicia platform y las cinco APIs:
+seis procesos, puertos 3007 y 8000-8004, sin UIs originales ni website separado.
+Requiere los entornos existentes y la configuracion de base de datos de las APIs.
+`platform-check` verifica su disponibilidad y las respuestas protegidas sin
+token. Ambos modos conservan `dev`, `check`, `setup` y `admin` originales.
+
+La prueba de ciclo de vida en `backoffice.test.mjs` utiliza ejecutables/servidores
+sinteticos temporales para comprobar arranque y cierre sin acceder a bases,
+correo o proveedores. Necesita 3007 y 8000-8004 libres.
 
 ## Pruebas de navegador con instalacion temporal
 

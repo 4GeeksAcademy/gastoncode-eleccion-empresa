@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk, Libre_Caslon_Text } from "next/font/google";
 import "./globals.css";
-import { TalentShell } from "@/components/talent-shell";
+import { TalentShell } from "../components/talent-shell";
 
 const heading = Libre_Caslon_Text({
   variable: "--font-brand",

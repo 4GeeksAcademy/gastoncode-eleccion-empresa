@@ -1,5 +1,8 @@
 # Fase 2: frontend unico de transicion
 
+Informe historico. La [fase 3](./FRONTEND_PHASE3.es.md) sustituye las
+redirecciones a UIs originales por rutas integradas y una sesion unica.
+
 Fecha de validacion: 2026-11-14.
 Revision inicial de aplicaciones: `5eb3ba92e0d8f17bb7e237644f6799ef95027e4c`.
 
