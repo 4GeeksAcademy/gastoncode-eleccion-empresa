@@ -16,12 +16,18 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from packages.incidents_analysis.analyzer import clean, validate_row
+import sys
+from pathlib import Path
 
-Incident = importlib.import_module("services.api-incidents.models").Incident
+# Añadir packages/ al sys.path para importar incidents_analysis
+_PACKAGES = Path(__file__).resolve().parents[1] / "packages"
+if str(_PACKAGES) not in sys.path:
+    sys.path.insert(0, str(_PACKAGES))
+
+from incidents_analysis.analyzer import clean, validate_row
 
 DEFAULT_CSV = ROOT / "scripts" / "incidents-brasaland.csv"
-DEFAULT_DB = ROOT / "services" / "api-incidents" / "incidents.json"
+DEFAULT_DB = ROOT / "services" / "api-unified" / "data" / "incidents.json"
 
 STATUS_MAP = {"OPEN": "open", "CLOSED": "resolved", "DISCARDED": "discarded"}
 CATEGORY_MAP = {

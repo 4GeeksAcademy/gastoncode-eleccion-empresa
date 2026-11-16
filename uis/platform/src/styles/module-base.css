@@ -1,0 +1,21 @@
+/* Plain-CSS modules did not use Tailwind's preflight in their original apps. */
+@layer base {
+  :is([data-platform-module="analyzer"], [data-platform-module="manager"], [data-platform-module="inventory"]),
+  :is([data-platform-module="analyzer"], [data-platform-module="manager"], [data-platform-module="inventory"]) *,
+  :is([data-platform-module="analyzer"], [data-platform-module="manager"], [data-platform-module="inventory"]) ::file-selector-button,
+  :is([data-platform-module="analyzer"], [data-platform-module="manager"], [data-platform-module="inventory"]) ::placeholder {
+    all: revert;
+  }
+}
+
+:is([data-platform-module="analyzer"], [data-platform-module="manager"], [data-platform-module="inventory"]) {
+  line-height: normal;
+}
+
+[data-platform-module] {
+  min-height: 100vh;
+}
+
+[data-platform-module="talent"] {
+  font-family: var(--font-ui), sans-serif;
+}
