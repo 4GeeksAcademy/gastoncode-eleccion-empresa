@@ -6,8 +6,8 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+import bcrypt
 from pydantic import BaseModel, ConfigDict, Field
-from passlib.hash import bcrypt
 
 from app.modules.auth.auth import get_current_user, require_roles
 from app.modules.auth.services import (
@@ -74,7 +74,7 @@ def register(data: UserCreate):
     user = {
         "id": user_id,
         "email": data.email,
-        "hashed_password": bcrypt.hash(data.password),
+        "hashed_password": bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
         "is_active": True,
         "role": "user",
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -119,7 +119,7 @@ def edit_user(user_id: str, data: UserUpdate, current_user: dict = Depends(get_c
         if existing_user and existing_user["id"] != user_id:
             raise HTTPException(status_code=400, detail="El email ya está registrado")
     if "password" in changes:
-        changes["hashed_password"] = bcrypt.hash(changes.pop("password"))
+        changes["hashed_password"] = bcrypt.hashpw(changes.pop("password").encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     if "role" in changes:
         if current_user["role"] != "admin":
             raise HTTPException(status_code=403, detail="Solo un admin puede cambiar roles")

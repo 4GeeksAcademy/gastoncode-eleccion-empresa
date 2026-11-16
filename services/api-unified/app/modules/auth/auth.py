@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import bcrypt
 from jose import JWTError, jwt
-from passlib.hash import bcrypt
 from pydantic import BaseModel, EmailStr
 
 from app.modules.auth.email_service import send_reset_email
@@ -81,7 +81,7 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
     user = get_user_by_email(form.username)
     if not user:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
-    if not bcrypt.verify(form.password, user["hashed_password"]):
+    if not bcrypt.checkpw(form.password.encode("utf-8"), user["hashed_password"].encode("utf-8")):
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
     if not user.get("is_active", True):
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
@@ -177,7 +177,7 @@ def reset_password(data: ResetPasswordRequest):
         raise HTTPException(status_code=400, detail="El enlace no es válido o ha expirado")
     now_iso = datetime.now(timezone.utc).isoformat()
     updated_user = update_password_and_invalidate_reset_tokens(user_id, {
-        "hashed_password": bcrypt.hash(data.password),
+        "hashed_password": bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
         "password_changed_at": now_iso,
     })
     if updated_user is None:
@@ -187,13 +187,13 @@ def reset_password(data: ResetPasswordRequest):
 
 @router.post("/change-password")
 def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
-    if not bcrypt.verify(data.current_password, current_user["hashed_password"]):
+    if not bcrypt.checkpw(data.current_password.encode("utf-8"), current_user["hashed_password"].encode("utf-8")):
         raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")
     if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="La nueva contraseña debe tener al menos 8 caracteres")
     now_iso = datetime.now(timezone.utc).isoformat()
     updated_user = update_password_and_invalidate_reset_tokens(current_user["id"], {
-        "hashed_password": bcrypt.hash(data.new_password),
+        "hashed_password": bcrypt.hashpw(data.new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
         "password_changed_at": now_iso,
     })
     if updated_user is None:
