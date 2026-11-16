@@ -9,10 +9,13 @@ from pydantic import BaseModel, Field
 
 
 class IncidentCategory(str, Enum):
-    SAFETY = "safety"
-    QUALITY = "quality"
-    SERVICE = "service"
-    EQUIPMENT = "equipment"
+    EQUIPMENT_FAILURE = "equipment_failure"
+    SUPPLY_ISSUE = "supply_issue"
+    CUSTOMER_COMPLAINT = "customer_complaint"
+    STAFF_ISSUE = "staff_issue"
+    FACILITY_ISSUE = "facility_issue"
+    POS_SYSTEM = "pos_system"
+    DELIVERY_ISSUE = "delivery_issue"
     OTHER = "other"
 
 
@@ -20,20 +23,31 @@ class IncidentStatus(str, Enum):
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
-    CLOSED = "closed"
+    DISCARDED = "discarded"
 
 
 class IncidentOrigin(str, Enum):
-    CLIENT = "client"
+    CUSTOMER = "customer"
+    BRANCH = "branch"
     INTERNAL = "internal"
-    SUPPLIER = "supplier"
 
 
 class IncidentBranch(str, Enum):
-    CHAPINERO = "chapinero"
-    USAQUEN = "usaquen"
-    MODELIA = "modelia"
-    PORTAL_80 = "portal_80"
+    CENTRAL = "central"
+    MEDELLIN_CENTRO = "medellin_centro"
+    MEDELLIN_LAURELES = "medellin_laureles"
+    MEDELLIN_ENVIGADO = "medellin_envigado"
+    MEDELLIN_BELLO = "medellin_bello"
+    MEDELLIN_ITAGUI = "medellin_itagui"
+    BOGOTA_CHAPINERO = "bogota_chapinero"
+    BOGOTA_USAQUEN = "bogota_usaquen"
+    CALI_GRANADA = "cali_granada"
+    BARRANQUILLA_NORTE = "barranquilla_norte"
+    MIAMI_DORAL = "miami_doral"
+    MIAMI_HIALEAH = "miami_hialeah"
+    MIAMI_KENDALL = "miami_kendall"
+    ORLANDO_INTERNATIONAL = "orlando_international"
+    FORT_LAUDERDALE = "fort_lauderdale"
 
 
 class IncidentCreate(BaseModel):
@@ -64,9 +78,11 @@ class Incident(BaseModel):
 
 
 class IncidentSummary(BaseModel):
-    category: str
-    count: int
-    branch: str
+    total: int
+    by_status: dict[str, int]
+    by_category: dict[str, int]
+    by_origin: dict[str, int]
+    by_branch: dict[str, int]
 
 
 # Analysis models

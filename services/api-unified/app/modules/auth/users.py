@@ -71,12 +71,14 @@ def register(data: UserCreate):
     if get_user_by_email(data.email):
         raise HTTPException(status_code=400, detail="El email ya está registrado")
     user_id = str(uuid4())
+    # El primer usuario registrado obtiene rol admin automáticamente
+    first_user = len(get_all_users()) == 0
     user = {
         "id": user_id,
         "email": data.email,
         "hashed_password": bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
         "is_active": True,
-        "role": "user",
+        "role": "admin" if first_user else "user",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "password_changed_at": None,
     }

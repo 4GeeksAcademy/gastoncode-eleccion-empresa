@@ -10,6 +10,7 @@ from collections import OrderedDict
 from pathlib import Path
 from threading import Lock
 from time import time
+from datetime import datetime
 from uuid import uuid4
 
 from fastapi import Depends, File, HTTPException, Query, UploadFile
@@ -70,7 +71,7 @@ _cache_lock = Lock()
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 router = __import__("fastapi").APIRouter(
-    prefix="/api/incidents",
+    prefix="/api",
     tags=["Incidents"],
     dependencies=[Depends(require_roles(["admin", "manager"]))],
 )
@@ -121,6 +122,7 @@ def list_incidents(
     status: IncidentStatus | None = None,
     category: IncidentCategory | None = None,
     branch: IncidentBranch | None = None,
+    origin: IncidentOrigin | None = None,
     _user: dict = Depends(get_current_user),
 ):
     incidents = _load_incidents()
@@ -130,6 +132,8 @@ def list_incidents(
         incidents = [i for i in incidents if i["category"] == category.value]
     if branch:
         incidents = [i for i in incidents if i["branch"] == branch.value]
+    if origin:
+        incidents = [i for i in incidents if i["origin"] == origin.value]
     return incidents
 
 
@@ -153,6 +157,20 @@ def create_incident(data: IncidentCreate, current_user: dict = Depends(get_curre
     incidents.append(incident)
     _save_incidents(incidents)
     return incident
+
+
+@router.patch("/incidents/{incident_id}/status", tags=["Incidents"])
+def update_incident_status_by_id(incident_id: str, data: IncidentStatusUpdate, current_user: dict = Depends(get_current_user)):
+    idx, incident = _find_incident(incident_id)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+    incidents = _load_incidents()
+    incidents[idx]["status"] = data.status.value
+    incidents[idx]["updated_at"] = time()
+    if data.comment:
+        incidents[idx]["resolution_comment"] = data.comment
+    _save_incidents(incidents)
+    return incidents[idx]
 
 
 @router.patch("/incidents/{incident_id}", tags=["Incidents"])
@@ -180,7 +198,7 @@ def delete_incident(incident_id: str, _user: dict = Depends(require_roles(["admi
     return deleted
 
 
-@router.get("/summary", tags=["Incidents"])
+@router.get("/incidents/summary", tags=["Incidents"])
 def get_summary(
     branch: IncidentBranch | None = None,
     _user: dict = Depends(get_current_user),
@@ -188,23 +206,39 @@ def get_summary(
     incidents = _load_incidents()
     if branch:
         incidents = [i for i in incidents if i["branch"] == branch.value]
-    counts: dict[str, dict[str, int]] = {}
+
+    total = len(incidents)
+
+    by_status: dict[str, int] = {}
+    by_category: dict[str, int] = {}
+    by_origin: dict[str, int] = {}
+    by_branch: dict[str, int] = {}
+
     for inc in incidents:
+        s = inc["status"]
+        by_status[s] = by_status.get(s, 0) + 1
+
         cat = inc["category"]
+        by_category[cat] = by_category.get(cat, 0) + 1
+
+        o = inc["origin"]
+        by_origin[o] = by_origin.get(o, 0) + 1
+
         br = inc["branch"]
-        if cat not in counts:
-            counts[cat] = {}
-        counts[cat][br] = counts[cat].get(br, 0) + 1
-    result = []
-    for cat, branches in counts.items():
-        for br, cnt in branches.items():
-            result.append(IncidentSummary(category=cat, count=cnt, branch=br))
-    return result
+        by_branch[br] = by_branch.get(br, 0) + 1
+
+    return IncidentSummary(
+        total=total,
+        by_status=by_status,
+        by_category=by_category,
+        by_origin=by_origin,
+        by_branch=by_branch,
+    )
 
 
 # ── Endpoints: Analysis (CSV Upload) ─────────────────────────
 
-@router.post("/analyze", response_model=AnalysisResponse, tags=["Analysis"])
+@router.post("/incidents/analyze", response_model=AnalysisResponse, tags=["Analysis"])
 def upload_and_analyze(
     file: UploadFile = File(...),
     title: str = Query(default="", max_length=200),
@@ -245,7 +279,7 @@ def upload_and_analyze(
     return AnalysisResponse.model_validate(analysis)
 
 
-@router.get("/analyze", response_model=list[AnalysisListItem], tags=["Analysis"])
+@router.get("/incidents/analyze", response_model=list[AnalysisListItem], tags=["Analysis"])
 def list_analyses(_user: dict = Depends(get_current_user)):
     docs = ANALYSES_TABLE.all()
     docs.sort(key=lambda d: d.get("created_at", ""), reverse=True)
@@ -255,7 +289,7 @@ def list_analyses(_user: dict = Depends(get_current_user)):
     ]
 
 
-@router.get("/analyze/{analysis_id}", response_model=AnalysisResponse, tags=["Analysis"])
+@router.get("/incidents/analyze/{analysis_id}", response_model=AnalysisResponse, tags=["Analysis"])
 def get_analysis(analysis_id: str, _user: dict = Depends(get_current_user)):
     cached = _cache_get(analysis_id)
     if cached:
@@ -267,7 +301,7 @@ def get_analysis(analysis_id: str, _user: dict = Depends(get_current_user)):
     return AnalysisResponse.model_validate(doc)
 
 
-@router.get("/analyze/{analysis_id}/csv", tags=["Analysis"])
+@router.get("/incidents/analyze/{analysis_id}/csv", tags=["Analysis"])
 def download_analysis_csv(analysis_id: str, _user: dict = Depends(get_current_user)):
     doc = ANALYSES_TABLE.get(AnalysisQuery().id == analysis_id)
     if not doc:
