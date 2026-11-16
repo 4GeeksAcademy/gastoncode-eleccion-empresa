@@ -5,6 +5,6 @@ Lógica Python compartida para la validación y análisis del CSV de incidencias
 Es utilizada tanto por:
 
 - `scripts/analyze.py`
-- `services/api-incidents/main.py`
+- La API unificada (`services/api-unified`), que hereda la ruta de incidencias
 
 Esto evita duplicar la lógica de negocio.

@@ -98,13 +98,14 @@ Chromium 145, no una matriz completa de motores/versiones.
 Se eliminan las redirecciones de platform hacia el backoffice original y la
 dependencia de `LEGACY_BACKOFFICE_URL`. Solo se mantienen proxies de APIs:
 
-| Variable del servidor | Destino predeterminado | Rutas en platform |
+| Variable del servidor | Destino predeterminado (anterior) | Rutas en platform |
 | --- | --- | --- |
-| `AUTH_API_URL` | `http://localhost:8001` | `/api/auth`, `/api/users`, `/api/profiles` y subrutas |
-| `SUPPLIERS_API_URL` | `http://localhost:8000` | `/api/suppliers` y subrutas |
-| `INCIDENTS_API_URL` | `http://127.0.0.1:8002` | `/api/incidents` y subrutas; conserva `/api/incidents` en el backend |
-| `INVENTORY_API_URL` | `http://127.0.0.1:8003` | `/api/inventory` y subrutas hacia `/inventory` |
-| `TALENT_API_URL` | `http://127.0.0.1:8004` | `/api/talent` y subrutas hacia `/talent` |
+| `UNIFIED_API_URL` | `http://127.0.0.1:8005` | `/api/*` completo (auth, suppliers, incidents, inventory, talent) |
+
+> Las variables individuales [`AUTH_API_URL`, `SUPPLIERS_API_URL`, `INCIDENTS_API_URL`,
+> `INVENTORY_API_URL`, `TALENT_API_URL`] eran el destino de los servicios legacy,
+> ahora eliminados. El frontend actual usa `UNIFIED_API_URL` o el rewrite
+> predeterminado hacia el puerto 8005.
 
 Estas variables no son publicas. Deben configurarse **antes del build** de
 produccion; cambiarlas solo al arrancar no actualiza los rewrites compilados.
@@ -114,15 +115,15 @@ dominio por error.
 Con los entornos existentes y la configuracion de APIs disponible:
 
 ```bash
-# Un frontend y cinco APIs, sin UIs antiguas:
-node scripts/backoffice.mjs platform-dev
+# Un frontend y una API unificada, sin servicios legacy:
+node scripts/backoffice.mjs dev
 # En otra terminal:
-node scripts/backoffice.mjs platform-check
+node scripts/backoffice.mjs check
 ```
 
 Website: `http://localhost:3007/`. Dashboard:
-`http://localhost:3007/backoffice`. Requiere libres 3007 y 8000-8004.
-`Ctrl+C` cierra los seis procesos. El modo conserva la configuracion local de
+`http://localhost:3007/backoffice`. Requiere libres 3007 y 8005.
+`Ctrl+C` cierra los dos procesos. El modo conserva la configuracion local de
 JWT del launcher; no prepara bases ni sustituye gestion de secretos productiva.
 Inventario sigue necesitando la configuracion PostgreSQL de su API.
 
@@ -137,8 +138,7 @@ npm run build:platform
 npm run start -w brasaland-platform
 ```
 
-Los modos originales `dev`, `check`, `setup` y `admin` siguen disponibles.
-Las sesiones de 3000 y 3007 no se transfieren: son origenes distintos.
+Los modos `dev`, `check`, `setup` y `admin` siguen disponibles.
 
 ## Validacion y evidencias
 
@@ -225,7 +225,7 @@ PLATFORM_OUTPUT=/ruta/fuera/del/repositorio \
 node --test scripts/platform-proxy.test.mjs
 ```
 
-El segundo comando necesita 8000-8004 libres y los destinos locales
+El segundo comando necesita 8005 libre y los destinos locales
 predeterminados en el build. No usarlo junto al launcher real. El runner de
 navegador instala herramientas temporales, no dependencias del repositorio, y
 necesita las bibliotecas de Chromium. En esta ejecucion se descargaron y

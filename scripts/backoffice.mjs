@@ -8,21 +8,7 @@ import { fileURLToPath } from "node:url";
 
 export const root = fileURLToPath(new URL("../", import.meta.url));
 export const services = [
-  { name: "auth", cwd: "services/api-auth", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8001"], port: 8001, health: "http://127.0.0.1:8001/" },
-  { name: "suppliers", cwd: "services/api-suppliers", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"], port: 8000, health: "http://127.0.0.1:8000/" },
-  { name: "dashboard", cwd: ".", command: "npm", args: ["run", "dev:dashboard"], port: 3000, health: "http://127.0.0.1:3000/login" },
-  { name: "proveedores", cwd: ".", command: "npm", args: ["run", "dev:suppliers"], port: 3001, health: "http://127.0.0.1:3001/suppliers" },
-  // PYTHONPATH apunta a la raiz para resolver packages.incidents_analysis.
-  { name: "incidents", cwd: "services/api-incidents", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8002", "--workers", "1"], port: 8002, health: "http://127.0.0.1:8002/", env: { PYTHONPATH: root } },
-  { name: "inventory", cwd: "services/api-inventory", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8003"], port: 8003, health: "http://127.0.0.1:8003/" },
-  { name: "incidencias", cwd: ".", command: "npm", args: ["run", "dev:incidents-manager"], port: 3004, health: "http://127.0.0.1:3004/incidents-manager" },
-  { name: "analizador", cwd: ".", command: "npm", args: ["run", "dev:incidents"], port: 3002, health: "http://127.0.0.1:3002/incidents-analyzer" },
-  { name: "inventario", cwd: ".", command: "npm", args: ["run", "dev:inventory-management"], port: 3005, health: "http://127.0.0.1:3005/inventory-management" },
-  { name: "talento", cwd: ".", command: "npm", args: ["run", "dev:talent"], port: 3003, health: "http://127.0.0.1:3003/talent-pipeline-tracker" },
-  { name: "talent", cwd: "services/api-talent", command: "uv", args: ["run", "--no-sync", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8004"], port: 8004, health: "http://127.0.0.1:8004/" },
-];
-export const platformServices = [
-  ...services.filter((service) => service.port >= 8000),
+  { name: "unified-api", cwd: "services/api-unified", command: "uv", args: ["run", "--no-sync", "uvicorn", "app.main:create_app", "--factory", "--host", "127.0.0.1", "--port", "8005"], port: 8005, health: "http://127.0.0.1:8005/health" },
   { name: "platform", cwd: ".", command: "npm", args: ["run", "dev:platform"], port: 3007, health: "http://127.0.0.1:3007/" },
 ];
 
@@ -64,23 +50,19 @@ async function health(url) {
 }
 
 export async function main(action) {
-  const unified = action === "platform-dev" || action === "platform-check";
-  const activeServices = unified ? platformServices : services;
-  const frontendUrl = unified ? "http://127.0.0.1:3007" : "http://127.0.0.1:3000";
-  if (unified) action = action.slice("platform-".length);
+  const activeServices = services;
+  const frontendUrl = "http://127.0.0.1:3007";
   if (action === "admin") {
     const email = process.argv[3];
     if (!email) throw new Error("Uso: npm run backoffice:admin -- email-de-cuenta-existente");
-    for (const service of services.slice(0, 2)) await assertPortAvailable(service.port);
-    await run("uv", ["run", "--no-sync", "python", "promote_admin.py", email], path.join(root, "services/api-auth"));
+    await assertPortAvailable(8005);
+    await run("uv", ["run", "--no-sync", "python", "-m", "app.modules.auth.promote_admin", email], path.join(root, "services/api-unified"));
     return;
   }
   if (action === "setup") {
     await run("npm", ["install", "--package-lock=false"]);
-    for (const directory of ["services/api-auth", "services/api-suppliers", "services/api-incidents", "services/api-inventory", "services/api-talent"]) {
-      await run("uv", ["sync"], path.join(root, directory));
-    }
-    console.log("Entornos preparados. No se modificaron bases ni se ejecutaron seeds.");
+    await run("uv", ["sync"], path.join(root, "services/api-unified"));
+    console.log("Entorno preparado. No se modificaron bases ni se ejecutaron seeds.");
     return;
   }
   if (action === "check") {
@@ -92,33 +74,22 @@ export async function main(action) {
     if (response.status !== 401) throw new Error("Proxy auth: esperaba 401 sin token");
     const incidents = await fetch(`${frontendUrl}/api/incidents/summary`, { signal: AbortSignal.timeout(5000) });
     if (incidents.status !== 401) throw new Error("Proxy incidencias: esperaba 401 sin token");
-    const inventory = await fetch("http://127.0.0.1:8003/inventory/products", { signal: AbortSignal.timeout(5000) });
-    if (inventory.status !== 401) throw new Error("API inventario: esperaba 401 sin token");
+    const inventory = await fetch(`${frontendUrl}/api/inventory/products`, { signal: AbortSignal.timeout(5000) });
+    if (inventory.status !== 401) throw new Error("Proxy inventario: esperaba 401 sin token");
     const talent = await fetch(`${frontendUrl}/api/talent/records`, { signal: AbortSignal.timeout(5000) });
     if (talent.status !== 401) throw new Error("Proxy talento: esperaba 401 sin token");
     console.log("OK proxy talento protegido");
     console.log("OK proxy incidencias");
-    console.log("OK API inventario protegido");
+    console.log("OK proxy inventario protegido");
     console.log("OK proxy auth. Las pruebas funcionales requieren cuentas de prueba aisladas.");
     return;
   }
-  if (action !== "dev") throw new Error("Uso: backoffice.mjs setup|dev|check|admin|platform-dev|platform-check");
+  if (action !== "dev") throw new Error("Uso: backoffice.mjs setup|dev|check|admin");
   for (const service of activeServices) await assertPortAvailable(service.port);
   const env = {
     ...process.env,
     JWT_SECRET: await secret(),
-    AUTH_SERVICE_URL: "http://127.0.0.1:8001",
-    AUTH_API_URL: "http://127.0.0.1:8001",
-    SUPPLIERS_API_URL: "http://127.0.0.1:8000",
-    INVENTORY_API_URL: "http://127.0.0.1:8003",
-    SUPPLIERS_UI_URL: "http://127.0.0.1:3001",
-    INCIDENTS_API_URL: "http://127.0.0.1:8002",
-    INCIDENTS_MANAGER_UI_URL: "http://127.0.0.1:3004",
-    INCIDENTS_UI_URL: "http://127.0.0.1:3002",
-    INVENTORY_UI_URL: "http://127.0.0.1:3005",
-    TALENT_UI_URL: "http://127.0.0.1:3003",
-    TALENT_API_URL: "http://127.0.0.1:8004",
-    NEXT_PUBLIC_DASHBOARD_URL: unified ? "http://localhost:3007" : "http://localhost:3000",
+    UNIFIED_API_URL: "http://127.0.0.1:8005",
     NEXT_PUBLIC_SUPPLIERS_UI_URL: "/suppliers",
   };
   const children = [];
@@ -149,9 +120,7 @@ export async function main(action) {
     if (stopping) return;
     try {
       await Promise.all(activeServices.map((service) => health(service.health)));
-      console.log(unified
-        ? `Plataforma lista: http://localhost:3007 (website: /; dashboard: /backoffice; cinco módulos y sesión única). Ctrl+C cierra los ${activeServices.length} procesos.`
-        : `Backoffice listo: http://localhost:3000 (proveedores: /suppliers, incidencias: /incidents-manager, analizador: /incidents-analyzer, inventario: /inventory-management, talento: /talent-pipeline-tracker; APIs inventario: :8003, talento: :8004). Ctrl+C cierra los ${activeServices.length} procesos.`);
+      console.log(`Plataforma lista: http://localhost:3007 (website: /; dashboard: /backoffice; API unificada en :8005). Ctrl+C cierra los ${activeServices.length} procesos.`);
     } catch {
       if (stopping) return;
       if (Date.now() >= deadline) { console.error("El conjunto no estuvo disponible en 120 segundos."); stop(1); }

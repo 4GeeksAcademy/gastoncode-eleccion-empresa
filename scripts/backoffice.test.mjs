@@ -5,25 +5,16 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { assertPortAvailable, root, services, platformServices } from "./backoffice.mjs";
+import { assertPortAvailable, root, services } from "./backoffice.mjs";
 
-test("launcher contains five APIs and six UIs with unique ports", () => {
-  assert.deepEqual(services.map((service) => service.port), [8001, 8000, 3000, 3001, 8002, 8003, 3004, 3002, 3005, 3003, 8004]);
-  assert.equal(new Set(services.map((service) => service.port)).size, 11);
-  assert.equal(services[0].cwd, "services/api-auth");
-  assert.equal(services[1].cwd, "services/api-suppliers");
-  assert.equal(services[4].cwd, "services/api-incidents");
-  assert.equal(services[4].env.PYTHONPATH, root);
-  assert.equal(services[5].cwd, "services/api-inventory");
-  assert.deepEqual(services[4].args.slice(-2), ["--workers", "1"]);
-  assert.equal(services[7].health, "http://127.0.0.1:3002/incidents-analyzer");
-  assert.equal(services[8].cwd, ".");
-  assert.deepEqual(services[8].args, ["run", "dev:inventory-management"]);
-  assert.equal(services[8].health, "http://127.0.0.1:3005/inventory-management");
-  assert.deepEqual(services[9].args, ["run", "dev:talent"]);
-  assert.equal(services[9].health, "http://127.0.0.1:3003/talent-pipeline-tracker");
-  assert.equal(services[10].cwd, "services/api-talent");
-  assert.equal(services[10].port, 8004);
+test("launcher contains unified API and platform with unique ports", () => {
+  assert.deepEqual(services.map((service) => service.port), [8005, 3007]);
+  assert.equal(new Set(services.map((service) => service.port)).size, 2);
+  assert.equal(services[0].cwd, "services/api-unified");
+  assert.equal(services[0].health, "http://127.0.0.1:8005/health");
+  assert.deepEqual(services[0].args.slice(-2), ["--port", "8005"]);
+  assert.equal(services[1].health, "http://127.0.0.1:3007/");
+  assert.equal(services[1].args[0], "run");
 });
 
 test("occupied ports are rejected without stopping the existing server", async () => {
@@ -35,8 +26,8 @@ test("occupied ports are rejected without stopping the existing server", async (
   } finally { await new Promise((resolve) => server.close(resolve)); }
 });
 
-test("platform-dev starts one frontend and five APIs, then SIGINT closes the set", { timeout: 30000 }, async () => {
-  for (const service of platformServices) await assertPortAvailable(service.port);
+test("launcher starts platform and unified API, then SIGINT closes the set", { timeout: 30000 }, async () => {
+  for (const service of services) await assertPortAvailable(service.port);
   const directory = await mkdtemp(path.join(os.tmpdir(), "brasaland-platform-lifecycle-"));
   const executable = `#!/usr/bin/env node
 const {createServer} = require("node:http");
@@ -46,7 +37,7 @@ if (!args.includes("--port") && args.join(" ") !== "run dev:platform") process.e
 createServer((req, res) => res.end("synthetic service")).listen(port, "127.0.0.1");
 `;
   for (const name of ["npm", "uv"]) await writeFile(path.join(directory, name), executable, { mode: 0o700 });
-  const coordinator = spawn(process.execPath, ["scripts/backoffice.mjs", "platform-dev"], {
+  const coordinator = spawn(process.execPath, ["scripts/backoffice.mjs", "dev"], {
     cwd: root,
     env: { ...process.env, PATH: `${directory}${path.delimiter}${process.env.PATH}`, JWT_SECRET: "synthetic-lifecycle-secret" },
     stdio: ["ignore", "pipe", "pipe"],
@@ -69,8 +60,8 @@ createServer((req, res) => res.end("synthetic service")).listen(port, "127.0.0.1
   });
   try {
     await finished;
-    assert.match(output, /los 6 procesos/);
-    for (const service of platformServices) await assertPortAvailable(service.port);
+    assert.match(output, /los 2 procesos/);
+    for (const service of services) await assertPortAvailable(service.port);
   } finally {
     if (coordinator.exitCode === null) {
       coordinator.kill("SIGTERM");

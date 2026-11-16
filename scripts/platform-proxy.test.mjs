@@ -4,38 +4,42 @@ import test, { after, before } from "node:test";
 import { assertPortAvailable, main } from "./backoffice.mjs";
 
 const base = process.env.PLATFORM_URL ?? "http://localhost:3007";
-const services = [
-  [8001, "auth"], [8000, "suppliers"], [8002, "incidents"], [8003, "inventory"], [8004, "talent"],
-];
+const UNIFIED_PORT = 8005;
 const servers = [];
 before(async () => {
-  for (const [port] of services) await assertPortAvailable(port);
-  for (const [port, service] of services) {
-    const server = createServer(async (request, response) => {
-      const url = new URL(request.url, "http://synthetic.invalid");
-      const chunks = [];
-      for await (const chunk of request) chunks.push(chunk);
-      if (url.pathname === "/api/incidents/results/export") {
-        response.writeHead(200, { "content-type": "text/csv", "content-disposition": 'attachment; filename="synthetic.csv"' });
-        response.end("status\nopen\n");
-        return;
-      }
-      const protectedPaths = ["/auth/me", "/api/incidents/summary", "/inventory/products", "/talent/records"];
-      const unauthorized = url.searchParams.has("unauthorized") || (!request.headers.authorization && protectedPaths.includes(url.pathname));
-      response.writeHead(unauthorized ? 401 : 200, { "content-type": "application/json" });
-      response.end(JSON.stringify({
-        service, method: request.method, path: url.pathname, search: url.search,
-        authorization: request.headers.authorization,
-        contentType: request.headers["content-type"],
-        body: Buffer.concat(chunks).toString(),
-      }));
-    });
-    await new Promise((resolve, reject) => {
-      server.once("error", reject);
-      server.listen(port, "127.0.0.1", resolve);
-    });
-    servers.push(server);
-  }
+  await assertPortAvailable(UNIFIED_PORT);
+  const server = createServer(async (request, response) => {
+    const url = new URL(request.url, "http://synthetic.invalid");
+    const chunks = [];
+    for await (const chunk of request) chunks.push(chunk);
+    if (url.pathname === "/api/incidents/results/export") {
+      response.writeHead(200, { "content-type": "text/csv", "content-disposition": 'attachment; filename="synthetic.csv"' });
+      response.end("status\nopen\n");
+      return;
+    }
+    // Map the unified API paths to service identifiers
+    let service = "unknown";
+    if (url.pathname.startsWith("/auth")) service = "auth";
+    else if (url.pathname.startsWith("/suppliers")) service = "suppliers";
+    else if (url.pathname.startsWith("/api/incidents")) service = "incidents";
+    else if (url.pathname.startsWith("/inventory")) service = "inventory";
+    else if (url.pathname.startsWith("/talent")) service = "talent";
+
+    const protectedPaths = ["/auth/me", "/api/incidents/summary", "/inventory/products", "/talent/records"];
+    const unauthorized = url.searchParams.has("unauthorized") || (!request.headers.authorization && protectedPaths.includes(url.pathname));
+    response.writeHead(unauthorized ? 401 : 200, { "content-type": "application/json" });
+    response.end(JSON.stringify({
+      service, method: request.method, path: url.pathname, search: url.search,
+      authorization: request.headers.authorization,
+      contentType: request.headers["content-type"],
+      body: Buffer.concat(chunks).toString(),
+    }));
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(UNIFIED_PORT, "127.0.0.1", resolve);
+  });
+  servers.push(server);
 });
 after(async () => {
   await Promise.all(servers.map((server) => new Promise((resolve, reject) => {
@@ -45,7 +49,7 @@ after(async () => {
 });
 
 for (const [resource, service, backend] of [
-  ["auth", "auth", "/auth"], ["users", "auth", "/users"], ["profiles", "auth", "/profiles"],
+  ["auth", "auth", "/auth"], ["users", "auth", "/auth/users"], ["profiles", "auth", "/auth/profiles"],
   ["suppliers", "suppliers", "/suppliers"], ["incidents", "incidents", "/api/incidents"],
   ["inventory", "inventory", "/inventory"], ["talent", "talent", "/talent"],
 ]) {
@@ -103,6 +107,6 @@ test("platform real proxy preserves upstream 401 without success fallbacks", asy
   assert.equal(result.service, "auth");
 });
 
-test("platform-check validates the unified origin with five synthetic APIs", async () => {
-  await main("platform-check");
+test("platform-check validates the unified origin", async () => {
+  await main("check");
 });

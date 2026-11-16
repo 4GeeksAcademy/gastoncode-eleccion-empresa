@@ -1,2 +1,0 @@
-# DEPRECATED: use pyproject.toml + uv sync instead
-# Dependencies are now declared in pyproject.toml

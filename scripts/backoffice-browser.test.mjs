@@ -44,7 +44,7 @@ test("one origin, one login, permissions, revocation and logout across both appl
     }
     const promoted = spawnSync("uv", ["run", "--no-sync", "python", "-c",
       "import json,sys;from tinydb import TinyDB,Query;db=TinyDB(sys.argv[1]);table=db.table('users');[(table.update({'role':account['role']},Query().id==account['id'])) for account in json.loads(sys.argv[2])];db.close()",
-      database, JSON.stringify(accounts.map(({ id, role }) => ({ id, role })))], { cwd: path.join(root, "services/api-auth"), encoding: "utf8" });
+      database, JSON.stringify(accounts.map(({ id, role }) => ({ id, role })))], { cwd: path.join(root, "services/api-unified"), encoding: "utf8" });
     assert.equal(promoted.status, 0, promoted.stderr);
     adminToken = await apiLogin(accounts[0]);
     const managerToken = await apiLogin(accounts[1]);

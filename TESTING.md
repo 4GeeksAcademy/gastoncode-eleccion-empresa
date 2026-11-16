@@ -11,33 +11,33 @@ npm run build:platform
 npm run start -w brasaland-platform
 # En otra terminal:
 node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
-# Solo con 8000-8004 libres y destinos locales en el build:
+# Solo con 8005 libre y destino local en el build:
 node --test scripts/platform-proxy.test.mjs
 ```
 
 El navegador usa APIs sinteticas: no necesita las UIs originales ni APIs
 reales. La suite contiene 72 casos y puede guardar 46 capturas con
-`PLATFORM_OUTPUT=/ruta/fuera/del/repositorio`. La suite HTTP crea cinco APIs
-sinteticas y contiene 19 casos; no debe ejecutarse junto a APIs reales.
-Para probar el launcher con `node --test scripts/backoffice.test.mjs`, detener
-tambien platform: su prueba sintetica de ciclo de vida reserva 3007 y 8000-8004.
+`PLATFORM_OUTPUT=/ruta/fuera/del/repositorio`. La suite HTTP crea una API
+sintetica unificada y contiene 19 casos; no debe ejecutarse junto a la API
+real. Para probar el launcher con `node --test scripts/backoffice.test.mjs`,
+detener tambien platform: su prueba sintetica de ciclo de vida reserva 3007 y 8005.
 
 Resultados, diferencias visuales y fallos previos:
 [informe de fase 3](./docs/FRONTEND_PHASE3.es.md).
 El lockfile sigue pendiente de sincronizacion por un responsable autorizado;
 esta fase no acredita una instalacion limpia mediante `npm ci`.
 
-## API de autenticación (Python)
+## API unificada (Python)
 
-Requiere Python 3.14+ y `uv`. Desde la raíz del monorepo, prepara las dependencias. Ejecuta pytest desde el directorio del servicio para limitar la colección a esta API:
+Requiere Python 3.14+ y `uv`. Desde la raíz del monorepo:
 
 ```bash
-uv sync --project services/api-auth --group test
-cd services/api-auth
-uv run pytest
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- python -m unittest discover -s services/api-unified/tests -v
 ```
 
-La suite invoca la lógica de los endpoints directamente (sin probar el transporte ni la serialización HTTP), utiliza una base TinyDB temporal y no llama a servicios de correo externos.
+La suite ejecuta tests de humo sobre la aplicacion unificada de forma aislada,
+sin depender de los servicios legacy eliminados.
 
 ## Lógica de autenticación (TypeScript)
 
@@ -48,30 +48,16 @@ npm install
 npx jest --coverage
 ```
 
-Jest descubre pruebas en `uis/backoffice/auth-shared` y `lib/`. Incluye pruebas de navegación/guard de autenticación, cliente de inventario (cabeceras Bearer, payload e historial) y clasificación de stock; las pruebas simulan `fetch` y el almacenamiento local del navegador. La cobertura HTML se genera en `coverage/`. El comando existente es `npm run test:auth:ts` (el nombre se conserva por compatibilidad aunque ya cubre también `lib/`); para una ejecución serial se puede usar `npm run test:auth:ts -- --runInBand`.
-
-Las comprobaciones de integración de las UIs de inventario son independientes:
-
-```bash
-npm run lint -w inventory-management
-npm run build -w inventory-management
-```
-
-La compilación valida tipos y rutas de la aplicación; las pruebas Jest no reemplazan una prueba E2E con servicios y base de datos reales.
+Jest descubre pruebas en `lib/`. Incluye pruebas del cliente de inventario
+(cabeceras Bearer, payload e historial) y clasificación de stock; las pruebas
+simulan `fetch` y el almacenamiento local del navegador. La cobertura HTML se
+genera en `coverage/`.
 
 ## Talento integrado
 
 ```bash
-node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/talent-pipeline-tracker/tests/talent-api.test.mjs
-uv sync --project services/api-talent --group test
-uv run --directory services/api-talent --group test python -m unittest discover -s tests -v
-npm run lint -w talent-pipeline-tracker
-npm run build -w talent-pipeline-tracker
-node scripts/browser-tests.mjs scripts/talent.browser.test.mjs
+node --test scripts/backoffice.test.mjs
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- python -m unittest discover -s services/api-unified/tests -v
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
 ```
-
-La API simula identidad y proveedor; el cliente simula fetch y localStorage.
-El navegador requiere dashboard y tracker iniciados, simula las APIs y genera
-capturas en /tmp. No envía candidatos a 4Geeks ni toca bases reales. Chromium
-necesita sus bibliotecas del sistema: la ejecución actual quedó bloqueada por
-libatk-1.0.so.0 ausente. Detener desarrollo antes del build.

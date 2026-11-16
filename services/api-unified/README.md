@@ -1,8 +1,9 @@
 # Brasaland Unified API
 
-Aplicación FastAPI paralela para comenzar la consolidación de los cinco
-servicios actuales. En esta fase reutiliza las aplicaciones existentes y sus
-persistencias, sin retirarlas ni cambiar sus despliegues.
+Aplicación FastAPI que consolida los cinco dominios actuales
+(auth, suppliers, incidents, inventory, talent) en un solo servicio.
+Reemplaza a los proyectos `api-auth`, `api-suppliers`, `api-incidents`,
+`api-inventory` y `api-talent`, que han sido eliminados.
 
 ## Requisitos y configuración
 
@@ -18,17 +19,26 @@ persistencias, sin retirarlas ni cambiar sus despliegues.
 
 ## Ejecución local
 
-Desde la raíz del monorepo:
+Desde la raíz del monorepo, usando el launcher (recomendado):
+
+```sh
+node scripts/backoffice.mjs setup
+node scripts/backoffice.mjs dev
+```
+
+La API unificada se inicia en el puerto **8005** junto con el frontend (3007).
+
+O desde la raíz del monorepo directamente:
 
 ```sh
 uv run --project services/api-unified uvicorn main:app \
-  --app-dir services/api-unified --reload --port 8010
+  --app-dir services/api-unified --reload --port 8005
 ```
 
 O desde `services/api-unified`:
 
 ```sh
-uv run uvicorn main:app --reload --port 8010
+uv run uvicorn main:app --reload --port 8005
 ```
 
 La app combina rutas de auth, suppliers, incidents, inventory y talent. Las
@@ -37,10 +47,16 @@ servicios de dominio sustituyen la consulta HTTP a `api-auth` por una
 dependencia de identidad en proceso; talento conserva la restricción de roles
 admin/manager.
 
+## Tests
+
+```sh
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- python -m unittest discover -s services/api-unified/tests -v
+```
+
 ## Alcance y limitaciones de esta etapa
 
-- Los cinco servicios originales permanecen intactos y se pueden ejecutar por
-  separado.
+- No se requiere ninguno de los servicios legacy para funcionar.
 - No se migra ni cambia TinyDB o PostgreSQL.
 - La app importa los módulos legacy en aislamiento para evitar las colisiones
   de nombres genéricos (`auth`, `main`, `models`, `database`). Este adaptador es

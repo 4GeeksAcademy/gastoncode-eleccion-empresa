@@ -178,18 +178,19 @@ npm run typecheck:platform
 npm run start -w brasaland-platform
 ```
 
-| Variable del servidor | Valor predeterminado | Uso |
+| Variable del servidor | Valor predeterminado (anterior) | Uso |
 | --- | --- | --- |
-| `AUTH_API_URL` | `http://localhost:8001` | API de identidad, usuarios y perfiles |
-| `LEGACY_BACKOFFICE_URL` | `http://localhost:3000` | Catalogo y redirecciones a modulos originales |
+| `UNIFIED_API_URL` | `http://127.0.0.1:8005` | API unificada (auth, suppliers, incidents, inventory, talent) |
+
+> Las variables `AUTH_API_URL` (8001) y `LEGACY_BACKOFFICE_URL` (3000)
+> corresponden a servicios legacy que ya no existen.
 
 Estas variables no llevan prefijo `NEXT_PUBLIC_`. Sus valores deben estar
 definidos durante el build de produccion porque las redirecciones/rewrites y
 el catalogo se generan en esa fase; cambiarlas solo al arrancar no basta.
 
-Platform no inicia APIs. El launcher `backoffice:dev` permanece sin cambios:
-cinco APIs y seis UIs. El website original sigue en 3006 y platform en 3007.
-El script raiz `dev`, que usa `dev:*`, incluye ahora tambien platform.
+Platform no inicia APIs. El launcher `dev` inicia la API unificada (8005)
+y platform (3007).
 
 ## Validacion
 
