@@ -1,1 +1,1 @@
-export { default } from "@analyzer/app/incidents/page";
+export { default } from "@/modules/incidents-analyzer/incidents/page";

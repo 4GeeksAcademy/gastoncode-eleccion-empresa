@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "@talent/app/error";
+export { default } from "@/modules/talent/error";

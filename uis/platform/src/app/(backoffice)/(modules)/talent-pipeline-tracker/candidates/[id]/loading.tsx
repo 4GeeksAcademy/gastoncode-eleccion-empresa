@@ -1,1 +1,1 @@
-export { default } from "@talent/app/candidates/[id]/loading";
+export { default } from "@/modules/talent/candidates/[id]/loading";

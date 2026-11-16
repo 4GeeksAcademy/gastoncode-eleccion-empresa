@@ -1,1 +1,1 @@
-export { default } from "@talent/app/loading";
+export { default } from "@/modules/talent/loading";

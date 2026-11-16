@@ -1,5 +1,5 @@
 @import "tailwindcss" source(none);
-@import "@brasaland/theme/tailwind.css";
+@import "../styles/tailwind-bridge.css";
 @import "../styles/analyzer.css";
 @import "../styles/manager.css";
 @import "../styles/inventory.css";
@@ -7,14 +7,6 @@
 @import "../styles/module-base.css";
 
 @source "../";
-@source "../../../website/app";
-@source "../../../website/components";
-@source "../../../backoffice/dashboard-backoffice/src/app";
-@source "../../../backoffice/auth-shared";
-@source "../../../backoffice/suppliers-management/src";
-@source "../../../backoffice/talent-pipeline-tracker/app";
-@source "../../../backoffice/talent-pipeline-tracker/components";
-@source "../../../backoffice/talent-pipeline-tracker/utils";
 
 @theme inline {
   --font-mono: var(--font-geist-mono, ui-monospace, monospace);

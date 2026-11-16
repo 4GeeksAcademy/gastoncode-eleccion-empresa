@@ -1,4 +1,4 @@
-import { AuthGuard } from "@auth/auth-guard";
+import { AuthGuard } from "@/lib/auth/auth-guard";
 import { ModuleFrame } from "@/components/module-frame";
 
 const ROLES = ["admin", "manager"] as const;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ModuleFrame } from "@/components/module-frame";
-import SessionMenu from "@manager/app/components/session-menu";
+import SessionMenu from "@/modules/incidents-manager/components/session-menu";
 
 export const metadata = { title: "Brasaland · Gestor de incidencias" };
 

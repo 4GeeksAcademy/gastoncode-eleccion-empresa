@@ -1,0 +1,65 @@
+/*
+ * Tokens visuales de Brasaland en CSS plano, para que los consuman tanto las
+ * apps con Tailwind como las que usan hojas de estilo propias.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Brasa: el naranja de la parrilla */
+  --bl-brasa-50: #fff7ed;
+  --bl-brasa-100: #ffedd5;
+  --bl-brasa-200: #fed7aa;
+  --bl-brasa-300: #fdba74;
+  --bl-brasa-400: #fb923c;
+  --bl-brasa-500: #f97316;
+  --bl-brasa-600: #ea580c;
+  --bl-brasa-700: #c2410c;
+  --bl-brasa-800: #9a3412;
+  --bl-brasa-900: #7c2d12;
+
+  /* Carbón: fondos y superficies */
+  --bl-bg: #0c0a09;
+  --bl-surface: #1c1917;
+  --bl-surface-2: #292524;
+  --bl-border: #292524;
+  --bl-border-strong: #44403c;
+
+  --bl-text: #e7e5e4;
+  --bl-text-muted: #a8a29e;
+  --bl-text-subtle: #78716c;
+
+  --bl-accent: var(--bl-brasa-500);
+  --bl-accent-strong: var(--bl-brasa-600);
+  --bl-accent-contrast: #ffffff;
+
+  --bl-danger-bg: rgba(220, 38, 38, 0.12);
+  --bl-danger-text: #fca5a5;
+  --bl-success-text: #6ee7b7;
+
+  --bl-shadow-card: rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --bl-bg: #f5f1ec;
+  --bl-surface: #ffffff;
+  --bl-surface-2: #f1ece5;
+  --bl-border: #e0d8ce;
+  --bl-border-strong: #c4b5a5;
+
+  --bl-text: #2a2018;
+  --bl-text-muted: #6b5c4d;
+  --bl-text-subtle: #8a7a69;
+
+  --bl-accent: var(--bl-brasa-600);
+  --bl-accent-strong: var(--bl-brasa-700);
+  --bl-accent-contrast: #fff7ed;
+
+  --bl-danger-bg: #feecec;
+  --bl-danger-text: #a12020;
+  --bl-success-text: #047857;
+
+  --bl-shadow-card: rgba(94, 60, 24, 0.14);
+}

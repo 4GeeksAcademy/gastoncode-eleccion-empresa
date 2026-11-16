@@ -1,1 +1,1 @@
-export { default } from "@inventory/app/products/page";
+export { default } from "@/modules/inventory/products/page";

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { safeAuthDestination } from "@auth/auth-navigation";
+import { safeAuthDestination } from "@/lib/auth/auth-navigation";
 
 export async function moduleLogin(searchParams: Promise<{ next?: string | string[] }>, fallback: string) {
   const { next } = await searchParams;

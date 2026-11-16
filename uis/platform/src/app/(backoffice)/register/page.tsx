@@ -1,1 +1,1 @@
-export { default } from "@dashboard/register/page";
+export { default } from "@/backoffice/register/page";

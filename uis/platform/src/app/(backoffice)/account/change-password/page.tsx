@@ -1,1 +1,1 @@
-export { default } from "@dashboard/account/change-password/page";
+export { default } from "@/backoffice/account/change-password/page";

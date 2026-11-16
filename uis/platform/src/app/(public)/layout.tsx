@@ -1,4 +1,4 @@
-import { restaurantStructuredData, websiteMetadata } from "@website/lib/site-metadata";
+import { restaurantStructuredData, websiteMetadata } from "@/website/lib/site-metadata";
 import styles from "./public.module.css";
 
 export const metadata = websiteMetadata;

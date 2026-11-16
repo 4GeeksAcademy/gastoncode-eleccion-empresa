@@ -1,1 +1,1 @@
-export { default } from "@manager/app/incidents/page";
+export { default } from "@/modules/incidents-manager/incidents/page";

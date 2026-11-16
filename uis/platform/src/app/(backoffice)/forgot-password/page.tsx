@@ -1,1 +1,1 @@
-export { default } from "@dashboard/forgot-password/page";
+export { default } from "@/backoffice/forgot-password/page";

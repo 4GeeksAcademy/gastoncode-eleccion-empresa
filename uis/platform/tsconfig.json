@@ -16,15 +16,6 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@website/*": ["../website/*"],
-      "@dashboard/*": ["../backoffice/dashboard-backoffice/src/app/*"],
-      "@auth/*": ["../backoffice/auth-shared/*"],
-      "@suppliers/*": ["../backoffice/suppliers-management/src/*"],
-      "@analyzer/*": ["../backoffice/incidents-analyzer/src/*"],
-      "@manager/*": ["../backoffice/incidents-manager/src/*"],
-      "@inventory/*": ["../backoffice/inventory-management/src/*"],
-      "@talent/*": ["../backoffice/talent-pipeline-tracker/*"],
-      "@brasaland/auth-shared/*": ["../backoffice/auth-shared/*"],
       "@brasaland/inventory-api": ["../../lib/inventory.ts"]
     }
   },

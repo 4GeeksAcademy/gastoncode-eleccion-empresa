@@ -1,1 +1,1 @@
-export { default } from "@dashboard/account/layout";
+export { default } from "@/backoffice/account/layout";

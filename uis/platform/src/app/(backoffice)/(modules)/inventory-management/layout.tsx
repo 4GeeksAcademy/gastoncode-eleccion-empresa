@@ -1,5 +1,5 @@
 import { ModuleFrame } from "@/components/module-frame";
-import { InventoryShell } from "@inventory/app/components/inventory-shell";
+import { InventoryShell } from "@/modules/inventory/components/inventory-shell";
 
 export const metadata = { title: "Brasaland · Gestión de inventario" };
 
