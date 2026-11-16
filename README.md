@@ -63,6 +63,10 @@ The launcher starts two processes and requires ports **8005 and 3007** to be
 free. `Ctrl+C` closes both. It does not configure or migrate a database.
 Inventory still needs `DATABASE_URL` for its Supabase PostgreSQL connection.
 
+For a VPS deployment using separate frontend and API containers with Docker
+Compose, see [Docker deployment](./docs/DOCKER_DEPLOYMENT.md). The Compose
+configuration expects a host-level reverse proxy and a VPS-managed `.env`.
+
 Frontend-only commands do not start APIs. The server-side proxy forwards
 `/api/*` requests to `http://127.0.0.1:8005`.
 

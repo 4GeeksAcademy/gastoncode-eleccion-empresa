@@ -5,6 +5,7 @@ const root = path.resolve(import.meta.dirname, "../..");
 const UNIFIED_API_URL = process.env.UNIFIED_API_URL ?? "http://127.0.0.1:8005";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   turbopack: { root },
   outputFileTracingRoot: root,
   async rewrites() {

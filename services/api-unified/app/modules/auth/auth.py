@@ -116,7 +116,7 @@ class ChangePasswordRequest(BaseModel):
 
 
 RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", "30"))
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3007").rstrip("/")
 
 
 @router.post("/forgot-password")
