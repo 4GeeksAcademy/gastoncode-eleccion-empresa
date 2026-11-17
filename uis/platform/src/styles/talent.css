@@ -1,0 +1,56 @@
+@scope ([data-platform-module="talent"]) {
+  /* The shared light palette is local here; standalone talent themes html. */
+  :scope[data-theme="light"] {
+    color-scheme: light;
+    --bl-bg: #f5f1ec;
+    --bl-surface: #ffffff;
+    --bl-surface-2: #f1ece5;
+    --bl-border: #e0d8ce;
+    --bl-border-strong: #c4b5a5;
+    --bl-text: #2a2018;
+    --bl-text-muted: #6b5c4d;
+    --bl-text-subtle: #8a7a69;
+    --bl-accent: var(--bl-brasa-600);
+    --bl-accent-strong: var(--bl-brasa-700);
+    --bl-accent-contrast: #fff7ed;
+    --bl-danger-bg: #feecec;
+    --bl-danger-text: #a12020;
+    --bl-success-text: #047857;
+    --bl-shadow-card: rgba(94, 60, 24, 0.14);
+  }
+
+  /* Los tokens locales se derivan del tema compartido; el modo claro se hereda. */
+  :scope {
+    --background: var(--bl-bg);
+    --foreground: var(--bl-text);
+    --surface-1: var(--bl-surface);
+    --surface-2: var(--bl-surface-2);
+    --surface-3: var(--bl-border-strong);
+    --surface-input: var(--bl-bg);
+    --surface-chip: var(--bl-surface);
+    --surface-pill: var(--bl-surface-2);
+    --surface-avatar: var(--bl-surface-2);
+    --border-muted: var(--bl-border);
+    --border-strong: var(--bl-border-strong);
+    --text-muted: var(--bl-text-muted);
+    --text-soft: var(--bl-text-muted);
+    --text-accent: var(--bl-brasa-300);
+    --accent: var(--bl-accent);
+    --accent-contrast: var(--bl-accent-contrast);
+    --placeholder: var(--bl-text-subtle);
+    --tag-bg: var(--bl-brasa-800);
+    --page-grad-start: var(--bl-surface-2);
+    --page-grad-mid: var(--bl-bg);
+    --page-grad-end: var(--bl-bg);
+    --shadow-card: var(--bl-shadow-card);
+  }
+
+
+
+  :scope {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-ui), sans-serif;
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+}
