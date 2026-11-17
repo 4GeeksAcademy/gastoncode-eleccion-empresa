@@ -1,13 +1,13 @@
 # Brasaland Digital
 
-Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain's internal workflows. It includes a coordinated backoffice for authentication, suppliers, incidents, inventory, and a synthetic-data talent tracking prototype, plus inventory replenishment utilities.
+Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain's internal workflows. It includes a unified backoffice platform for authentication, suppliers, incidents, inventory, and a synthetic-data talent tracking prototype, plus inventory replenishment utilities.
 
-This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate: auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
+This repository contains working prototypes, not a production-ready deployment. A single Next.js App Router frontend (`uis/platform`) combines the website, protected dashboard, authentication/account pages, and all five business modules. A single unified FastAPI backend (`services/api-unified`) consolidates auth, suppliers, incidents, inventory, and talent API routes on one port. Auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase. The legacy Next.js and FastAPI projects have been removed — only the unified frontend and unified API remain.
 
 ## What’s included
 
-- **Integrated backoffice:** dashboard and account management, suppliers, incidents, CSV incident analysis, inventory, and talent. The launcher starts five APIs (auth, suppliers, incidents, inventory, talent) and six UIs (dashboard, suppliers, incident manager, incident analyzer, inventory, talent).
-- **Backend APIs:** FastAPI services for authentication, suppliers, incidents, and inventory. Authentication uses JWT; each API enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
+- **Unified frontend:** website, dashboard and account management, suppliers, incidents, CSV incident analysis, inventory, and talent, served by one Next.js process on port 3007.
+- **Unified API:** FastAPI service consolidating auth, suppliers, incidents, inventory, and talent routes on port 8005. Authentication uses JWT (HS256); each domain enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
 - **Talent pipeline tracker:** integrated at `/talent-pipeline-tracker`, restricted to admin/manager. Its API adapter uses the external 4Geeks prototype: synthetic data only, no local candidate persistence, vacancies, or onboarding.
 - **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
 - **Static website prototypes, shared UI/types/utilities, data and analysis packages, scripts, and project documentation.**
@@ -17,69 +17,72 @@ The repository does not yet provide an operational database shared across all do
 ## Requirements
 
 - Node.js 22 or later and npm.
-- [uv](https://docs.astral.sh/uv/) for Python environments.
-- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers`, `api-incidents`, `api-inventory`, and `api-talent`.
+- [uv](https://docs.astral.sh/uv/) for Python environments (Python 3.14 or later).
 
-Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
+The unified API (`services/api-unified`) manages its Python environment via `uv`. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file.
 
-## Start the integrated backoffice
+## Unified frontend and API
 
-From the repository root:
+`uis/platform` uses App Router and runs alongside the original interfaces on
+**<http://localhost:3007>**:
 
-```bash
-npm run backoffice:setup
-npm run backoffice:dev
-```
+- `/` and `/application`: public website, without initializing backoffice auth.
+- `/backoffice`: protected dashboard.
+- `/login`, `/register`, `/forgot-password`, `/reset-password`, and `/account/*`:
+  reused authentication and account views, with `/backoffice` as the new home.
+- `/suppliers`, `/incidents-analyzer`, `/incidents-manager`,
+  `/inventory-management`, and `/talent-pipeline-tracker`: real App Router
+  modules, including their existing subroutes. No original UI server is needed.
 
-Open **<http://localhost:3000>**. The dashboard is the public origin for the integrated experience and shared session:
+All backoffice routes share one session provider. Module links stay on port
+3007 and return to `/backoffice`; `/` remains the public website.
 
-- `/` — dashboard and account access
-- `/suppliers` — supplier management
-- `/incidents-manager` — incident registration and summary
-- `/incidents-analyzer` — upload and analyze incident CSV files
-- `/inventory-management` — protected inventory pages: products, inbound orders, outbound orders, and order history
-- `/talent-pipeline-tracker` — synthetic candidate tracking, details, stages/statuses, and notes, restricted to admin/manager
+The unified API serves all backend routes on port 8005 under `/api/*`,
+proxied automatically by Next.js rewrites.
 
-The launcher starts eleven processes and requires ports **3000-3005 and 8000-8004** to be free. Talent uses UI port 3003 and API port 8004. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access separate UI ports when you need the dashboard's shared session.
-
-`backoffice:setup` installs the npm workspace and syncs all five API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. Inventory requires `DATABASE_URL` for its Supabase PostgreSQL database; keep it in the root environment (for example, `.env`) or process environment and never commit or publish it. TLS is required by default. The launcher's local JWT secret storage is for development only, not production secret management.
-
-To check that the integrated services and selected dashboard proxies respond while the stack is running:
+### Starting the stack
 
 ```bash
-npm run backoffice:check
+# Setup (install dependencies):
+node scripts/backoffice.mjs setup
+
+# Development mode (starts unified API on 8005 + platform on 3007):
+node scripts/backoffice.mjs dev
+
+# Health check while the stack is running:
+node scripts/backoffice.mjs check
+
+# Create the first administrator (stop the stack first):
+node scripts/backoffice.mjs admin user@example.com
+
+# Or start only the frontend (APIs must be available separately):
+npm run dev:platform
 ```
 
-The check is not a substitute for functional tests or a permissions review. For persistent data, first-admin setup, port details, session behavior, and operational cautions, see the [integrated backoffice guide](./docs/BACKOFFICE_INTEGRATION.es.md).
+The launcher starts two processes and requires ports **8005 and 3007** to be
+free. `Ctrl+C` closes both. It does not configure or migrate a database.
+Inventory still needs `DATABASE_URL` for its Supabase PostgreSQL connection.
+
+For a VPS deployment using separate frontend and API containers with Docker
+Compose, see [Docker deployment](./docs/DOCKER_DEPLOYMENT.md). The Compose
+configuration expects a host-level reverse proxy and a VPS-managed `.env`.
+
+Frontend-only commands do not start APIs. The server-side proxy forwards
+`/api/*` requests to `http://127.0.0.1:8005`.
 
 ### Create the first administrator
 
-1. Start the integrated backoffice and register an account at `/register`.
+1. Start the stack and register an account at `/register`.
 2. Stop the processes with `Ctrl+C`.
 3. Promote that existing account while the APIs are stopped:
 
    ```bash
-   npm run backoffice:admin -- user@example.com
+   node scripts/backoffice.mjs admin user@example.com
    ```
 
-4. Restart the backoffice and sign in.
+4. Restart and sign in.
 
 This command does not create an account. Access to the local terminal and data files is equivalent to administrative access.
-
-## Run individual interfaces
-
-The following root scripts start only their respective Next.js interfaces; they do **not** start the APIs they depend on:
-
-```bash
-npm run dev:dashboard
-npm run dev:suppliers
-npm run dev:incidents
-npm run dev:incidents-manager
-npm run dev:inventory-management
-npm run dev:talent
-```
-
-The talent tracker runs on port 3003 behind the integrated dashboard/session. Use `npm run backoffice:dev` for that workflow. Its external provider is configured server-side through `TRACKER_API_URL`; never send real candidate data to this prototype. Each UI and API has its own README.
 
 ## Tests and quality checks
 
@@ -93,33 +96,29 @@ npm run lint
 Examples of focused test commands from the repository root:
 
 ```bash
-# Integrated launcher and dashboard/API client tests
-node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/incidents-analyzer/tests/incidents-api.test.mjs uis/backoffice/incidents-manager/tests/incidents-api.test.mjs
+# Unified API smoke tests (isolated; no legacy dependencies)
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- python -m unittest discover -s services/api-unified/tests -v
 
-# Authentication API logic tests (pytest; run from the service directory)
-uv sync --project services/api-auth --group test
-cd services/api-auth
-uv run pytest
-cd ../..
+# Launcher lifecycle and proxy tests
+node --test scripts/backoffice.test.mjs
+node --test scripts/platform-proxy.test.mjs
 
 # Shared auth and inventory TypeScript tests
 npx jest --coverage
 
-# Incidents API tests (PYTHONPATH is needed for the local analysis package)
-uv sync --project services/api-incidents --group test
-PYTHONPATH="$PWD" uv run --project services/api-incidents --group test -- python -m unittest discover -s services/api-incidents/tests -v
-
-# Inventory replenishment planner tests
-python3 -m unittest discover -s .agents/skills/replenishment-planner/tests -v
-
-# Inventory API unit tests (uses isolated SQLite; no Supabase writes)
-uv sync --project services/api-inventory --group test
-uv run --directory services/api-inventory --group test pytest
+# Browser tests (start platform first):
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
 ```
 
-For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) and the [integration guide](./docs/BACKOFFICE_INTEGRATION.es.md) for test prerequisites and isolation guidance.
+For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) for test prerequisites and isolation guidance.
 
-See [`TESTING.md`](./TESTING.md) for focused test commands and setup details. Jest covers `uis/backoffice/auth-shared` and the inventory API client/stock helpers.
+See [`TESTING.md`](./TESTING.md) for focused test commands and setup details. Jest covers the inventory API client and stock helpers.
+
+**Dependency integration note:** organizational content exclusions have historically prevented updating the root lockfile. No repository dependency installation or clean `npm ci` validation was performed for this transition. An authorized maintainer must reconcile the lockfile in a permitted environment before relying on a clean install.
+
+See the [phase 3 report](./docs/FRONTEND_PHASE3.es.md) for implementation,
+verification results, remaining limitations, and browser test instructions.
 
 ## Repository map
 
@@ -130,10 +129,8 @@ See [`TESTING.md`](./TESTING.md) for focused test commands and setup details. Je
 ├── docs/                           # Architecture and integration documentation
 ├── packages/                       # Python analysis package and shared package areas
 ├── scripts/                        # Backoffice launcher, seeds, analysis, and test tools
-├── services/                       # FastAPI: auth, suppliers, incidents, inventory
-├── uis/
-│   ├── backoffice/                  # Dashboard, suppliers, incidents, talent interfaces
-│   └── website/                     # Static website prototypes
+├── services/api-unified/           # FastAPI unified backend (port 8005)
+├── uis/platform/                   # Next.js unified frontend (port 3007)
 ├── .agents/skills/                  # Operational skills, including replenishment planner
 ├── src/ and shared/                 # Shared types, utilities, and conventions
 └── workflows/, mcps/, infra/        # Automation, MCP, and infrastructure work areas
