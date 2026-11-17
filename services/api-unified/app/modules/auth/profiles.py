@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.modules.auth.auth import get_current_user
+from app.modules.auth.schemas import ProfileResponse
 from app.modules.auth.services import get_profile_by_user_id, update_profile
 
 
@@ -18,7 +19,7 @@ class ProfileUpdate(BaseModel):
     address: Optional[str] = None
 
 
-@router.get("/me")
+@router.get("/me", response_model=ProfileResponse)
 def get_my_profile(current_user: dict = Depends(get_current_user)):
     profile = get_profile_by_user_id(current_user["id"])
     if not profile:
@@ -26,7 +27,7 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
     return profile
 
 
-@router.put("/me")
+@router.put("/me", response_model=ProfileResponse)
 def edit_my_profile(data: ProfileUpdate, current_user: dict = Depends(get_current_user)):
     changes = data.model_dump(exclude_none=True)
     profile = update_profile(current_user["id"], changes)

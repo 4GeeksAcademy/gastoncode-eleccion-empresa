@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.modules.schemas import HealthResponse
+
 from app.modules.auth import auth_router, users_router, profiles_router
 from app.modules.auth.auth import get_current_user, require_roles
 from app.modules.suppliers import suppliers_router
@@ -109,12 +111,12 @@ def create_app() -> FastAPI:
     # Talent requires admin/manager role. Override get_current_user in talent.
     app.dependency_overrides[get_current_user] = get_current_user
 
-    @app.get("/", tags=["health"])
-    def health() -> dict[str, str]:
-        return {"status": "ok", "service": "brasaland-unified-api"}
+    @app.get("/", tags=["health"], response_model=HealthResponse)
+    def health() -> HealthResponse:
+        return HealthResponse(status="ok", service="brasaland-unified-api")
 
-    @app.get("/health", tags=["health"])
-    def detailed_health() -> dict[str, str]:
-        return {"status": "healthy", "service": "brasaland-unified-api"}
+    @app.get("/health", tags=["health"], response_model=HealthResponse)
+    def detailed_health() -> HealthResponse:
+        return HealthResponse(status="healthy", service="brasaland-unified-api")
 
     return app

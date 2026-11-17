@@ -22,16 +22,17 @@ from app.modules.incidents.models import (
     AnalysisListItem,
     AnalysisResponse,
     AnalysisStatus,
-    Incident,
     IncidentBranch,
     IncidentCategory,
     IncidentCreate,
     IncidentOrigin,
+    IncidentResponse,
     IncidentStatus,
     IncidentStatusUpdate,
     IncidentSummary,
 )
 from app.modules.auth.auth import get_current_user, require_roles
+from app.modules.schemas import MessageResponse
 
 # ── incidents_analysis ────────────────────────────────────────
 # The packages/ directory lives at the repository root.
@@ -117,7 +118,7 @@ def _cache_set(key: str, value: dict):
 
 # ── Endpoints: Incidents ─────────────────────────────────────
 
-@router.get("/incidents", tags=["Incidents"])
+@router.get("/incidents", response_model=list[IncidentResponse], tags=["Incidents"])
 def list_incidents(
     status: IncidentStatus | None = None,
     category: IncidentCategory | None = None,
@@ -137,7 +138,7 @@ def list_incidents(
     return incidents
 
 
-@router.post("/incidents", status_code=201, tags=["Incidents"])
+@router.post("/incidents", response_model=IncidentResponse, status_code=201, tags=["Incidents"])
 def create_incident(data: IncidentCreate, current_user: dict = Depends(get_current_user)):
     now = time()
     incident = {
@@ -159,7 +160,7 @@ def create_incident(data: IncidentCreate, current_user: dict = Depends(get_curre
     return incident
 
 
-@router.patch("/incidents/{incident_id}/status", tags=["Incidents"])
+@router.patch("/incidents/{incident_id}/status", response_model=IncidentResponse, tags=["Incidents"])
 def update_incident_status_by_id(incident_id: str, data: IncidentStatusUpdate, current_user: dict = Depends(get_current_user)):
     idx, incident = _find_incident(incident_id)
     if idx is None:
@@ -173,7 +174,7 @@ def update_incident_status_by_id(incident_id: str, data: IncidentStatusUpdate, c
     return incidents[idx]
 
 
-@router.patch("/incidents/{incident_id}", tags=["Incidents"])
+@router.patch("/incidents/{incident_id}", response_model=IncidentResponse, tags=["Incidents"])
 def update_incident_status(incident_id: str, data: IncidentStatusUpdate, current_user: dict = Depends(get_current_user)):
     idx, incident = _find_incident(incident_id)
     if idx is None:
@@ -187,7 +188,7 @@ def update_incident_status(incident_id: str, data: IncidentStatusUpdate, current
     return incidents[idx]
 
 
-@router.delete("/incidents/{incident_id}", tags=["Incidents"])
+@router.delete("/incidents/{incident_id}", response_model=IncidentResponse, tags=["Incidents"])
 def delete_incident(incident_id: str, _user: dict = Depends(require_roles(["admin"]))):
     idx, _ = _find_incident(incident_id)
     if idx is None:
@@ -198,7 +199,7 @@ def delete_incident(incident_id: str, _user: dict = Depends(require_roles(["admi
     return deleted
 
 
-@router.get("/incidents/summary", tags=["Incidents"])
+@router.get("/incidents/summary", response_model=IncidentSummary, tags=["Incidents"])
 def get_summary(
     branch: IncidentBranch | None = None,
     _user: dict = Depends(get_current_user),

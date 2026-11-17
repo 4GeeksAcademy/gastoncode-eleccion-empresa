@@ -14,6 +14,11 @@ from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr
 
 from app.modules.auth.email_service import send_reset_email
+from app.modules.auth.schemas import (
+    MeResponse,
+    ProfileResponse,
+    TokenResponse,
+)
 from app.modules.auth.services import (
     create_reset_token,
     get_profile_by_user_id,
@@ -23,6 +28,7 @@ from app.modules.auth.services import (
     update_user,
     update_password_and_invalidate_reset_tokens,
 )
+from app.modules.schemas import MessageResponse
 
 
 load_dotenv()
@@ -76,7 +82,7 @@ def require_roles(allowed_roles: list[str]):
 
 # ── Endpoints ───────────────────────────────────────────────
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 def login(form: OAuth2PasswordRequestForm = Depends()):
     user = get_user_by_email(form.username)
     if not user:
@@ -89,14 +95,15 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.get("/me")
+@router.get("/me", response_model=MeResponse)
 def get_me(current_user: dict = Depends(get_current_user)):
-    return {
-        "id": current_user["id"],
-        "email": current_user["email"],
-        "role": current_user["role"],
-        "profile": get_profile_by_user_id(current_user["id"]),
-    }
+    profile = get_profile_by_user_id(current_user["id"])
+    return MeResponse(
+        id=current_user["id"],
+        email=current_user["email"],
+        role=current_user["role"],
+        profile=ProfileResponse(**profile) if profile else None,
+    )
 
 
 # ── Modelos Pydantic ─────────────────────────────────────────
@@ -119,7 +126,7 @@ RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", "30"))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3007").rstrip("/")
 
 
-@router.post("/forgot-password")
+@router.post("/forgot-password", response_model=MessageResponse)
 def forgot_password(data: ForgotPasswordRequest):
     user = get_user_by_email(data.email)
     if user:
@@ -145,7 +152,7 @@ def forgot_password(data: ForgotPasswordRequest):
     return {"message": "Si el email existe, recibirás un enlace para restablecer tu contraseña."}
 
 
-@router.post("/reset-password")
+@router.post("/reset-password", response_model=MessageResponse)
 def reset_password(data: ResetPasswordRequest):
     if len(data.password) < 8:
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres")
@@ -185,7 +192,7 @@ def reset_password(data: ResetPasswordRequest):
     return {"message": "Contraseña restablecida correctamente"}
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=MessageResponse)
 def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
     if not bcrypt.checkpw(data.current_password.encode("utf-8"), current_user["hashed_password"].encode("utf-8")):
         raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")

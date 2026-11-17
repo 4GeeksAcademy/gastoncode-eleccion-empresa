@@ -1,9 +1,10 @@
 """Incidents models — Pydantic schemas for incidents and analysis."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import Literal, Optional
-from uuid import UUID
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -63,7 +64,8 @@ class IncidentStatusUpdate(BaseModel):
     comment: Optional[str] = Field(None, max_length=500)
 
 
-class Incident(BaseModel):
+class IncidentResponse(BaseModel):
+    """Full incident record as returned by the API. Timestamps are Unix floats."""
     id: str
     title: str
     description: str
@@ -71,8 +73,8 @@ class Incident(BaseModel):
     branch: str
     origin: str
     status: str
-    created_at: str
-    updated_at: str
+    created_at: float
+    updated_at: float
     created_by: str
     resolution_comment: Optional[str] = None
 

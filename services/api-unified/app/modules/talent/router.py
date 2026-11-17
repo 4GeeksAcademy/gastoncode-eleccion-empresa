@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 
 from app.modules.auth.auth import get_current_user, require_roles
+from app.modules.schemas import MessageResponse
 from app.modules.talent.models import (
     CandidateDetail,
     CandidateInput,
@@ -82,7 +83,7 @@ def list_notes(
     return result
 
 
-@router.post("/records/{record_id}/notes", status_code=201)
+@router.post("/records/{record_id}/notes", response_model=MessageResponse, status_code=201)
 def create_note(
     record_id: ResourceId,
     note: NoteInput,

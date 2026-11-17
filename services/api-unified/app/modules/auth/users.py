@@ -10,6 +10,11 @@ import bcrypt
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.modules.auth.auth import get_current_user, require_roles
+from app.modules.auth.schemas import (
+    DisplayNameItem,
+    RegisterResponse,
+    UserResponse,
+)
 from app.modules.auth.services import (
     create_user,
     delete_user,
@@ -20,6 +25,7 @@ from app.modules.auth.services import (
     get_user_by_id,
     update_user,
 )
+from app.modules.schemas import MessageResponse
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -66,7 +72,7 @@ def owner_or_admin(user_id: str, current_user: dict):
         raise HTTPException(status_code=403, detail="No tenés permiso")
 
 
-@router.post("")
+@router.post("", response_model=RegisterResponse, status_code=201)
 def register(data: UserCreate):
     if get_user_by_email(data.email):
         raise HTTPException(status_code=400, detail="El email ya está registrado")
@@ -90,20 +96,29 @@ def register(data: UserCreate):
         "address": data.address,
     }
     create_user(user, profile)
-    return {"user": public_user(user), "profile": profile}
+    return RegisterResponse(
+        user=UserResponse(
+            id=user_id,
+            email=data.email,
+            is_active=True,
+            role="admin" if first_user else "user",
+            created_at=user["created_at"],
+        ),
+        profile=profile,
+    )
 
 
-@router.get("")
+@router.get("", response_model=list[UserResponse])
 def list_users(current_user: dict = Depends(require_roles(["admin", "manager"]))):
     return [public_user(user) for user in get_all_users()]
 
 
-@router.post("/display-names")
+@router.post("/display-names", response_model=list[DisplayNameItem])
 def display_names(data: DisplayNamesRequest, _current_user: dict = Depends(get_current_user)):
     return get_display_names_by_user_ids(data.ids)
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: str, current_user: dict = Depends(get_current_user)):
     owner_or_admin(user_id, current_user)
     user = get_user_by_id(user_id)
@@ -112,7 +127,7 @@ def get_user(user_id: str, current_user: dict = Depends(get_current_user)):
     return public_user(user)
 
 
-@router.put("/{user_id}")
+@router.put("/{user_id}", response_model=UserResponse)
 def edit_user(user_id: str, data: UserUpdate, current_user: dict = Depends(get_current_user)):
     owner_or_admin(user_id, current_user)
     changes = data.model_dump(exclude_none=True)
@@ -132,7 +147,7 @@ def edit_user(user_id: str, data: UserUpdate, current_user: dict = Depends(get_c
     return public_user(user)
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", response_model=MessageResponse)
 def remove_user(user_id: str, current_user: dict = Depends(get_current_user)):
     owner_or_admin(user_id, current_user)
     if not get_user_by_id(user_id):

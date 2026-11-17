@@ -10,6 +10,7 @@ from app.modules.suppliers.models import (
     SupplierCreateInput, SupplierRateUpdate, SupplierStatusUpdate, SupplierResponse,
 )
 from app.modules.auth.auth import get_current_user, require_roles
+from app.modules.schemas import MessageResponse
 
 
 router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
@@ -84,7 +85,7 @@ def update_supplier_status(supplier_id: int, supplier_status: SupplierStatusUpda
     return serialize_document(suppliers_table.get(doc_id=supplier_id))
 
 
-@router.delete("/{supplier_id}")
+@router.delete("/{supplier_id}", response_model=MessageResponse)
 def delete_supplier(supplier_id: int, current_user: dict = Depends(require_roles(["admin", "manager"]))):
     document = suppliers_table.get(doc_id=supplier_id)
     if document is None:
