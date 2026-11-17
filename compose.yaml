@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    image: gastoncode15/brasaland-api:1.0.4
+    image: gastoncode15/brasaland-api:latest
     restart: unless-stopped
     env_file:
       - .env
@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    image: gastoncode15/brasaland-frontend:1.0.3
+    image: gastoncode15/brasaland-frontend:latest
     restart: unless-stopped
     depends_on:
       api:
