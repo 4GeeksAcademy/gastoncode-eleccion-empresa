@@ -33,7 +33,7 @@ export default function HomePage() {
       </a>
       <SiteHeader />
       <main id="inicio">
-        <section id="nosotros" className="relative scroll-mt-24 overflow-hidden border-b border-stone-800 snap-center snap-always">
+        <section id="nosotros" className="relative scroll-mt-24 overflow-hidden border-b border-stone-800 snap-center snap-proximity">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.22),_transparent_46%),radial-gradient(circle_at_80%_20%,_rgba(248,113,113,0.15),_transparent_42%)]" />
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-8 px-6 py-10 md:min-h-[calc(92svh-5rem)] md:grid-cols-2 md:gap-10 md:py-14">
             <div>
@@ -62,12 +62,20 @@ export default function HomePage() {
               </div>
             </div>
             <figure className="rounded-2xl border border-amber-400/20 bg-stone-900/60 p-3 shadow-2xl shadow-amber-950/40">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=80"
-                alt="Hamburguesa gourmet a la parrilla servida en mesa de madera"
-                className="h-64 w-full rounded-xl object-cover md:h-[24rem]"
-              />
+              <picture>
+                <source srcSet="/images/hero-800w.webp" type="image/webp" />
+                <source srcSet="/images/hero-800w.jpg" type="image/jpeg" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/hero-800w.jpg"
+                  alt="Hamburguesa gourmet a la parrilla servida en mesa de madera"
+                  width={800}
+                  height={534}
+                  className="h-64 w-full rounded-xl object-cover md:h-[24rem]"
+                  fetchPriority="high"
+                  decoding="async"
+                />
+              </picture>
               <figcaption className="px-2 pt-3 text-sm text-stone-400">
                 Hamburguesas y cortes a la brasa con sabor consistente en cada restaurante.
               </figcaption>
@@ -75,7 +83,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="beneficios" className="scroll-mt-24 snap-center snap-always" aria-labelledby="beneficios-titulo">
+        <section id="beneficios" className="scroll-mt-24 snap-center snap-proximity" aria-labelledby="beneficios-titulo">
           <div className="mx-auto flex min-h-[calc(100svh-5rem)] w-full max-w-6xl flex-col justify-center px-6 py-12 md:py-16">
             <div className="mb-10">
               <h2 id="beneficios-titulo" className="text-3xl font-black text-white md:text-4xl">Beneficios clave de Brasaland</h2>
@@ -89,7 +97,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="contacto" className="scroll-mt-24 border-y border-stone-800 bg-stone-900/50 snap-center snap-always">
+        <section id="contacto" className="scroll-mt-24 border-y border-stone-800 bg-stone-900/50 snap-center snap-proximity">
           <div className="mx-auto grid min-h-[calc(100svh-5rem)] w-full max-w-6xl items-center gap-10 px-6 py-12 md:grid-cols-2 md:py-16">
             <div>
               <h2 className="text-3xl font-black text-white md:text-4xl">Conecta con Brasaland</h2>
@@ -105,12 +113,20 @@ export default function HomePage() {
               <p className="mt-6 text-sm text-stone-400">También puedes escribirnos a: contacto@brasaland.com</p>
             </div>
             <figure className="overflow-hidden rounded-2xl border border-amber-500/30">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1550317138-10000687a72b?auto=format&fit=crop&w=1200&q=80"
-                alt="Corte de hamburguesas a la parrilla sobre fuego"
-                className="h-full w-full object-cover"
-              />
+              <picture>
+                <source srcSet="/images/contact-800w.webp" type="image/webp" />
+                <source srcSet="/images/contact-800w.jpg" type="image/jpeg" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/contact-800w.jpg"
+                  alt="Corte de hamburguesas a la parrilla sobre fuego"
+                  width={800}
+                  height={534}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
             </figure>
           </div>
         </section>

@@ -20,10 +20,18 @@ export const websiteMetadata: Metadata = {
   description:
     "Brasaland es una cadena de 14 restaurantes en Colombia y Florida. Descubre una experiencia de cocina a la brasa consistente, rápida y cálida en dos mercados.",
   robots: { index: true, follow: true },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   openGraph: {
     title: "Brasaland",
     description: "Sabor consistente, servicio cálido y operaciones modernas para una experiencia gastronómica superior.",
     type: "website",
-    images: ["https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=1400&q=80"],
+    images: ["/images/og-800w.webp"],
   },
 };

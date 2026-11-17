@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import styles from "./backoffice.module.css";
+import "../../styles/analyzer.css";
+import "../../styles/manager.css";
+import "../../styles/inventory.css";
+import "../../styles/talent.css";
+import "../../styles/module-base.css";
+import "./backoffice-entry.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
