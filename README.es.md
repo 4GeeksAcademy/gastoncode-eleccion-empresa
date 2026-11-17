@@ -12,6 +12,11 @@ _Las instrucciones están [disponibles en inglés](./README.md)._
 ```bash
 npm run backoffice:setup
 npm run backoffice:dev
+## Plataforma unificada
+
+```bash
+node scripts/backoffice.mjs setup
+node scripts/backoffice.mjs dev
 ```
 
 dashboard, login, cuentas, proveedores, el gestor de incidencias
@@ -19,21 +24,14 @@ dashboard, login, cuentas, proveedores, el gestor de incidencias
 CSV (`/incidents-analyzer`), la gestión de inventario
 (`/inventory-management`: productos/stock, entradas, salidas e historial) y talento
 (`/talent-pipeline-tracker`: candidaturas y notas sintéticas, solo admin/manager) quedan
-accesibles en http://localhost:3000 con una sesión compartida. El launcher inicia
-cinco APIs (autenticación, proveedores, incidencias, inventario y talento) y seis
-interfaces. La API de inventario guarda productos y movimientos en PostgreSQL de
-Supabase y calcula las existencias a partir de estos movimientos. Requiere
-`DATABASE_URL` configurada en el entorno o en `.env`; nunca publiques ese valor. Consulta la
-[guía de integración](docs/BACKOFFICE_INTEGRATION.es.md) para persistencia,
-primer administrador, cierre coordinado y verificaciones.
+accesibles en **http://localhost:3007** con una sesión compartida. El launcher inicia
+la API unificada (puerto 8005) y el frontend (puerto 3007). La API de inventario
+guarda productos y movimientos en PostgreSQL de Supabase y calcula las existencias
+a partir de estos movimientos. Requiere `DATABASE_URL` configurada en el entorno o
+en `.env`; nunca publiques ese valor.
 
-Las pruebas unitarias de autenticación y del cliente de inventario (pytest y
-Jest) se describen en [`TESTING.md`](./TESTING.md). La suite Python se ejecuta desde
-`services/api-auth` para evitar recolectar pruebas de otros proyectos del monorepo.
-La API de inventario tiene una suite pytest aislada con SQLite; puede ejecutarse
-con `uv sync --project services/api-inventory --group test` y
-`uv run --directory services/api-inventory --group test pytest` (no requiere
-conexión a Supabase).
+Las pruebas unitarias del cliente de inventario (Jest) y de la API unificada
+(pytest) se describen en [`TESTING.md`](./TESTING.md).
 
 ---
 

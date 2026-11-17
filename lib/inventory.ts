@@ -2,7 +2,7 @@ import {
 	clearToken,
 	getToken,
 	SESSION_INVALIDATED_EVENT,
-} from "@brasaland/auth-shared/auth-api";
+} from "../uis/platform/src/lib/auth/auth-api";
 export { getStockStatus, LOW_STOCK_THRESHOLD } from "./stock-status";
 export type { StockStatus } from "./stock-status";
 

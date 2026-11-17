@@ -1,4 +1,12 @@
-# Backoffice integrado en desarrollo
+# Backoffice integrado en desarrollo — DOCUMENTO HISTÓRICO
+
+> **Este documento describe la arquitectura anterior**, con seis UIs Next.js independientes
+> y cinco APIs FastAPI separadas (puertos 8000-8004 y 3000-3005). Esa arquitectura ya
+> no existe: todos los proyectos legacy han sido eliminados.
+>
+> La plataforma actual es un solo frontend (`uis/platform`, puerto 3007) que se comunica
+> con una única API unificada (`services/api-unified`, puerto 8005).
+> Consulta el [README principal](../README.md) para la documentación actualizada.
 
 ## Arranque
 

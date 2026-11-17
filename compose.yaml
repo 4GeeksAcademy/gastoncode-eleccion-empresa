@@ -1,0 +1,54 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: gastoncode15/brasaland-api:1.0.4
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      AUTH_DB_PATH: /data/auth.json
+      SUPPLIERS_DB_PATH: /data/suppliers.json
+      ANALYSES_DB_PATH: /data/analyses.json
+      INCIDENTS_DB_PATH: /data/incidents.json
+    volumes:
+      - api-data:/data
+    expose:
+      - "8005"
+    # La API solo se publica en la red privada de Compose.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8005/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: gastoncode15/brasaland-frontend:1.0.3
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3007}:3007"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3007/').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  api-data:
