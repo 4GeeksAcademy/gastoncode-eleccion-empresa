@@ -71,6 +71,15 @@ analyses_cache: OrderedDict[str, dict] = OrderedDict()
 _cache_lock = Lock()
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
+# ── Incidents data cache (in-memory + TTL) ───────────────────
+_INCIDENTS_CACHE_TTL = 5       # segundos antes de recargar
+_SUMMARY_CACHE_TTL = 10        # segundos (summary tolera mayor desfase)
+_incidents_cache: list[dict] | None = None
+_incidents_cache_time: float = 0
+_summary_cache: dict | None = None
+_summary_cache_time: float = 0
+_incidents_cache_lock = Lock()
+
 router = __import__("fastapi").APIRouter(
     prefix="/api",
     tags=["Incidents"],
@@ -87,6 +96,32 @@ def _load_incidents():
         return []
 
 
+def _load_incidents_cached():
+    """Cache with TTL para evitar I/O de disco en cada request."""
+    global _incidents_cache, _incidents_cache_time
+    now = time()
+    with _incidents_cache_lock:
+        if _incidents_cache is not None and (now - _incidents_cache_time) < _INCIDENTS_CACHE_TTL:
+            return _incidents_cache
+        _incidents_cache = _load_incidents()
+        _incidents_cache_time = now
+        return _incidents_cache
+
+
+def _invalidate_incidents_cache():
+    global _incidents_cache, _incidents_cache_time
+    with _incidents_cache_lock:
+        _incidents_cache = None
+        _incidents_cache_time = 0
+
+
+def _invalidate_summary_cache():
+    global _summary_cache, _summary_cache_time
+    with _incidents_cache_lock:
+        _summary_cache = None
+        _summary_cache_time = 0
+
+
 def _save_incidents(incidents: list[dict]):
     with _incidents_lock:
         with open(INCIDENTS_DB_PATH, "w") as f:
@@ -94,7 +129,7 @@ def _save_incidents(incidents: list[dict]):
 
 
 def _find_incident(incident_id: str) -> tuple[int | None, dict | None]:
-    incidents = _load_incidents()
+    incidents = _load_incidents_cached()
     for idx, inc in enumerate(incidents):
         if inc["id"] == incident_id:
             return idx, inc
@@ -126,7 +161,7 @@ def list_incidents(
     origin: IncidentOrigin | None = None,
     _user: dict = Depends(get_current_user),
 ):
-    incidents = _load_incidents()
+    incidents = _load_incidents_cached()
     if status:
         incidents = [i for i in incidents if i["status"] == status.value]
     if category:
@@ -154,9 +189,11 @@ def create_incident(data: IncidentCreate, current_user: dict = Depends(get_curre
         "created_by": current_user["id"],
         "resolution_comment": None,
     }
-    incidents = _load_incidents()
+    incidents = _load_incidents_cached()
     incidents.append(incident)
     _save_incidents(incidents)
+    _invalidate_incidents_cache()
+    _invalidate_summary_cache()
     return incident
 
 
@@ -165,12 +202,14 @@ def update_incident_status_by_id(incident_id: str, data: IncidentStatusUpdate, c
     idx, incident = _find_incident(incident_id)
     if idx is None:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
-    incidents = _load_incidents()
+    incidents = _load_incidents_cached()
     incidents[idx]["status"] = data.status.value
     incidents[idx]["updated_at"] = time()
     if data.comment:
         incidents[idx]["resolution_comment"] = data.comment
     _save_incidents(incidents)
+    _invalidate_incidents_cache()
+    _invalidate_summary_cache()
     return incidents[idx]
 
 
@@ -179,12 +218,14 @@ def update_incident_status(incident_id: str, data: IncidentStatusUpdate, current
     idx, incident = _find_incident(incident_id)
     if idx is None:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
-    incidents = _load_incidents()
+    incidents = _load_incidents_cached()
     incidents[idx]["status"] = data.status.value
     incidents[idx]["updated_at"] = time()
     if data.comment:
         incidents[idx]["resolution_comment"] = data.comment
     _save_incidents(incidents)
+    _invalidate_incidents_cache()
+    _invalidate_summary_cache()
     return incidents[idx]
 
 
@@ -193,9 +234,11 @@ def delete_incident(incident_id: str, _user: dict = Depends(require_roles(["admi
     idx, _ = _find_incident(incident_id)
     if idx is None:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
-    incidents = _load_incidents()
+    incidents = _load_incidents_cached()
     deleted = incidents.pop(idx)
     _save_incidents(incidents)
+    _invalidate_incidents_cache()
+    _invalidate_summary_cache()
     return deleted
 
 
@@ -204,12 +247,20 @@ def get_summary(
     branch: IncidentBranch | None = None,
     _user: dict = Depends(get_current_user),
 ):
-    incidents = _load_incidents()
+    global _summary_cache, _summary_cache_time
+    now = time()
+    with _incidents_cache_lock:
+        if _summary_cache is not None and (now - _summary_cache_time) < _SUMMARY_CACHE_TTL:
+            cached = _summary_cache
+            if branch:
+                return _apply_summary_branch_filter(cached, branch)
+            return IncidentSummary(**cached)
+
+    incidents = _load_incidents_cached()
     if branch:
         incidents = [i for i in incidents if i["branch"] == branch.value]
 
     total = len(incidents)
-
     by_status: dict[str, int] = {}
     by_category: dict[str, int] = {}
     by_origin: dict[str, int] = {}
@@ -218,22 +269,36 @@ def get_summary(
     for inc in incidents:
         s = inc["status"]
         by_status[s] = by_status.get(s, 0) + 1
-
         cat = inc["category"]
         by_category[cat] = by_category.get(cat, 0) + 1
-
         o = inc["origin"]
         by_origin[o] = by_origin.get(o, 0) + 1
-
         br = inc["branch"]
         by_branch[br] = by_branch.get(br, 0) + 1
 
+    summary_dict = {
+        "total": total,
+        "by_status": by_status,
+        "by_category": by_category,
+        "by_origin": by_origin,
+        "by_branch": by_branch,
+    }
+
+    with _incidents_cache_lock:
+        _summary_cache = summary_dict
+        _summary_cache_time = now
+
+    return IncidentSummary(**summary_dict)
+
+
+def _apply_summary_branch_filter(summary: dict, branch: IncidentBranch) -> IncidentSummary:
+    """Re-aplica el filtro de sucursal sobre un summary cacheado (sin sucursal)."""
     return IncidentSummary(
-        total=total,
-        by_status=by_status,
-        by_category=by_category,
-        by_origin=by_origin,
-        by_branch=by_branch,
+        total=summary["by_branch"].get(branch.value, 0),
+        by_status={},
+        by_category={},
+        by_origin={},
+        by_branch={branch.value: summary["by_branch"].get(branch.value, 0)},
     )
 
 

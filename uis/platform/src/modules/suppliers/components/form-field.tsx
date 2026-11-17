@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+
 interface Props {
   label: string;
   value: string;
@@ -11,7 +13,7 @@ interface Props {
   step?: number;
 }
 
-export default function FormField({
+const FormField = memo(function FormField({
   label,
   value,
   onChange,
@@ -43,4 +45,6 @@ export default function FormField({
       />
     </div>
   );
-}
+});
+
+export default FormField;

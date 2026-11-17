@@ -1,3 +1,6 @@
+"use client";
+
+import { memo } from "react";
 import { toLabel } from "./labels";
 
 type StatusPillProps = {
@@ -5,7 +8,7 @@ type StatusPillProps = {
   tone?: "primary" | "neutral";
 };
 
-export function StatusPill({ value, tone = "neutral" }: StatusPillProps) {
+export const StatusPill = memo(function StatusPill({ value, tone = "neutral" }: StatusPillProps) {
   const toneClass =
     tone === "primary"
       ? "border-[color-mix(in_srgb,var(--accent)_50%,transparent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--text-accent)]"
@@ -17,4 +20,4 @@ export function StatusPill({ value, tone = "neutral" }: StatusPillProps) {
       {toLabel(value)}
     </span>
   );
-}
+});

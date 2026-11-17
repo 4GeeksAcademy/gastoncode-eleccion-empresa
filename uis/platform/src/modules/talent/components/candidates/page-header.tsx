@@ -1,8 +1,10 @@
+import { memo } from "react";
+
 type PageHeaderProps = {
   total: number;
 };
 
-export function PageHeader({ total }: PageHeaderProps) {
+export const PageHeader = memo(function PageHeader({ total }: PageHeaderProps) {
   return (
     <section className="mb-6 space-y-2">
       <h1 className="font-brand text-3xl leading-tight text-[var(--foreground)] sm:text-4xl">
@@ -16,4 +18,4 @@ export function PageHeader({ total }: PageHeaderProps) {
       </p>
     </section>
   );
-}
+});

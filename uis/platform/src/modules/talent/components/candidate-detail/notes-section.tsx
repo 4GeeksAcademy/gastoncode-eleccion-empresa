@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { CandidateNote } from "../../types/candidate-detail";
 import { publicErrorMessage, trackerFetch } from "../../utils/api";
 import { dateLabel } from "./date-label";
@@ -29,9 +29,7 @@ export function NotesSection({ recordId }: NotesSectionProps) {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const isSubmitDisabled = useMemo(() => {
-    return submitting || !content.trim();
-  }, [content, submitting]);
+  const isSubmitDisabled = submitting || !content.trim();
 
   const refreshNotes = async () => {
     try {

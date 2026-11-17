@@ -1,10 +1,12 @@
 'use client';
 
+import { memo } from 'react';
+
 interface Props {
   status: 'active' | 'suspended';
 }
 
-export default function StatusBadge({ status }: Props) {
+const StatusBadge = memo(function StatusBadge({ status }: Props) {
   const isActive = status === 'active';
 
   return (
@@ -23,4 +25,6 @@ export default function StatusBadge({ status }: Props) {
       {status}
     </span>
   );
-}
+});
+
+export default StatusBadge;

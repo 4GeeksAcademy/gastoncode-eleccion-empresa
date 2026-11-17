@@ -1,3 +1,6 @@
+"use client";
+
+import { memo } from "react";
 import { ModuleLink } from "@/lib/auth/module-link";
 import { Candidate } from "../../types/candidates";
 import { initials, timeAgo } from "./labels";
@@ -7,7 +10,7 @@ type CandidateCardProps = {
   item: Candidate;
 };
 
-export function CandidateCard({ item }: CandidateCardProps) {
+export const CandidateCard = memo(function CandidateCard({ item }: CandidateCardProps) {
   return (
     <ModuleLink basePath="/talent-pipeline-tracker" href={`/candidates/${item.id}`} className="block">
       <article className="rounded-xl border border-[var(--border-muted)] bg-[var(--surface-2)] p-5 shadow-[0_16px_40px_var(--shadow-card)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-3)]">
@@ -33,4 +36,4 @@ export function CandidateCard({ item }: CandidateCardProps) {
       </article>
     </ModuleLink>
   );
-}
+});

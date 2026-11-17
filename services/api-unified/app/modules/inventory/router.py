@@ -36,6 +36,36 @@ def _stock(session: Session, ingredient_id: int) -> float:
     return float(entries - exits)
 
 
+def _stock_batch(session: Session, ingredient_ids: list[int]) -> dict[int, float]:
+    """Return {ingredient_id: current_stock} for all given IDs using 2 queries (no N+1)."""
+    if not ingredient_ids:
+        return {}
+
+    entries_result = session.exec(
+        select(
+            IngredientEntry.ingredient_id,
+            func.coalesce(func.sum(IngredientEntry.quantity), 0.0),
+        )
+        .where(IngredientEntry.ingredient_id.in_(ingredient_ids))
+        .group_by(IngredientEntry.ingredient_id)
+    ).all()
+    exits_result = session.exec(
+        select(
+            IngredientExit.ingredient_id,
+            func.coalesce(func.sum(IngredientExit.quantity), 0.0),
+        )
+        .where(IngredientExit.ingredient_id.in_(ingredient_ids))
+        .group_by(IngredientExit.ingredient_id)
+    ).all()
+
+    entries_map = {row[0]: float(row[1]) for row in entries_result}
+    exits_map = {row[0]: float(row[1]) for row in exits_result}
+    return {
+        ingredient_id: entries_map.get(ingredient_id, 0.0) - exits_map.get(ingredient_id, 0.0)
+        for ingredient_id in ingredient_ids
+    }
+
+
 def _ingredient_response(session: Session, ingredient: Ingredient) -> IngredientResponse:
     return IngredientResponse(
         id=ingredient.id,
@@ -54,7 +84,20 @@ def list_ingredients(
     _user: dict = Depends(get_current_user),
 ):
     ingredients = session.exec(select(Ingredient).order_by(Ingredient.id)).all()
-    return [_ingredient_response(session, ingredient) for ingredient in ingredients]
+    ids = [ing.id for ing in ingredients]
+    stock_map = _stock_batch(session, ids)
+    return [
+        IngredientResponse(
+            id=ing.id,
+            name=ing.name,
+            sku=ing.sku,
+            unit=ing.unit,
+            category=ing.category,
+            country=ing.country,
+            current_stock=stock_map.get(ing.id, 0.0),
+        )
+        for ing in ingredients
+    ]
 
 
 @router.post("/products", response_model=IngredientResponse, status_code=status.HTTP_201_CREATED)

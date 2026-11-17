@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { publicErrorMessage, trackerFetch } from "../../utils/api";
 
 type FormValues = {
@@ -75,13 +75,11 @@ export function NewCandidateSection({ onCreated }: { onCreated: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const hasErrors = useMemo(() => Object.keys(errors).length > 0, [errors]);
-
   const onChange = (field: keyof FormValues) => (event: ChangeEvent<HTMLInputElement>) => {
     const next = { ...values, [field]: event.target.value };
     setValues(next);
 
-    if (hasErrors) {
+    if (Object.keys(errors).length > 0) {
       setErrors(validate(next));
     }
   };

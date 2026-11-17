@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
   fetchSuppliers,
   searchSuppliers,
@@ -17,10 +18,13 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { AuthGuard } from '@/lib/auth/auth-guard';
 import SearchBar from '../components/search-bar';
 import SupplierList from '../components/supplier-list';
-import SupplierForm from '../components/supplier-form';
-import RateDialog from '../components/rate-dialog';
-import DeleteDialog from '../components/delete-dialog';
 import Link from 'next/link';
+
+/* Los diálogos modales se cargan bajo demanda (lazy) para reducir
+ * el JS inicial del módulo de proveedores. */
+const SupplierForm = dynamic(() => import('../components/supplier-form'), { ssr: false });
+const RateDialog = dynamic(() => import('../components/rate-dialog'), { ssr: false });
+const DeleteDialog = dynamic(() => import('../components/delete-dialog'), { ssr: false });
 
 export default function Home() {
   return (
@@ -104,7 +108,16 @@ function SuppliersDashboard() {
     setTimeout(() => setSuccessMsg(null), 3000);
   }
 
-  async function handleSearch(country: string, categories: string) {
+  const handleEditRate = useCallback((id: number, name: string) => {
+    const s = suppliers.find((x) => x.id === id);
+    if (s) setRateTarget({ id, name, rate: s.rate_per_unit });
+  }, [suppliers]);
+
+  const handleDeleteTarget = useCallback((id: number, name: string) => {
+    setDeleteTarget({ id, name });
+  }, []);
+
+  const handleSearch = useCallback(async (country: string, categories: string) => {
     setSearching(true);
     setError(null);
     try {
@@ -122,9 +135,9 @@ function SuppliersDashboard() {
     } finally {
       setSearching(false);
     }
-  }
+  }, [handleFailure, loadAll]);
 
-  async function handleCreate(data: CreateSupplierInput) {
+  const handleCreate = useCallback(async (data: CreateSupplierInput) => {
     try {
       await createSupplier(data);
       setShowForm(false);
@@ -133,9 +146,9 @@ function SuppliersDashboard() {
     } catch (err) {
       handleFailure(err, 'Error al crear el proveedor.');
     }
-  }
+  }, [handleFailure, loadAll]);
 
-  async function handleRate(id: number, rate: number) {
+  const handleRate = useCallback(async (id: number, rate: number) => {
     try {
       await updateRate(id, rate);
     } catch (err) {
@@ -145,13 +158,10 @@ function SuppliersDashboard() {
     flash('Tarifa actualizada.');
     await loadAll();
     return true;
-  }
+  }, [handleFailure, loadAll]);
 
-  async function handleToggleStatus(
-    id: number,
-    _name: string,
-    currentStatus: 'active' | 'suspended'
-  ) {
+  const handleToggleStatus = useCallback(
+    async (id: number, _name: string, currentStatus: 'active' | 'suspended') => {
     const next = currentStatus === 'active' ? 'suspended' : 'active';
     setUpdatingStatusIds((current) => new Set(current).add(id));
     try {
@@ -169,9 +179,9 @@ function SuppliersDashboard() {
         return nextIds;
       });
     }
-  }
+  }, [handleFailure, loadAll]);
 
-  async function handleDelete(id: number): Promise<boolean> {
+  const handleDelete = useCallback(async (id: number): Promise<boolean> => {
     try {
       await deleteSupplier(id);
       flash('Proveedor eliminado.');
@@ -181,7 +191,7 @@ function SuppliersDashboard() {
       handleFailure(err, 'Error al eliminar el proveedor.');
       return false;
     }
-  }
+  }, [handleFailure, loadAll]);
 
   return (
     <>
@@ -272,12 +282,9 @@ function SuppliersDashboard() {
             canWrite={canWrite}
             suppliers={suppliers}
             updatingStatusIds={updatingStatusIds}
-            onEditRate={(id, name) => {
-              const s = suppliers.find((x) => x.id === id);
-              if (s) setRateTarget({ id, name, rate: s.rate_per_unit });
-            }}
+            onEditRate={handleEditRate}
             onToggleStatus={handleToggleStatus}
-            onDelete={(id, name) => setDeleteTarget({ id, name })}
+            onDelete={handleDeleteTarget}
           />
         )}
       </main>
