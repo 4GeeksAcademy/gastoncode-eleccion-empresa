@@ -1,4 +1,5 @@
 import { ModuleFrame } from "@/components/module-frame";
+import "../../../../styles/module-base.css";
 
 export const metadata = { title: "Brasaland · Proveedores" };
 

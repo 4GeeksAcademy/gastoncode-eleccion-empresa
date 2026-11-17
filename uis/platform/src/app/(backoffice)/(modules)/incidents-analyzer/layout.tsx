@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ModuleFrame } from "@/components/module-frame";
+import "../../../../styles/module-base.css";
+import "../../../../styles/analyzer.css";
 
 export const metadata = { title: "Brasaland · Incidencias" };
 

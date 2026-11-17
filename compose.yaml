@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    image: gastoncode15/brasaland-frontend:1.0.2
+    image: gastoncode15/brasaland-frontend:1.0.3
     restart: unless-stopped
     depends_on:
       api:

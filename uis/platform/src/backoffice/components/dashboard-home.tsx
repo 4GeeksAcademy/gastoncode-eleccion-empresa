@@ -1,9 +1,11 @@
-import { ServiceCard } from "./service-card";
+import dynamic from "next/dynamic";
 import { AuthGuard } from "@/lib/auth/auth-guard";
 import { SiteHeader } from "./site-header";
-import { StatCard } from "./stat-card";
 import { SectionHeading } from "./ui/section-heading";
 import { SERVICES } from "../catalog/services";
+
+const StatCard = dynamic(() => import("./stat-card").then((mod) => ({ default: mod.StatCard })));
+const ServiceCard = dynamic(() => import("./service-card").then((mod) => ({ default: mod.ServiceCard })));
 
 const AREAS = new Set(SERVICES.map((service) => service.area));
 

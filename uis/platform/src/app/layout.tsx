@@ -19,28 +19,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" data-scroll-behavior="smooth">
       <head>
         {/*
-          Preload de imagen crítica (hero) con fetchpriority="high" para priorizar
-          la descarga temprana del Largest Contentful Paint (LCP). Las imágenes
-          se sirven desde el mismo origen (self-hosted) para eliminar latencia
-          de conexión externa (DNS, TCP, SSL). imageSrcSet/imageSizes permiten
-          que el navegador descargue la resolución adecuada según el viewport.
-
-          El logo /logo-brasaland.svg no se preloadea manualmente porque
-          Next.js lo promueve automáticamente al encontrar fetchPriority="high"
-          en el componente BrandLogo.
+          El preload de la imagen hero (LCP) se define exclusivamente en
+          app/(public)/layout.tsx para que solo afecte al website público.
+          El backoffice no muestra imágenes, por lo que cargar 127 KB de
+          imagen precargada en /backoffice es innecesario.
         */}
-        <link
-          rel="preload"
-          href="/images/hero-800w.webp"
-          as="image"
-          fetchPriority="high"
-          imageSrcSet="
-            /images/hero-400w.webp 400w,
-            /images/hero-800w.webp 800w,
-            /images/hero-1200w.webp 1200w
-          "
-          imageSizes="(max-width: 768px) 100vw, 50vw"
-        />
       </head>
       <body>{children}</body>
     </html>

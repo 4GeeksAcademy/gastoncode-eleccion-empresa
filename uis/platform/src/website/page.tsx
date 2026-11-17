@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BenefitCard } from "@/website/components/benefit-card";
 import { SiteFooter } from "@/website/components/site-footer";
@@ -62,20 +63,14 @@ export default function HomePage() {
               </div>
             </div>
             <figure className="rounded-2xl border border-amber-400/20 bg-stone-900/60 p-3 shadow-2xl shadow-amber-950/40">
-              <picture>
-                <source srcSet="/images/hero-800w.webp" type="image/webp" />
-                <source srcSet="/images/hero-800w.jpg" type="image/jpeg" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/hero-800w.jpg"
-                  alt="Hamburguesa gourmet a la parrilla servida en mesa de madera"
-                  width={800}
-                  height={534}
-                  className="h-64 w-full rounded-xl object-cover md:h-[24rem]"
-                  fetchPriority="high"
-                  decoding="async"
-                />
-              </picture>
+              <Image
+                src="/images/hero-800w.jpg"
+                alt="Hamburguesa gourmet a la parrilla servida en mesa de madera"
+                width={800}
+                height={534}
+                priority
+                className="h-64 w-full rounded-xl object-cover md:h-[24rem]"
+              />
               <figcaption className="px-2 pt-3 text-sm text-stone-400">
                 Hamburguesas y cortes a la brasa con sabor consistente en cada restaurante.
               </figcaption>
@@ -113,20 +108,14 @@ export default function HomePage() {
               <p className="mt-6 text-sm text-stone-400">También puedes escribirnos a: contacto@brasaland.com</p>
             </div>
             <figure className="overflow-hidden rounded-2xl border border-amber-500/30">
-              <picture>
-                <source srcSet="/images/contact-800w.webp" type="image/webp" />
-                <source srcSet="/images/contact-800w.jpg" type="image/jpeg" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/contact-800w.jpg"
-                  alt="Corte de hamburguesas a la parrilla sobre fuego"
-                  width={800}
-                  height={534}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </picture>
+              <Image
+                src="/images/contact-800w.jpg"
+                alt="Corte de hamburguesas a la parrilla sobre fuego"
+                width={800}
+                height={534}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
             </figure>
           </div>
         </section>
