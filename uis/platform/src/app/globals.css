@@ -1,0 +1,9 @@
+@import "tailwindcss" source(none);
+@import "../styles/tailwind-bridge.css";
+
+@source "../";
+
+@theme inline {
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+  --font-brand: var(--font-talent-brand);
+}

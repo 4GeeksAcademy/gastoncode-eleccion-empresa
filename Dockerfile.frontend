@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1
+
+FROM node:22-alpine AS dependencies
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY uis/platform/package.json ./uis/platform/package.json
+RUN npm ci
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+# Rewrites are serialized into the Next.js production build. This is the
+# Compose service name, not localhost (which would resolve inside this image).
+ARG UNIFIED_API_URL=http://api:8005
+ENV UNIFIED_API_URL=${UNIFIED_API_URL}
+ENV NEXT_TELEMETRY_DISABLED=1
+# Generar imágenes optimizadas locales (WebP, AVIF si soportado)
+RUN node scripts/optimize-images.mjs
+# Compilar Next.js standalone
+RUN npm run build:platform
+
+FROM node:22-alpine AS runner
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3007
+ENV HOSTNAME=0.0.0.0
+WORKDIR /app
+
+# outputFileTracingRoot is the monorepo root, so standalone preserves the
+# uis/platform path inside its output tree.
+COPY --from=builder --chown=node:node /app/uis/platform/.next/standalone ./
+COPY --from=builder --chown=node:node /app/uis/platform/.next/static ./uis/platform/.next/static
+COPY --from=builder --chown=node:node /app/uis/platform/public ./uis/platform/public
+
+USER node
+EXPOSE 3007
+CMD ["node", "uis/platform/server.js"]
