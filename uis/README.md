@@ -1,10 +1,7 @@
-# `uis` folder
+# User interfaces (`uis/`)
 
-This folder contains **all the user interfaces** related to the company for the cross-functional AI Engineering project (for example: web applications, internal dashboards, customer portals, Streamlit/Gradio apps, etc.).
+The currently identified frontend application in this directory is [`platform/`](./platform/), a Next.js platform integrated with the unified API. Its local port is 3007; launcher and run instructions are in the [root README](../README.md) and [`scripts/README.md`](../scripts/README.md).
 
-Each subfolder inside `uis/` must correspond to **one specific user interface** (for example: `website`, `suppliers-backoffice`) and include its own technical and functional documentation.
+The presence of this directory does not imply that other frontend applications exist; add them here when implemented and documented.
 
-- **Main purpose**: to centralize in a single place all the frontend applications that support the company's use cases.
-- **Recommendation**: document in this file (or in sub-READMEs) the applications you add, their objective, the technology used, and how to run them.
-
-> _Spanish version: [README.es.md](./README.es.md)._
+> Spanish version: [README.es.md](./README.es.md).

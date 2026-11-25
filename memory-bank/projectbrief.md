@@ -36,15 +36,9 @@ La solución debe servir a los equipos de operaciones, compras, personas, formac
 
 ## Enfoque y estructura del repositorio
 
-El repositorio organiza el trabajo en varias áreas, no en una única aplicación:
+El repositorio es el espacio de trabajo de Brasaland Digital: reúne interfaces, servicios, paquetes compartidos, herramientas operativas y documentación. La aplicación y los servicios que están ejecutables hoy son una implementación parcial de la iniciativa, no un inventario exhaustivo de capacidades ni una prueba de que los objetivos de negocio ya estén resueltos. La topología de ejecución vigente y el alcance por módulo se describen en `docs/ARCHITECTURE_CURRENT.md` y `docs/DOMAIN_REFERENCE.md`; esos documentos técnicos pueden cambiar sin alterar este briefing del negocio.
 
-- `uis/backoffice/` reúne interfaces para el dashboard ejecutivo, la gestión de proveedores, el análisis y la gestión centralizada de incidencias, inventario (`/inventory-management`) y el seguimiento de talento. La UI de inventario está integrada en el origen del dashboard y consume su API de dominio.
-- `services/` contiene servicios de API por dominio: autenticación, incidencias, proveedores e inventario. El servicio de inventario registra productos y movimientos en PostgreSQL de Supabase y calcula existencias a partir de esos movimientos; aún es un prototipo sin migraciones versionadas.
-- `packages/`, `src/` y `shared/` alojan tipos, utilidades y convenciones compartidas.
-- `data/`, `scripts/`, `skills/`, `agents/`, `mcps/` y `workflows/` proporcionan espacio para análisis de datos, automatización y capacidades de IA. Además, `.agents/skills/` contiene skills operativas con scripts y pruebas; entre ellas, un planificador determinista que sugiere reposición a partir de inventario validado.
-- `docs/` y `memory-bank/` documentan la arquitectura, el contexto y el avance del proyecto.
-
-Estos módulos reflejan las áreas de trabajo presentes en el repositorio; su existencia no implica por sí sola que todos los objetivos de negocio estén ya implementados o integrados. La evolución debe priorizar entregables verificables que reduzcan los problemas operativos de Brasaland y permitan ampliar la plataforma por etapas.
+Las áreas y carpetas de análisis, datos, automatización e IA representan tanto trabajo existente como espacios de evolución. La existencia de una carpeta, propuesta, prototipo o herramienta no implica que esté integrada en los procesos de los restaurantes. La evolución debe priorizar entregables verificables que reduzcan los problemas operativos descritos y permitan ampliar la solución por etapas.
 
 ## Criterios de éxito
 

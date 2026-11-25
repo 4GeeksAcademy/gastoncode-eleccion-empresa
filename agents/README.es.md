@@ -1,8 +1,10 @@
-# Carpeta `agents`
+# `agents/`
 
-Esta carpeta contiene los **agentes de IA** del monorepo (asistentes, copilotos internos, agentes de soporte/operaciones, etc.) que se construyen como parte de los hitos transversales de AI Engineering.
+Este directorio contiene actualmente una plantilla inicial y documentación para herramientas; no identifica un agente de IA configurado o desplegable. El archivo `agent.py` de la plantilla está vacío, por lo que no debe considerarse una implementación funcional.
 
-Cada subcarpeta dentro de `agents/` debería representar **un agente concreto** (por ejemplo `support-agent`, `onboarding-agent`, `sales-assistant`) con su propia documentación: objetivo, capacidades, fuentes de conocimiento/memoria, herramientas disponibles y cómo probarlo.
+- [`_template/`](./_template/): estructura inicial y guía para un agente futuro.
+- [`tools/`](./tools/): guía documental para herramientas reutilizables; el README no demuestra que haya herramientas concretas implementadas.
 
-- **Propósito principal**: centralizar el desarrollo de agentes reutilizables para la compañía dentro del monorepo.
-- **Recomendación**: documenta aquí el catálogo de agentes que se vaya creando y enlaza a los READMEs de cada agente.
+Añade aquí enlaces a agentes concretos cuando estén implementados y probados.
+
+> English version: [README.md](./README.md).

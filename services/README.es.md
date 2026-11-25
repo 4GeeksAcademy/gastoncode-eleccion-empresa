@@ -1,8 +1,7 @@
-# Carpeta `services`
+# Servicios backend (`services/`)
 
-Esta carpeta contiene **todos los servicios backend** (APIs y workers en segundo plano) relacionados con la compañía para el proyecto transversal de AI Engineering.
+La aplicación backend actual es [`api-unified/`](./api-unified/), un servicio FastAPI que agrupa los módulos de autenticación, proveedores, incidencias, inventario y talento. El launcher local integrado lo inicia en el puerto 8005 junto con `uis/platform`.
 
-Cada subcarpeta dentro de `services/` debe corresponder a **un servicio concreto** (por ejemplo `admin-api`, `data-processor-worker`) e incluir su propia documentación técnica y funcional.
+Consulta el [README del servicio](./api-unified/README.md) para configuración, comandos de ejecución y pruebas, persistencia y limitaciones. En el contenido actual de este directorio no se identifican otros servicios backend ni workers.
 
-- **Propósito principal**: centralizar toda la lógica backend, APIs y consumidores de colas que dan soporte a los casos de uso de la compañía.
-- **Recomendación**: documenta en este archivo (o en sub-READMEs) los servicios que vayas añadiendo, su objetivo, tecnología usada y cómo ejecutarlos.
+> English version: [README.md](./README.md).

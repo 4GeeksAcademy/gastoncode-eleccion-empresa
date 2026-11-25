@@ -1,6 +1,16 @@
-# Carpeta `docs`
+# Documentación del proyecto
 
-Esta carpeta contiene la **documentación transversal** del monorepo: guías de arquitectura, decisiones técnicas, convenciones, procesos, y cualquier material compartido entre aplicaciones, pipelines, agentes y workflows.
+Esta carpeta reúne documentación técnica compartida del monorepo de Brasaland.
 
-- **Propósito principal**: tener un punto único para la documentación “global” del proyecto (no específica de una sola app/agente).
-- **Recomendación**: organiza la documentación por temas (arquitectura, despliegue, datos, seguridad, observabilidad, etc.) y mantén enlaces desde los READMEs de cada componente hacia estas guías.
+## Arquitectura y dominios
+
+- [Arquitectura actual](./ARCHITECTURE_CURRENT.md): estructura implementada y datos verificados de ejecución/API.
+- [Referencia de dominios](./DOMAIN_REFERENCE.md): módulos actuales, persistencia y limitaciones conocidas.
+- [Propuesta de arquitectura](./ARCHITECTURE_PROPOSAL.md): diseño futuro de backend por capas; sus endpoints propuestos no describen las rutas activas.
+
+## Operación y pruebas
+
+- [Despliegue con Docker](./DOCKER_DEPLOYMENT.md): instrucciones y límites actuales de Compose.
+- [Guía de pruebas](../TESTING.md): comandos, alcance de pruebas sintéticas y limitaciones conocidas.
+
+> English version: [README.md](./README.md).
