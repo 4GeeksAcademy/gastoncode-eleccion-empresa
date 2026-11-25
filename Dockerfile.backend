@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+
+FROM ghcr.io/astral-sh/uv:latest AS uv
+
+FROM python:3.14-slim AS dependencies
+COPY --from=uv /uv /uvx /bin/
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+WORKDIR /app
+
+# uv resolves the incidents-analysis editable dependency relative to the
+# monorepo, so include its project metadata before syncing the locked env.
+COPY services/api-unified/pyproject.toml services/api-unified/uv.lock ./services/api-unified/
+COPY packages/incidents_analysis ./packages/incidents_analysis
+RUN uv sync --project services/api-unified --locked --no-dev
+
+FROM python:3.14-slim AS runner
+ENV PATH="/opt/venv/bin:${PATH}"
+ENV PYTHONPATH=/app/services/api-unified
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /data \
+    && chown app:app /data
+COPY --from=dependencies /opt/venv /opt/venv
+COPY --chown=app:app services/api-unified/app ./services/api-unified/app
+COPY --chown=app:app services/api-unified/main.py ./services/api-unified/main.py
+COPY --chown=app:app packages/incidents_analysis ./packages/incidents_analysis
+
+USER app
+EXPOSE 8005
+CMD ["uvicorn", "app.main:create_app", "--factory", "--app-dir", "/app/services/api-unified", "--host", "0.0.0.0", "--port", "8005"]

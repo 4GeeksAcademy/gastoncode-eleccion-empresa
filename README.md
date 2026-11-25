@@ -1,150 +1,144 @@
 # Brasaland Digital
 
-Brasaland Digital is a monorepo of web interfaces, APIs, and operational tools for modernizing the restaurant chain's internal workflows. It includes a coordinated backoffice for authentication, suppliers, incidents, inventory, and a synthetic-data talent tracking prototype, plus inventory replenishment utilities.
+Brasaland Digital is a monorepo of web interfaces, an API, and operational tools supporting the modernization of Brasaland's internal workflows. Brasaland operates restaurants in Colombia and Florida. This repository contains functional prototypes for selected business domains; **it is not a complete platform and is not production-ready**.
 
-This repository contains working prototypes, not a production-ready unified platform. The applications and APIs remain separate: auth, suppliers, and incidents use local TinyDB files, while the inventory API uses PostgreSQL in Supabase.
+## Current scope and status
 
-## What’s included
+The integrated local setup consists of a web platform and an API:
 
-- **Integrated backoffice:** dashboard and account management, suppliers, incidents, CSV incident analysis, inventory, and talent. The launcher starts five APIs (auth, suppliers, incidents, inventory, talent) and six UIs (dashboard, suppliers, incident manager, incident analyzer, inventory, talent).
-- **Backend APIs:** FastAPI services for authentication, suppliers, incidents, and inventory. Authentication uses JWT; each API enforces its own authorization checks. Inventory stores products and movements in Supabase PostgreSQL and derives stock from those movements.
-- **Talent pipeline tracker:** integrated at `/talent-pipeline-tracker`, restricted to admin/manager. Its API adapter uses the external 4Geeks prototype: synthetic data only, no local candidate persistence, vacancies, or onboarding.
-- **Inventory replenishment planner:** a deterministic local CSV tool that suggests quantities for human review. It does not forecast demand, select suppliers, or submit orders.
-- **Static website prototypes, shared UI/types/utilities, data and analysis packages, scripts, and project documentation.**
+- **Web platform:** Next.js app in `uis/platform`, served on port 3007. It includes a public website, protected dashboard, authentication and account pages, suppliers, incident analysis and management, inventory, and a talent-tracking prototype.
+- **Unified API:** FastAPI app in `services/api-unified`, served on port 8005. It groups authentication, suppliers, incidents, inventory, and talent domains.
+- **Replenishment tool:** local planner that accepts a validated inventory CSV and produces deterministic suggestions for human review. It does not forecast demand, select suppliers, or place orders.
 
-The repository does not yet provide an operational database shared across all domains, a unified deployment, or an integrated sales and telemetry pipeline. See [project status](./memory-bank/progress.md) and the [architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) for current scope and future plans.
+The platform proxies `/api/*` requests to the unified API. The development launcher starts two processes (frontend and API), not the former separate servers per domain.
+
+### Capabilities and limitations by domain
+
+| Domain | Observed scope | Important limitations |
+| --- | --- | --- |
+| Authentication and accounts | Registration, sign-in, profiles, roles, and password change/reset flows. | JWT and local data; password-reset email delivery requires optional Resend configuration. |
+| Suppliers | UI and API to query and maintain supplier records. | Local TinyDB persistence; not a shared transactional database or a purchase-order workflow. |
+| Incidents | Incident management, filters and summary; CSV file analysis. | Local TinyDB persistence; no general operational telemetry pipeline. |
+| Inventory | Products, inbound/outbound movements, and history; stock is derived from movements. | Supabase PostgreSQL; tables are created at service startup and there are no versioned migrations. Isolated tests do not validate real Supabase writes or concurrency. |
+| Talent | Candidate tracking through an adapter to an external prototype. | Synthetic data only; no local persistence, vacancies, or onboarding implementation. |
+| Replenishment | Quantity suggestions from CSV. | Deterministic calculation, requires human review, and does not place orders. |
+
+The repository does **not yet implement** a database shared across all domains, point-of-sale integration, an integrated sales/telemetry pipeline, digital ordering, CRM, full people management, or a training platform. These are future goals or areas of work and must not be inferred from the repository structure.
+
+## Documentation status convention
+
+This documentation distinguishes the current product from plans using these categories:
+
+- **Implemented:** functionality exists in current code; related tests may cover only part of its flow.
+- **Limited / prototype:** an implementation exists, but has persistence, integration, validation, or operational constraints.
+- **Proposed / pending:** a future goal or design, not a capability currently available.
+
+The existence of a route, module, folder, or architecture proposal does not by itself prove that a business workflow is complete or ready for operational use. Refer to the current testing guides for claims about validation.
+
+## Technology stack
+
+- **Frontend:** Next.js 16.3.1, React 19.2.8, TypeScript 6, and Tailwind CSS 4.
+- **Backend:** Python 3.14 or later, FastAPI, Pydantic, and Uvicorn.
+- **Persistence:** local TinyDB for authentication, suppliers, and incidents; SQLModel and PostgreSQL (Supabase) for inventory.
+- **Authentication:** JWT (HS256) and bcrypt. Resend is optional for sending password-reset emails.
+- **Tooling:** npm, `uv`, pytest, Jest, and Playwright-based browser tests.
 
 ## Requirements
 
 - Node.js 22 or later and npm.
-- [uv](https://docs.astral.sh/uv/) for Python environments.
-- Python 3.14 or later for `api-auth`; Python 3.12 or later for `api-suppliers`, `api-incidents`, `api-inventory`, and `api-talent`.
+- Python 3.14 or later.
+- [`uv`](https://docs.astral.sh/uv/) to manage the Python environment.
+- The API requires `JWT_SECRET`; the development launcher creates and retains it locally if it is not set. `DATABASE_URL` is only required to initialize and use the inventory module; without it the API can start, but inventory routes cannot access their database. Do not use a production database for tests.
 
-Python environments are managed separately for each API. The integrated development launcher supplies a shared local `JWT_SECRET`; it does not write a `.env` file. For a standalone service setup, configure its required environment variables as described in that service’s README.
+The launcher creates and retains a local JWT secret if `JWT_SECRET` is not set in the environment; it does not create a `.env` file. For deployment, manage secrets with an appropriate mechanism and do not commit them to Git.
 
-## Start the integrated backoffice
+## Run locally
 
 From the repository root:
 
 ```bash
-npm run backoffice:setup
-npm run backoffice:dev
+# Install dependencies
+node scripts/backoffice.mjs setup
+
+# Start API (8005) and web platform (3007)
+node scripts/backoffice.mjs dev
+
+# Check service availability and protected responses
+node scripts/backoffice.mjs check
 ```
 
-Open **<http://localhost:3000>**. The dashboard is the public origin for the integrated experience and shared session:
+The launcher requires ports **8005** and **3007** to be free. Press `Ctrl+C` to stop both processes. `setup` installs dependencies but does not migrate or initialize a separate database; the inventory service does run its existing table-creation logic at startup. To run only the frontend, use `npm run dev:platform`; the API must be available separately at the configured destination.
 
-- `/` — dashboard and account access
-- `/suppliers` — supplier management
-- `/incidents-manager` — incident registration and summary
-- `/incidents-analyzer` — upload and analyze incident CSV files
-- `/inventory-management` — protected inventory pages: products, inbound orders, outbound orders, and order history
-- `/talent-pipeline-tracker` — synthetic candidate tracking, details, stages/statuses, and notes, restricted to admin/manager
+### Main routes
 
-The launcher starts eleven processes and requires ports **3000-3005 and 8000-8004** to be free. Talent uses UI port 3003 and API port 8004. Stop it with `Ctrl+C`; if one process exits unexpectedly, the launcher stops the group. Do not access separate UI ports when you need the dashboard's shared session.
+- `/` and `/application`: public website.
+- `/backoffice`: protected dashboard.
+- `/login`, `/register`, `/forgot-password`, `/reset-password`, and `/account/*`: authentication and account pages.
+- `/suppliers`: suppliers.
+- `/incidents-analyzer`: incident CSV analysis.
+- `/incidents-manager`: incident management.
+- `/inventory-management`: inventory.
+- `/talent-pipeline-tracker`: talent tracking with synthetic data.
 
-`backoffice:setup` installs the npm workspace and syncs all five API environments. It does not seed or replace application data. By default, local TinyDB files are retained between runs. Inventory requires `DATABASE_URL` for its Supabase PostgreSQL database; keep it in the root environment (for example, `.env`) or process environment and never commit or publish it. TLS is required by default. The launcher's local JWT secret storage is for development only, not production secret management.
+Backoffice sections share the platform session. The API exposes OpenAPI documentation at `/docs` while running; business routes are mounted on the unified service and proxied by the frontend under `/api/*`.
 
-To check that the integrated services and selected dashboard proxies respond while the stack is running:
-
-```bash
-npm run backoffice:check
-```
-
-The check is not a substitute for functional tests or a permissions review. For persistent data, first-admin setup, port details, session behavior, and operational cautions, see the [integrated backoffice guide](./docs/BACKOFFICE_INTEGRATION.es.md).
-
-### Create the first administrator
-
-1. Start the integrated backoffice and register an account at `/register`.
-2. Stop the processes with `Ctrl+C`.
-3. Promote that existing account while the APIs are stopped:
-
-   ```bash
-   npm run backoffice:admin -- user@example.com
-   ```
-
-4. Restart the backoffice and sign in.
-
-This command does not create an account. Access to the local terminal and data files is equivalent to administrative access.
-
-## Run individual interfaces
-
-The following root scripts start only their respective Next.js interfaces; they do **not** start the APIs they depend on:
-
-```bash
-npm run dev:dashboard
-npm run dev:suppliers
-npm run dev:incidents
-npm run dev:incidents-manager
-npm run dev:inventory-management
-npm run dev:talent
-```
-
-The talent tracker runs on port 3003 behind the integrated dashboard/session. Use `npm run backoffice:dev` for that workflow. Its external provider is configured server-side through `TRACKER_API_URL`; never send real candidate data to this prototype. Each UI and API has its own README.
+The [module functional reference](./docs/DOMAIN_REFERENCE.md) documents UI/API routes, roles, persistence, known limitations, and test coverage. The [current architecture](./docs/ARCHITECTURE_CURRENT.md) describes topology without duplicating that inventory.
 
 ## Tests and quality checks
 
-Root workspace scripts are available for build and lint:
+Main commands from the repository root:
 
 ```bash
+# Build and lint configured workspaces
 npm run build
 npm run lint
-```
 
-Examples of focused test commands from the repository root:
+# Platform typecheck
+npm run typecheck:platform
 
-```bash
-# Integrated launcher and dashboard/API client tests
-node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/incidents-analyzer/tests/incidents-api.test.mjs uis/backoffice/incidents-manager/tests/incidents-api.test.mjs
+# Unified API suite (uses pytest)
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- pytest services/api-unified/tests -v
 
-# Authentication API logic tests (pytest; run from the service directory)
-uv sync --project services/api-auth --group test
-cd services/api-auth
-uv run pytest
-cd ../..
+# Launcher and proxy tests
+node --test scripts/backoffice.test.mjs
+node --test scripts/platform-proxy.test.mjs
 
-# Shared auth and inventory TypeScript tests
+# TypeScript tests
 npx jest --coverage
 
-# Incidents API tests (PYTHONPATH is needed for the local analysis package)
-uv sync --project services/api-incidents --group test
-PYTHONPATH="$PWD" uv run --project services/api-incidents --group test -- python -m unittest discover -s services/api-incidents/tests -v
-
-# Inventory replenishment planner tests
-python3 -m unittest discover -s .agents/skills/replenishment-planner/tests -v
-
-# Inventory API unit tests (uses isolated SQLite; no Supabase writes)
-uv sync --project services/api-inventory --group test
-uv run --directory services/api-inventory --group test pytest
+# Platform browser tests (start the platform first)
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
 ```
 
-For browser tests, start the relevant UI(s) first and use `node scripts/browser-tests.mjs`; the runner installs Playwright and Chromium in a temporary location. See [`scripts/README.es.md`](./scripts/README.es.md) and the [integration guide](./docs/BACKOFFICE_INTEGRATION.es.md) for test prerequisites and isolation guidance.
+See [`TESTING.md`](./TESTING.md) for suite prerequisites and isolation, and [`scripts/README.es.md`](./scripts/README.es.md) for the browser runner. Isolated tests are not equivalent to production validation: in particular, inventory tests do not verify Supabase writes, schema, or concurrency.
 
-See [`TESTING.md`](./TESTING.md) for focused test commands and setup details. Jest covers `uis/backoffice/auth-shared` and the inventory API client/stock helpers.
+## Deployment
+
+A Docker Compose setup and example VPS topology are documented at [`docs/DOCKER_DEPLOYMENT.md`](./docs/DOCKER_DEPLOYMENT.md). Compose does not demonstrate production readiness. The guide documents configuration, persistence, and operational limits; verify security, backups/restoration, migrations, and PostgreSQL operations before using important data.
+
+The architecture currently implemented, including the relationship between frontend routes, API prefixes, and per-domain persistence, is documented in [Current architecture](./docs/ARCHITECTURE_CURRENT.md). The [future architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) is a design document, not a description of capabilities already available.
 
 ## Repository map
 
 ```text
 .
-├── agents/                         # Agent templates and tool guidance
-├── data/                           # Raw, processed, pipeline, and evaluation data areas
-├── docs/                           # Architecture and integration documentation
-├── packages/                       # Python analysis package and shared package areas
-├── scripts/                        # Backoffice launcher, seeds, analysis, and test tools
-├── services/                       # FastAPI: auth, suppliers, incidents, inventory
-├── uis/
-│   ├── backoffice/                  # Dashboard, suppliers, incidents, talent interfaces
-│   └── website/                     # Static website prototypes
-├── .agents/skills/                  # Operational skills, including replenishment planner
-├── src/ and shared/                 # Shared types, utilities, and conventions
-└── workflows/, mcps/, infra/        # Automation, MCP, and infrastructure work areas
+├── services/api-unified/     # FastAPI API (auth, suppliers, incidents, inventory, talent)
+├── uis/platform/             # Next.js platform (port 3007)
+├── packages/                 # Packages, including incident analysis
+├── lib/, src/, shared/       # Clients, types, and shared utilities
+├── scripts/                  # Launcher, tests, seeds, and tools
+├── data/                     # Data and pipeline areas
+├── .agents/skills/           # Operational skills, including replenishment planner
+├── docs/                     # Current architecture, domain reference, proposal, and guides
+└── memory-bank/              # Business context and project status
 ```
 
-## Data and security notes
+## Related documentation
 
-- TinyDB files used by auth, suppliers, and incidents are local to each service and are not a shared transactional database. Inventory instead uses Supabase PostgreSQL; its tables are currently created at startup with SQLModel `create_all` (no versioned migrations yet).
-- Inventory stock is derived as inbound quantity minus outbound quantity; `current_stock` is not stored independently. Unit tests substitute isolated SQLite and do not validate Supabase schema changes, production permissions, or concurrent operations. A manual `SELECT 1` connectivity check with TLS confirmed connection only; it did not exercise business writes.
-- The integrated launcher preserves local data and uses the same JWT secret for the related APIs. Keep secrets out of source control; configure production secrets through an appropriate secret manager.
-- Avoid using real or sensitive data in development and tests. Use isolated database paths for tests and seeds.
-- The replenishment planner produces suggestions only. A responsible person must review them before any purchasing decision.
-
-For business context, see [`memory-bank/projectbrief.md`](./memory-bank/projectbrief.md) and [`memory-bank/CONTEXT-brasaland-briefing.es.md`](./memory-bank/CONTEXT-brasaland-briefing.es.md).
+- [Testing guide](./TESTING.md)
+- [Current architecture](./docs/ARCHITECTURE_CURRENT.md)
+- [Docker deployment](./docs/DOCKER_DEPLOYMENT.md)
+- [Future architecture proposal](./docs/ARCHITECTURE_PROPOSAL.md) — a proposal, not a description of what is implemented.
+- [Business context](./memory-bank/CONTEXT-brasaland-briefing.es.md)
+- [Project brief](./memory-bank/projectbrief.md) and [project status](./memory-bank/progress.md); they may contain historical context and should be checked against current code.

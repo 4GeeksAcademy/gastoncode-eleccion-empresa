@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Brasaland">
+  <defs>
+    <linearGradient id="f" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FDE68A"/>
+      <stop offset=".5" stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#DC2626"/>
+    </linearGradient>
+    <linearGradient id="e" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#B91C1C"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="16" width="88" height="68" rx="16" fill="#111827" stroke="#374151" stroke-width="3"/>
+  <path d="M14 34H82" stroke="#9CA3AF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M10 44H86" stroke="#9CA3AF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M14 54H82" stroke="#9CA3AF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M10 64H86" stroke="#9CA3AF" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="30" cy="74" rx="10" ry="6" fill="url(#e)"/>
+  <ellipse cx="50" cy="73" rx="11" ry="7" fill="url(#e)"/>
+  <ellipse cx="68" cy="74" rx="9" ry="6" fill="url(#e)"/>
+  <path d="M48 16C38 6 40 0 48 0c4 8 12 14 12 22 0 8-6 14-12 14s-12-6-12-12 4-8 6-6-2 4-2 6 2 4 4 4 6-2 6-8c0-6-6-10-6-18-4 4-4 10 0 18z" fill="url(#f)"/>
+</svg>

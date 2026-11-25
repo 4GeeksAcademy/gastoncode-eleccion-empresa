@@ -1,10 +1,7 @@
-# `services` folder
+# Backend services (`services/`)
 
-This folder contains **all the backend services** (APIs and background workers) related to the company for the cross-functional AI Engineering project.
+The current backend application is [`api-unified/`](./api-unified/), a FastAPI service that groups authentication, suppliers, incidents, inventory, and talent modules. The integrated local launcher starts it on port 8005 alongside `uis/platform`.
 
-Each subfolder inside `services/` must correspond to **one specific service** (for example: `admin-api`, `data-processor-worker`) and include its own technical and functional documentation.
+See the [service README](./api-unified/README.md) for configuration, run and test commands, persistence details, and limitations. No separate backend services or workers are identified by this directory listing.
 
-- **Main purpose**: to centralize all the backend logic, APIs, and queue consumers that support the company's use cases.
-- **Recommendation**: document in this file (or in sub-READMEs) the services you add, their objective, the technology used, and how to run them.
-
-> _Spanish version: [README.es.md](./README.es.md)._
+> Spanish version: [README.es.md](./README.es.md).

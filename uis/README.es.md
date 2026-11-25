@@ -1,8 +1,7 @@
-# Carpeta `uis`
+# Interfaces de usuario (`uis/`)
 
-Esta carpeta contiene **todas las interfaces de usuario** relacionadas con la compañía para el proyecto transversal de AI Engineering (por ejemplo: aplicaciones web, dashboards internos, portales de clientes, apps de Streamlit/Gradio, etc.).
+Actualmente, la aplicación frontend identificada en esta carpeta es [`platform/`](./platform/), plataforma Next.js integrada con la API unificada. Su puerto local es 3007; el launcher y las instrucciones de ejecución están en el [README raíz](../README.es.md) y en [`scripts/README.es.md`](../scripts/README.es.md).
 
-Cada subcarpeta dentro de `uis/` debe corresponder a **una interfaz de usuario concreta** (por ejemplo `website`, `suppliers-backoffice`) e incluir su propia documentación técnica y funcional.
+No se infiere que existan otras aplicaciones frontend por el hecho de que el directorio pueda albergar más interfaces en el futuro.
 
-- **Propósito principal**: centralizar en un único lugar todas las aplicaciones frontend que dan soporte a los casos de uso de la compañía.
-- **Recomendación**: documenta en este archivo (o en sub-READMEs) las aplicaciones que vayas añadiendo, su objetivo, tecnología usada y cómo ejecutarlas.
+> English version: [README.md](./README.md).

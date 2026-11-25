@@ -2,6 +2,14 @@
 
 ## AI Engineering · 4Geeks Academy — Briefing de empresa
 
+> **Nota de vigencia:** este documento es el briefing empresarial de origen del
+> proyecto y conserva el contexto y las necesidades planteadas para el ejercicio
+> de AI Engineering. Las descripciones de sistemas, procesos o carencias reflejan
+> ese contexto de origen y no necesariamente el estado técnico actual del
+> monorepo. Para la implementación vigente, consulta la
+> [arquitectura actual](../docs/ARCHITECTURE_CURRENT.md) y la
+> [referencia de dominios](../docs/DOMAIN_REFERENCE.md).
+
 ---
 
 Brasaland es una cadena de restaurantes de cocina a la brasa fundada en 2008 en Medellín, Colombia. Lo que empezó como un único local familiar se convirtió, en quince años, en una cadena de 14 restaurantes propios que opera en dos países: Colombia y Estados Unidos (Florida). La empresa emplea a unas 115 personas y factura alrededor de 6 millones de dólares anuales.

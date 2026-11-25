@@ -1,132 +1,144 @@
-# Proyecto de Compañía - Ingeniería de IA — Plantilla para estudiantes
+# Brasaland Digital
 
-[![4Geeks Academy](https://img.shields.io/badge/4Geeks-Academy-blue)](https://4geeksacademy.com)
-[![AI Engineering](https://img.shields.io/badge/track-AI%20Engineering-green)](https://4geeksacademy.com/es/programas-de-carrera/ingenieria-ia)
+Brasaland Digital es un monorepo de interfaces web, una API y herramientas operativas para apoyar la modernización de los procesos internos de Brasaland, una cadena de restaurantes con operaciones en Colombia y Florida. El repositorio contiene prototipos funcionales para algunos dominios del negocio; **no es una plataforma completa ni está preparada para producción**.
 
-_Plantilla base para proyectos transversales del Programa de Carrera en Ingeniería de IA — 4Geeks Academy._
+## Estado y alcance
 
-_Las instrucciones están [disponibles en inglés](./README.md)._
+La ejecución local integrada combina una plataforma web y una API:
 
-## Backoffice integrado
+- **Plataforma web:** aplicación Next.js en `uis/platform`, disponible en el puerto 3007. Incluye sitio público, dashboard protegido, autenticación y cuentas, proveedores, análisis y gestión de incidencias, inventario y un prototipo de seguimiento de talento.
+- **API unificada:** aplicación FastAPI en `services/api-unified`, disponible en el puerto 8005. Agrupa los dominios de autenticación, proveedores, incidencias, inventario y talento.
+- **Herramienta de reposición:** planificador local que recibe un CSV de inventario validado y genera sugerencias deterministas para revisión humana. No pronostica demanda, elige proveedores ni realiza pedidos.
+
+La plataforma enruta las solicitudes `/api/*` a la API unificada. El launcher de desarrollo inicia dos procesos (frontend y API), no los antiguos servidores separados por dominio.
+
+### Funciones y limitaciones por dominio
+
+| Dominio | Alcance observado | Limitaciones importantes |
+| --- | --- | --- |
+| Autenticación y cuentas | Registro, inicio de sesión, perfiles, roles y flujos de cambio/restablecimiento de contraseña. | JWT y datos locales; el envío de correo de restablecimiento depende de la configuración opcional de Resend. |
+| Proveedores | Interfaz y API para consultar y mantener registros de proveedores. | Persistencia TinyDB local; no constituye una base transaccional compartida ni un flujo de órdenes de compra. |
+| Incidencias | Gestión de incidencias, filtros y resumen; análisis de archivos CSV. | Persistencia TinyDB local; no integra un pipeline general de telemetría operacional. |
+| Inventario | Productos, entradas, salidas e historial; el stock se calcula a partir de movimientos. | PostgreSQL de Supabase; las tablas se crean al iniciar el servicio y no hay migraciones versionadas. Las pruebas aisladas no validan escrituras ni concurrencia real en Supabase. |
+| Talento | Seguimiento de candidaturas mediante un adaptador a un prototipo externo. | Solo datos sintéticos; no hay persistencia local, vacantes ni onboarding implementados. |
+| Reposición | Sugerencias de cantidades desde CSV. | Cálculo determinista, requiere revisión humana y no realiza compras. |
+
+El repositorio **no implementa aún** una base de datos compartida para todos los dominios, integración con sistemas de punto de venta, un pipeline integrado de ventas/telemetría, pedidos digitales, CRM, gestión completa de personas ni una plataforma de formación. Estos son objetivos o áreas futuras, no capacidades que deban inferirse de la estructura del repositorio.
+
+## Criterio de estado documental
+
+Para distinguir el producto actual de los planes, esta documentación usa las siguientes categorías:
+
+- **Implementado:** existe una función en el código actual; las pruebas relacionadas pueden cubrir solo parte del flujo.
+- **Limitado / prototipo:** existe una implementación, pero tiene restricciones de persistencia, integración, validación u operación que deben considerarse.
+- **Propuesto / pendiente:** es un objetivo o diseño futuro y no debe presentarse como disponible hoy.
+
+La existencia de una ruta, módulo, carpeta o propuesta de arquitectura no demuestra por sí sola que un caso de negocio esté completo o listo para uso operativo. Las afirmaciones sobre validación deben consultarse en las guías de pruebas vigentes.
+
+## Stack tecnológico
+
+- **Frontend:** Next.js 16.3.1, React 19.2.8, TypeScript 6 y Tailwind CSS 4.
+- **Backend:** Python 3.14 o posterior, FastAPI, Pydantic y Uvicorn.
+- **Persistencia:** TinyDB local para autenticación, proveedores e incidencias; SQLModel y PostgreSQL (Supabase) para inventario.
+- **Autenticación:** JWT (HS256) y bcrypt. Resend es opcional para enviar correos de restablecimiento de contraseña.
+- **Herramientas:** npm, `uv`, pytest, Jest y pruebas de navegador basadas en Playwright.
+
+## Requisitos
+
+- Node.js 22 o posterior y npm.
+- Python 3.14 o posterior.
+- [`uv`](https://docs.astral.sh/uv/) para gestionar el entorno de Python.
+- La API requiere `JWT_SECRET`; el launcher de desarrollo lo genera y conserva localmente si no está definido. `DATABASE_URL` solo es necesaria para inicializar y utilizar el módulo de inventario; sin ella la API puede iniciar, pero las rutas de inventario no podrán acceder a la base. No uses una base de producción para pruebas.
+
+El launcher genera y conserva un secreto JWT local si `JWT_SECRET` no está definido en el entorno; no crea un archivo `.env`. Para desplegar, gestiona los secretos mediante un mecanismo apropiado y no los guardes en Git.
+
+## Inicio local
+
+Desde la raíz del repositorio:
 
 ```bash
-npm run backoffice:setup
-npm run backoffice:dev
+# Instalar dependencias
+node scripts/backoffice.mjs setup
+
+# Iniciar API (8005) y plataforma web (3007)
+node scripts/backoffice.mjs dev
+
+# Comprobar disponibilidad y respuestas protegidas
+node scripts/backoffice.mjs check
 ```
 
-dashboard, login, cuentas, proveedores, el gestor de incidencias
-(`/incidents-manager`: formulario de registro y panel de resumen), el analizador
-CSV (`/incidents-analyzer`), la gestión de inventario
-(`/inventory-management`: productos/stock, entradas, salidas e historial) y talento
-(`/talent-pipeline-tracker`: candidaturas y notas sintéticas, solo admin/manager) quedan
-accesibles en http://localhost:3000 con una sesión compartida. El launcher inicia
-cinco APIs (autenticación, proveedores, incidencias, inventario y talento) y seis
-interfaces. La API de inventario guarda productos y movimientos en PostgreSQL de
-Supabase y calcula las existencias a partir de estos movimientos. Requiere
-`DATABASE_URL` configurada en el entorno o en `.env`; nunca publiques ese valor. Consulta la
-[guía de integración](docs/BACKOFFICE_INTEGRATION.es.md) para persistencia,
-primer administrador, cierre coordinado y verificaciones.
+El launcher requiere libres los puertos **8005** y **3007**. `Ctrl+C` detiene los procesos. El comando `setup` instala dependencias, pero no migra ni inicializa una base separada; el servicio de inventario sí ejecuta la creación de tablas existente al iniciar. Para ejecutar solo el frontend, usa `npm run dev:platform`; la API debe estar disponible por separado en el destino configurado.
 
-Las pruebas unitarias de autenticación y del cliente de inventario (pytest y
-Jest) se describen en [`TESTING.md`](./TESTING.md). La suite Python se ejecuta desde
-`services/api-auth` para evitar recolectar pruebas de otros proyectos del monorepo.
-La API de inventario tiene una suite pytest aislada con SQLite; puede ejecutarse
-con `uv sync --project services/api-inventory --group test` y
-`uv run --directory services/api-inventory --group test pytest` (no requiere
-conexión a Supabase).
+### Rutas principales
 
----
+- `/` y `/application`: sitio público.
+- `/backoffice`: dashboard protegido.
+- `/login`, `/register`, `/forgot-password`, `/reset-password` y `/account/*`: autenticación y cuenta.
+- `/suppliers`: proveedores.
+- `/incidents-analyzer`: análisis CSV de incidencias.
+- `/incidents-manager`: gestión de incidencias.
+- `/inventory-management`: inventario.
+- `/talent-pipeline-tracker`: seguimiento de talento con datos sintéticos.
 
-## Propósito
+Las secciones del backoffice comparten la sesión de la plataforma. La API dispone de documentación OpenAPI en `/docs` mientras está en ejecución; las rutas de negocio se montan en el servicio unificado y el frontend las proxifica bajo `/api/*`.
 
-Este repositorio es la **plantilla de inicio** para los proyectos transversales. Trabajarás con escenarios de empresas reales (Brasaland, TrackFlow, Nexova) construyendo entregables que se corresponden con los hitos del curso (Web, Programación, Backend, Telemetría, RAG, Agentes, Workflows, Tiempo real).
+La [referencia funcional por módulo](./docs/DOMAIN_REFERENCE.md) detalla rutas UI/API, roles, persistencia, límites conocidos y cobertura de pruebas. La [arquitectura actual](./docs/ARCHITECTURE_CURRENT.md) describe la topología sin duplicar ese inventario.
 
-- Crea una plantilla a partir de este repositorio.
-- Reemplaza el `CONTEXT.md` placeholder por el contexto de tu empresa asignada.
-- Usa `skills/` y los `README.md` por carpeta como guía de trabajo.
+## Pruebas y calidad
 
----
+Comandos principales desde la raíz:
 
-## Estado actual de la plantilla
+```bash
+# Build y lint de los workspaces configurados
+npm run build
+npm run lint
 
-El repositorio conserva la estructura de la plantilla y contiene aplicaciones
-ejecutables de backoffice, APIs de autenticación/proveedores/incidencias/inventario y
-scripts globales de desarrollo. El arranque integrado documentado arriba cubre
-dashboard, proveedores, gestor, analizador CSV de incidencias, inventario y
-seguimiento de talento. El adaptador de talento no persiste candidatos localmente
-ni convierte al proveedor externo en una fuente privada: usar solo datos sintéticos.
+# Typecheck de la plataforma
+npm run typecheck:platform
 
-- `CONTEXT.md` es un placeholder y debe sustituirse por el contexto de la empresa asignada.
-- `AGENTS.md` define las reglas de trabajo y las rutas protegidas.
-- La raiz configura workspaces npm para el backoffice y comandos de preparacion,
-  arranque y comprobacion; los contratos compartidos de dominio siguen en evolucion.
+# Suite de la API unificada (usa pytest)
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- pytest services/api-unified/tests -v
 
----
+# Pruebas del launcher y del proxy
+node --test scripts/backoffice.test.mjs
+node --test scripts/platform-proxy.test.mjs
 
-## Estructura del repositorio
+# Pruebas TypeScript
+npx jest --coverage
+
+# Pruebas de navegador de la plataforma (iniciar la plataforma primero)
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
+```
+
+Consulta [`TESTING.md`](./TESTING.md) para requisitos y aislamiento de las suites, y [`scripts/README.es.md`](./scripts/README.es.md) para el runner de navegador. Las pruebas aisladas no equivalen a una validación de producción: en particular, las pruebas de inventario no verifican escrituras, esquema o concurrencia de Supabase.
+
+## Despliegue
+
+Existe una configuración Docker Compose y una guía de topología de ejemplo para VPS: [`docs/DOCKER_DEPLOYMENT.md`](./docs/DOCKER_DEPLOYMENT.md). Compose no demuestra preparación para producción. La guía documenta configuración, persistencia y límites operativos; antes de cualquier uso con datos importantes se deben verificar seguridad, respaldos/restauración, migraciones y operaciones PostgreSQL.
+
+La arquitectura efectivamente implementada, incluyendo la relación entre rutas del frontend, prefijos de API y persistencia por dominio, está descrita en [Arquitectura actual](./docs/ARCHITECTURE_CURRENT.md). La [propuesta de arquitectura futura](./docs/ARCHITECTURE_PROPOSAL.md) es un documento de diseño y no describe capacidades ya disponibles.
+
+## Mapa del repositorio
 
 ```text
-ai-engineering-company-project-monorepo/
-├── README.md
-├── README.es.md
-├── CONTEXT.md                # Placeholder a reemplazar con el contexto asignado
-├── agents/                   # Patrones/plantillas de agentes y documentación de tools
-├── data/                     # raw, process, pipelines, eval
-├── docs/                     # Documentación de proyecto y arquitectura
-├── infra/                    # Docker, Terraform, configuraciones de despliegue
-├── internal/                 # CLIs, scripts de migración empaquetados, utilidades internas
-├── mcps/                     # Servidores Model Context Protocol (MCP)
-├── packages/
-│   └── shared/               # Paquete compartido (@repo/shared-types)
-├── scripts/                  # Convenciones/documentación de scripts
-├── services/                 # APIs y workers en segundo plano
-├── shared/                   # Recursos/convenciones compartidas a nivel repo
-├── skills/                   # Skills reutilizables para agentes
-├── uis/                      # Interfaces de usuario (React, Next.js, Streamlit, HTML)
-└── workflows/                # Documentación de automatizaciones/orquestación
+.
+├── services/api-unified/     # API FastAPI (auth, suppliers, incidents, inventory, talent)
+├── uis/platform/             # Plataforma Next.js (puerto 3007)
+├── packages/                 # Paquetes, incluido el análisis de incidencias
+├── lib/, src/, shared/       # Clientes, tipos y utilidades compartidas
+├── scripts/                  # Launcher, pruebas, seeds y herramientas
+├── data/                     # Áreas de datos y pipelines
+├── .agents/skills/           # Skills operativas; incluye planificador de reposición
+├── docs/                     # Arquitectura actual, dominios, propuesta y guías
+└── memory-bank/              # Contexto y estado del proyecto
 ```
 
----
+## Documentación relacionada
 
-## Cómo empezar
-
-1. **Usa este repositorio como plantilla** y crea tu propio repo de proyecto.
-2. **Clona** tu repositorio (o ábrelo en Codespaces).
-3. **Reemplaza** `CONTEXT.md` con el contexto completo de tu empresa asignada.
-4. **Revisa** los `README.md` de cada carpeta raíz para entender responsabilidades (`uis/`, `services/`, `data/`, `skills/`, etc.).
-5. **Empieza a implementar** entregables por hito en `uis/` y `services/`, reutilizando `packages/shared/` y `data/` según corresponda.
-
----
-
-## Hitos (referencia)
-
-| Hito | Enfoque       | Entregables típicos                              |
-| ---- | ------------- | ------------------------------------------------ |
-| 0    | Prework       | Configuración del entorno, primeros prompts      |
-| 1    | Web           | Sitio corporativo, formularios, SEO              |
-| 2    | Programación  | Lógica de negocio, puntuación, cálculos          |
-| 3    | UI con IA     | Interfaces generadas con IA                      |
-| 4    | Next.js       | Portales, app de fidelización, UI de operaciones |
-| 5    | Backend       | API central (ubicaciones, menús, ventas, etc.)   |
-| 6    | Telemetría    | Pipeline de datos, dashboards                    |
-| 7    | RAG y memoria | Base de conocimiento semántica, búsqueda         |
-| 8    | Agentes       | Agentes de soporte, onboarding, formación        |
-| 9    | Workflows     | Automatizaciones con n8n                         |
-| 10   | Tiempo real   | Dashboards en vivo, alertas, streaming           |
-
----
-
-## Enlaces
-
-- [4Geeks Academy — Ingeniería de IA](https://4geeksacademy.com/es/programas-de-carrera/ingenieria-ia)
-- [Cómo empezar un proyecto de código](https://4geeks.com/lesson/how-to-start-a-project)
-
----
-
-## Contribuidores
-
-Esta plantilla fue creada como parte del Programa de Carrera de Ingeniería de IA de 4Geeks Academy por [@marcogonzalo](https://www.linkedin.com/in/marcogonzalo) y [@alezanchezr](https://x.com/alesanchezr), junto a otros muchos colaboradores. Descubre más sobre nuestro [Curso de Ingeniería de IA](https://4geeksacademy.com/es/programas-de-carrera/ingenieria-ia) y sobre [otros cursos](https://4geeksacademy.com/es/comparar-programas).
-
-Puedes encontrar otras plantillas y recursos similares en la [página de GitHub de 4Geeks Academy](https://github.com/4geeksacademy).
-
-_Esta plantilla la mantiene 4Geeks Academy para el track de Ingeniería de IA. Uso exclusivo del programa._
+- [Guía de pruebas](./TESTING.md)
+- [Arquitectura actual](./docs/ARCHITECTURE_CURRENT.md)
+- [Despliegue Docker](./docs/DOCKER_DEPLOYMENT.md)
+- [Propuesta de arquitectura futura](./docs/ARCHITECTURE_PROPOSAL.md) — propuesta, no descripción de lo ya implementado.
+- [Contexto de negocio](./memory-bank/CONTEXT-brasaland-briefing.es.md)
+- [Brief del proyecto](./memory-bank/projectbrief.md) y [estado del proyecto](./memory-bank/progress.md); pueden contener contexto histórico y deben contrastarse con el código actual.

@@ -1,0 +1,24 @@
+.website {
+  font-family: var(--font-sans);
+  color-scheme: normal;
+}
+
+:global(html:has([data-platform-area="public"])) {
+  color-scheme: normal;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
+@media (min-width: 1024px) {
+  :global(html:has([data-platform-area="public"])) {
+    scroll-behavior: smooth;
+    scroll-snap-type: y proximity;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:has([data-platform-area="public"])) {
+    scroll-behavior: auto;
+    scroll-snap-type: none;
+  }
+}

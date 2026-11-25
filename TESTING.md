@@ -1,16 +1,51 @@
 # Pruebas
 
-## API de autenticación (Python)
+## Frontend unificado
 
-Requiere Python 3.14+ y `uv`. Desde la raíz del monorepo, prepara las dependencias. Ejecuta pytest desde el directorio del servicio para limitar la colección a esta API:
+Con las dependencias existentes, desde la raiz:
 
 ```bash
-uv sync --project services/api-auth --group test
-cd services/api-auth
-uv run pytest
+npm run typecheck:platform
+npm run lint:platform
+npm run build:platform
+npm run start -w brasaland-platform
+# En otra terminal:
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
+# Solo con 8005 libre y destino local en el build:
+node --test scripts/platform-proxy.test.mjs
+# Prueba normal; la prueba de ciclo de vida real es opcional y usa puertos 3007/8005:
+node --test scripts/backoffice.test.mjs
 ```
 
-La suite invoca la lógica de los endpoints directamente (sin probar el transporte ni la serialización HTTP), utiliza una base TinyDB temporal y no llama a servicios de correo externos.
+El navegador usa APIs sinteticas: no necesita las UIs originales ni APIs
+reales. La suite contiene 72 casos de navegador; 23 rutas se prueban en dos
+tamaños de viewport, lo que representa 46 casos y posibles capturas.
+Los demás casos cubren flujos de autenticación, navegación y operaciones de
+módulo. Puede guardar capturas con
+`PLATFORM_OUTPUT=/ruta/fuera/del/repositorio`. La suite HTTP crea una API
+sintetica unificada y contiene 19 casos: siete recursos probados con dos
+sufijos cada uno (14), más cinco pruebas HTTP/check. No debe ejecutarse junto a la API
+real. Para probar el launcher con `node --test scripts/backoffice.test.mjs`,
+detener tambien platform: su prueba sintetica de ciclo de vida reserva 3007 y 8005.
+
+No hay un informe de fase versionado en `docs/` en este momento. Los casos,
+requisitos y límites vigentes se describen en este archivo y en
+[`scripts/README.es.md`](./scripts/README.es.md). La instalación reproducible
+desde un lockfile debe validarse por separado antes de afirmar que `npm ci`
+funciona en un entorno limpio.
+
+## API unificada (Python)
+
+Requiere Python 3.14+ y `uv`. Desde la raíz del monorepo:
+
+```bash
+uv sync --project services/api-unified --group test
+uv run --project services/api-unified --group test -- pytest services/api-unified/tests -v
+```
+
+La suite está escrita para pytest y ejecuta pruebas de humo sobre la aplicación
+unificada con almacenes temporales/configuración de prueba; no requiere
+servicios por dominio separados. No la ejecutes contra bases con datos reales.
 
 ## Lógica de autenticación (TypeScript)
 
@@ -21,30 +56,7 @@ npm install
 npx jest --coverage
 ```
 
-Jest descubre pruebas en `uis/backoffice/auth-shared` y `lib/`. Incluye pruebas de navegación/guard de autenticación, cliente de inventario (cabeceras Bearer, payload e historial) y clasificación de stock; las pruebas simulan `fetch` y el almacenamiento local del navegador. La cobertura HTML se genera en `coverage/`. El comando existente es `npm run test:auth:ts` (el nombre se conserva por compatibilidad aunque ya cubre también `lib/`); para una ejecución serial se puede usar `npm run test:auth:ts -- --runInBand`.
-
-Las comprobaciones de integración de las UIs de inventario son independientes:
-
-```bash
-npm run lint -w inventory-management
-npm run build -w inventory-management
-```
-
-La compilación valida tipos y rutas de la aplicación; las pruebas Jest no reemplazan una prueba E2E con servicios y base de datos reales.
-
-## Talento integrado
-
-```bash
-node --test scripts/backoffice.test.mjs uis/backoffice/dashboard-backoffice/tests/auth-api.test.mjs uis/backoffice/talent-pipeline-tracker/tests/talent-api.test.mjs
-uv sync --project services/api-talent --group test
-uv run --directory services/api-talent --group test python -m unittest discover -s tests -v
-npm run lint -w talent-pipeline-tracker
-npm run build -w talent-pipeline-tracker
-node scripts/browser-tests.mjs scripts/talent.browser.test.mjs
-```
-
-La API simula identidad y proveedor; el cliente simula fetch y localStorage.
-El navegador requiere dashboard y tracker iniciados, simula las APIs y genera
-capturas en /tmp. No envía candidatos a 4Geeks ni toca bases reales. Chromium
-necesita sus bibliotecas del sistema: la ejecución actual quedó bloqueada por
-libatk-1.0.so.0 ausente. Detener desarrollo antes del build.
+Jest descubre pruebas en `lib/`. Incluye pruebas del cliente de inventario
+(cabeceras Bearer, payload e historial) y clasificación de stock; las pruebas
+simulan `fetch` y el almacenamiento local del navegador. La cobertura HTML se
+genera en `coverage/`.

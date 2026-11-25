@@ -1,10 +1,10 @@
-# `agents` folder
+# `agents/`
 
-This folder contains the monorepo’s **AI agents** (assistants, internal copilots, support/operations agents, etc.) built as part of the cross-functional AI Engineering milestones.
+This directory currently contains a starter template and a tools documentation directory; it does not identify a configured or deployable AI agent. The template's `agent.py` is empty, so do not treat it as a working agent implementation.
 
-Each subfolder under `agents/` should represent **one concrete agent** (for example `support-agent`, `onboarding-agent`, `sales-assistant`) with its own documentation: goal, capabilities, knowledge/memory sources, available tools, and how to test it.
+- [`_template/`](./_template/): starter layout and guidance for a future agent.
+- [`tools/`](./tools/): documentation guidance for reusable tools; the directory README does not establish that specific tools are implemented.
 
-- **Main purpose**: centralize reusable agent development for the company in one monorepo.
-- **Recommendation**: maintain a catalog of agents here as they are created and link to each agent’s README.
+Document and link concrete agents here when they are implemented and tested.
 
 > _Spanish version: [README.es.md](./README.es.md)._

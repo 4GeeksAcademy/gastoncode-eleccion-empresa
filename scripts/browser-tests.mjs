@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
   console.log("Uso: node scripts/browser-tests.mjs [opciones de node --test] [archivos]");
-  console.log("Por defecto ejecuta auth-browser.test.mjs. Inicia las UIs antes de ejecutar.");
+  console.log("Por defecto ejecuta scripts/platform.browser.test.mjs. Inicia la plataforma antes de ejecutar.");
   console.log("Instala Playwright 1.58.2 y Chromium en un directorio temporal y los elimina al terminar.");
 } else {
   let directory;
@@ -49,7 +49,7 @@ if (args.includes("--help")) {
       path.join(directory, "node_modules/playwright/cli.js"), "install", "chromium",
     ], env);
     await run(process.execPath, [
-      "--test", ...(args.length ? args : ["uis/backoffice/dashboard-backoffice/tests/auth-browser.test.mjs"]),
+      "--test", ...(args.length ? args : ["scripts/platform.browser.test.mjs"]),
     ], env);
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);

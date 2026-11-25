@@ -2,6 +2,11 @@
 
 > **Basado en FastAPI · Arquitectura en Capas**
 >
+> **Estado del documento:** propuesta de diseño, no inventario de capacidades
+> ni contrato de API actualmente desplegado. Las rutas, modelos, servicios e
+> integraciones descritos en este documento son aspiracionales salvo que se
+> indiquen expresamente como existentes en [la arquitectura actual](./ARCHITECTURE_CURRENT.md).
+>
 > Proyecto: Brasaland Digital — Cadena de restaurantes (14 locales, Colombia y USA)
 > Documento generado para el equipo de ingeniería de Brasaland Digital
 
@@ -25,7 +30,9 @@
 
 Brasaland opera 14 restaurantes en dos países (Colombia y Estados Unidos) con una facturación anual de ~6 millones USD y ~115 empleados. Actualmente, la operación se gestiona con herramientas mínimas: hojas de cálculo, llamadas telefónicas e informes PDF. El equipo **Brasaland Digital** tiene el mandato de construir la plataforma tecnológica que permita escalar la operación sin perder la calidad del servicio.
 
-Esta propuesta define un **backend basado en FastAPI con arquitectura en capas**, diseñado para servir como la API central de Brasaland. La arquitectura se organiza en **ocho dominios de negocio** que reflejan la estructura real de la empresa, cada uno con su propio conjunto de routers, servicios y repositorios.
+Esta propuesta define un **backend basado en FastAPI con arquitectura en capas**, diseñado para servir como la API central de Brasaland. En este diseño se enumeran **nueve dominios de negocio** (Locations, Menu, Sales, Waste, Suppliers, Customers, Employees, Training y Executive), además de Auth como dominio transversal. Es una propuesta; no describe la estructura actual del backend.
+
+Las rutas `/api/v1/...` que aparecen a continuación son ejemplos propuestos y **no deben interpretarse como endpoints activos**. El backend actual registra prefijos distintos; consulta [Arquitectura actual](./ARCHITECTURE_CURRENT.md) y [Referencia de dominios](./DOMAIN_REFERENCE.md).
 
 ---
 
@@ -38,7 +45,7 @@ Esta propuesta define un **backend basado en FastAPI con arquitectura en capas**
 | **Dos monedas y dos países** | Tipado estricto con Pydantic permite modelar `Price` con USD/COP de forma nativa y segura |
 | **Ventas en tiempo real** | Soporte nativo de async/await para operaciones I/O concurrentes sin bloqueo |
 | **Dashboard ejecutivo con IA** | Fácil integración con librerías de machine learning y NLP (LangChain, OpenAI, etc.) |
-| **Telemetría desde cada local** | WebSockets integrados para streaming de datos en tiempo real |
+| **Telemetría desde cada local** | WebSockets integrados para streaming de datos en tiempo real (capacidad propuesta, no implementada en el backend actual) |
 | **Multi-idioma (ES/EN)** | Schemas de Pydantic extensibles con campos localizados |
 | **Equipo pequeño de tecnología** | Productividad alta: menos código boilerplate, documentación automática (Swagger/OpenAPI) |
 | **Crecimiento futuro** | Escalabilidad horizontal con Uvicorn + Gunicorn; compatible con contenedores Docker |
@@ -142,7 +149,7 @@ backend/
 │   │   ├── menu.py                      # MenuItem, MenuCategory
 │   │   ├── sale.py                      # SaleTransaction
 │   │   ├── waste.py                     # WasteRecord
-│   │   ├── supplier.py                  # Supplier, PurchaseOrder
+│   │   ├── supplier.py                  # Supplier; PurchaseOrder es una entidad propuesta
 │   │   ├── customer.py                  # Customer, LoyaltyPoints
 │   │   ├── employee.py                  # Employee, Attendance
 │   │   └── training.py                  # Recipe, TrainingMaterial
@@ -218,7 +225,7 @@ backend/
 │
 ├── alembic.ini
 ├── Dockerfile
-├── docker-compose.yml                   # App + PostgreSQL + Redis
+├── docker-compose.yml                   # App + PostgreSQL + Redis (topología propuesta)
 ├── requirements.txt
 ├── pyproject.toml
 └── README.md
@@ -309,7 +316,7 @@ Registro de desperdicio de alimentos por local.
 
 ### 5.5 🛒 Suppliers — `/api/v1/suppliers`
 
-Gestión de proveedores, precios y pedidos.
+Gestión propuesta de proveedores, precios y pedidos. La API actual de proveedores no implementa órdenes de compra.
 
 **Endpoints:**
 
@@ -321,8 +328,8 @@ Gestión de proveedores, precios y pedidos.
 | `PUT` | `/{supplier_id}` | Actualizar datos del proveedor | `SupplierService.update()` |
 | `GET` | `/{supplier_id}/price-history` | Historial de precios del proveedor | `SupplierService.get_price_history()` |
 | `POST` | `/{supplier_id}/prices` | Actualizar precios del proveedor | `SupplierService.update_prices()` |
-| `GET` | `/purchase-orders` | Listar órdenes de compra | `SupplierService.get_purchase_orders()` |
-| `POST` | `/purchase-orders` | Crear orden de compra | `SupplierService.create_purchase_order()` |
+| `GET` | `/purchase-orders` | (Propuesto; no implementado) Listar órdenes de compra | `SupplierService.get_purchase_orders()` |
+| `POST` | `/purchase-orders` | (Propuesto; no implementado) Crear orden de compra | `SupplierService.create_purchase_order()` |
 | `GET` | `/consolidated` | Gasto consolidado por proveedor y categoría | `SupplierService.get_consolidated_spending()` |
 | `GET` | `/alerts` | Alertas de cambios de precio | `SupplierService.get_price_alerts()` |
 
@@ -450,7 +457,7 @@ Cada dominio se ha definido siguiendo tres criterios:
 | Menu | `menu.py` | Operaciones / Marketing | Felipe / Camila | `MenuItem`, `MenuCategory` |
 | Sales | `sales.py` | Operaciones | Felipe Guerrero | `SaleTransaction` |
 | Waste | `waste.py` | Operaciones | Felipe Guerrero | `WasteRecord` |
-| Suppliers | `suppliers.py` | Compras | Lucía Fernández | `Supplier`, `PurchaseOrder` |
+| Suppliers | `suppliers.py` | Compras | Lucía Fernández | `Supplier`, `PurchaseOrder` (propuesto) |
 | Customers | `customers.py` | Marketing | Camila Ospina | `Customer`, `LoyaltyPoints` |
 | Employees | `employees.py` | Personas y Cultura | Ashley Turner | `Employee`, `Attendance` |
 | Training | `training.py` | Formación | Jake Morrison | `Recipe`, `TrainingMaterial` |
@@ -508,11 +515,11 @@ POS Local (USA) ──────┘                                           
 
 ### 7.2 Integración con el Frontend Existente
 
-El frontend actual (Next.js en `uis/talent-pipeline-tracker/`) se comunica con el backend FastAPI a través de llamadas HTTP REST. La documentación OpenAPI generada automáticamente por FastAPI permite generar clientes TypeScript tipados automáticamente.
+En la arquitectura propuesta, un frontend Next.js consumiría la API mediante HTTP REST. La interfaz integrada actual está en `uis/platform/` y utiliza rewrites para acceder a la API unificada; no existe un frontend actual en `uis/talent-pipeline-tracker/`. El uso de clientes TypeScript generados desde OpenAPI es una opción futura, no una integración que afirme este documento como existente.
 
 ### 7.3 Integración con Agentes de IA
 
-Los agentes en `agents/` pueden consumir la API directamente:
+Como posibilidad futura, agentes que se implementen en `agents/` podrían consumir endpoints propuestos como:
 
 - **Agente de consulta ejecutiva**: Llama a `POST /api/v1/executive/ai/query`
 - **Agente de predicción de demanda**: Consume `GET /api/v1/sales/trends` + datos históricos de inventario

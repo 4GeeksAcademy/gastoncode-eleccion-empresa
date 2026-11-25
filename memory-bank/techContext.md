@@ -1,72 +1,31 @@
 # Contexto técnico
 
-## Stack utilizado hasta el momento
+## Topología vigente
 
-### Interfaces web
+- La plataforma web integrada es `uis/platform`, una aplicación Next.js 16 App Router, servida localmente en el puerto 3007.
+- La API integrada vive en `services/api-unified` (FastAPI/Uvicorn, puerto 8005) e incluye routers de auth, proveedores, incidencias, inventario y talento.
+- `scripts/backoffice.mjs` prepara/inicia la API unificada y la plataforma: dos procesos de aplicación, no cinco APIs y seis UIs.
+- La plataforma reescribe aliases `/api/*` a la API unificada. Para inventario el prefijo API directo es `/inventory/*`; incidencias usa `/api/incidents/*`; demás prefijos son `/auth/*`, `/suppliers/*` y `/talent/*`.
+- En Docker Compose hay dos servicios (`api`, `frontend`) en red privada. Solo el frontend se publica en `127.0.0.1:${FRONTEND_PORT:-3007}` para un proxy inverso del host; el frontend se construye con `UNIFIED_API_URL=http://api:8005`. Esta topología de ejemplo no certifica preparación para producción.
 
-- El backoffice está organizado como workspaces de npm en `uis/backoffice/` y contiene aplicaciones separadas para dashboard, proveedores, análisis de incidencias, gestor de incidencias (`incidents-manager`), gestión de inventario (`inventory-management`) y seguimiento de talento.
-- Las aplicaciones usan Next.js 16.3.x y React 19.2.x. Los manifiestos declaran TypeScript 5 y ESLint 9; todas salvo `incidents-manager` declaran Tailwind CSS 4. El gestor de incidencias usa CSS plano con `@brasaland/theme`.
-- Las aplicaciones de dashboard, proveedores, análisis y gestor de incidencias declaran Next.js 16.3.1; el tracker de talento declara 16.3.0.
-- `uis/backoffice/shared/` provee el paquete visual compartido `@brasaland/theme`; `auth-shared` provee sesión (token en `localStorage`) usada por las apps integradas del backoffice, incluida inventory-management.
-- Puertos de desarrollo: dashboard 3000, proveedores 3001, analizador de incidencias 3002, talento 3003, gestor de incidencias 3004 e inventario 3005. APIs: proveedores 8000, autenticación 8001, incidencias 8002, inventario 8003 y talento 8004.
+## Persistencia, configuración y límites
 
-### Servicios y herramientas
+- Auth, proveedores, incidentes y resultados de análisis usan archivos TinyDB/JSON bajo rutas configurables. Compose los monta en `/data` mediante el volumen `api-data`; TinyDB no ofrece coordinación transaccional entre réplicas.
+- Inventario usa SQLModel y PostgreSQL mediante `DATABASE_URL`; el stock se calcula como entradas menos salidas. `create_all` se ejecuta al iniciar solo si hay URL; sin ella la API puede iniciar, pero las rutas de inventario no funcionan. No hay migraciones versionadas y la concurrencia PostgreSQL real no está demostrada por tests SQLite.
+- Talento proxifica el tracker externo configurado por `TRACKER_API_URL` (por defecto playground de 4Geeks), cachea GET en memoria durante 30 segundos y no persiste candidatos localmente; usar solo datos sintéticos.
+- Reposición es una CLI independiente en `.agents/skills/replenishment-planner/`, con CSV de entrada/salida y revisión humana; no tiene UI/API ni emite órdenes.
+- `JWT_SECRET` es obligatorio para arrancar la API. `FRONTEND_URL`, Resend y `TRACKER_API_URL` habilitan comportamientos opcionales/externos. Compose declara `.env` como `env_file`, por lo que se debe crear el archivo al usar Compose.
 
-- Los servicios backend están escritos en Python y usan FastAPI con Uvicorn como servidor ASGI.
-- `api-auth`, `api-suppliers` y `api-incidents` declaran TinyDB para persistir datos en archivos JSON. Autenticación usa JWT con algoritmo HS256, OAuth2 bearer y contraseñas bcrypt; las dependencias incluyen `python-jose`, `python-dotenv` y `python-multipart`.
-- `api-suppliers` declara Pydantic con soporte de email. `api-incidents` usa además `python-dotenv`, `python-jose` y TinyDB, y consume la lógica CSV del paquete local `packages/incidents_analysis` (requiere `PYTHONPATH` en la raíz del repo). Guarda análisis en `analyses.json` e incidencias en `incidents.json`, rutas configurables con `ANALYSES_DB_PATH` e `INCIDENTS_DB_PATH`; `incidents.json` está en `.gitignore`.
-- `api-inventory` es una API FastAPI independiente que usa SQLModel/SQLAlchemy y PostgreSQL de Supabase mediante `DATABASE_URL` y el driver `psycopg`; requiere TLS (`sslmode=require` si la URL no define modo SSL). Mantiene ingredientes, entradas y salidas en PostgreSQL. El stock no se persiste y se deriva como suma de entradas menos salidas. Los usuarios permanecen en `api-auth`/TinyDB: inventario valida el JWT compartiendo `JWT_SECRET`, consulta `/auth/me` y registra únicamente el UUID externo en los movimientos. Las lecturas requieren autenticación y las escrituras el rol `admin` o `manager`.
-- `api-auth` mantiene un grupo `test` con pytest separado de las dependencias de producción. Sus pruebas llaman directamente a la lógica de los endpoints, usan TinyDB temporal y no prueban serialización HTTP ni realizan llamadas reales de correo. Ejecutar desde `services/api-auth` con `uv run pytest` (tras `uv sync --project services/api-auth --group test`). `api-incidents` mantiene una suite `unittest` de pruebas HTTP mediante Starlette TestClient y `httpx2`; instalar su grupo `test` por separado.
-- La lógica TypeScript compartida de autenticación y el cliente/helpers de inventario (`lib/`) se prueban con Jest y ts-jest. `jest.config.cjs` incluye esos roots y usa entorno Node con `window`, `localStorage` y `fetch` simulados. Instalar dependencias npm en raíz y ejecutar `npx jest --coverage` o `npm run test:auth:ts`.
-- `scripts/seed_incidents.py` carga incidencias desde CSV de forma idempotente (salta las existentes) y reutiliza la validación del analizador.
-- `scripts/backoffice.mjs` (`npm run backoffice:setup|dev|check|admin`) prepara con `uv` cinco APIs y coordina once procesos: auth, proveedores, incidencias, inventario y talento (APIs), y seis UIs. `backoffice:check` comprueba productos sin token y el proxy `/api/talent/records` con HTTP 401.
-- `api-talent` es un adaptador FastAPI sin persistencia local: valida JWT y cuenta vigente mediante auth; requiere admin/manager en todas las operaciones. TRACKER_API_URL vive solo en servidor y el JWT de Brasaland nunca se reenvía al proveedor. Admite candidaturas, etapas/estados y notas. Solo datos sintéticos: el proxy no garantiza privacidad ni aislamiento de 4Geeks.
-- `api-inventory` tiene pruebas pytest con SQLite aislado y autenticación simulada. Cubren productos, unicidad de SKU, entradas/salidas y stock derivado, stock insuficiente, validaciones, recursos inexistentes, RBAC y no inclusión de valores rechazados en errores. No requieren ni escriben en Supabase.
-- La skill `.agents/skills/replenishment-planner/` incluye un script determinista basado en `Decimal` y una suite `unittest`. Calcula sugerencias de reposición a partir de un CSV de inventario validado; no pronostica demanda ni realiza pedidos.
-- La raíz define scripts de npm para iniciar cada interfaz, así como tareas de build y lint de los workspaces. El manifiesto raíz declara TypeScript 6 y `uv`; las aplicaciones frontend declaran TypeScript 5.
-- El repositorio también contiene utilidades y tipos compartidos en `src/`, `packages/` y `shared/`, además de áreas para datos, agentes, skills, MCP y workflows.
+## Versiones y pruebas observadas
 
-## Decisiones de arquitectura observables
+- Consultar los manifiestos actuales para versiones precisas: Node 22 en Docker, Python 3.14 en la imagen backend y versiones de Next.js/TypeScript en `uis/platform/package.json` y el manifiesto raíz.
+- La API dispone de smoke tests con TestClient, TinyDB temporal y SQLite temporal; las pruebas de inventario cliente/stock son Jest. Browser/proxy tests incluyen simulaciones de upstream y no certifican proveedores ni bases reales.
+- Reposición tiene tests unittest; el seed de incidencias tiene tests Python. La prueba opcional del ciclo de vida del launcher (`BACKOFFICE_LIFECYCLE=1`) puede estar desalineada con su texto de salida actual y debe comprobarse antes de considerarla validación.
+- La guía de comandos y aislamiento de suites está en `TESTING.md`; la matriz por dominio en `docs/DOMAIN_REFERENCE.md`.
 
-- **Aplicaciones de backoffice separadas:** cada área funcional tiene su propia aplicación Next.js y ciclo de desarrollo. El tema visual se comparte como paquete del workspace.
-- **Integración bajo un mismo origen:** el dashboard (puerto 3000) reenvía mediante rewrites `/incidents-manager/*` a la app del gestor (que usa `basePath: "/incidents-manager"`) y `/api/incidents/*` a la API de incidencias. Así comparten origen y sesión; el login del gestor redirige al del dashboard con `next=/incidents-manager`, y el dashboard navega a esas rutas externas con recarga completa (`EXTERNAL_APP_PREFIXES`).
-- **Integración de inventario:** el dashboard lista inventory-management en el catálogo y reenvía `/inventory-management/*` a la UI del puerto 3005; la aplicación declara `basePath: "/inventory-management"`. `/api/inventory/*` se enruta a la API del puerto 8003. La navegación del catálogo usa enlaces completos, y `auth-shared` / `AuthGuard` conservan la sesión y redirigen a login las rutas de productos, entrada, salida e historial. La UI presenta stock sin stock/bajo/suficiente (umbral bajo de 50); creación de entradas/salidas está restringida a `admin`/`manager` en UI y API. El historial presenta tipo, producto, cantidad, local, autor, `user_uuid` y fecha.
-- **Ciclo de vida de incidencias en la API:** los cambios de estado solo admiten `open → in_progress | discarded` e `in_progress → resolved | discarded`; `resolved` y `discarded` son finales. Los errores de validación devuelven 400 con el campo afectado, y las excepciones no controladas, 500 con mensaje genérico.
-- **Servicios backend por dominio:** autenticación, proveedores, incidencias e inventario están separados en carpetas y tienen manifiestos de dependencias propios.
-- **Persistencia JSON con TinyDB:** autenticación, proveedores e incidencias guardan datos localmente en archivos JSON; no dependen de una base de datos relacional común. Incidencias conserva los análisis en TinyDB y mantiene una caché LRU thread-safe limitada a 100 elementos.
-- **Autenticación basada en tokens:** `api-auth` emite JWT bearer de duración configurable por entorno e incluye el rol del usuario. Revalida que la cuenta exista y esté activa al autenticar cada solicitud; las rutas aplican permisos de propietario, administrador o roles permitidos según operación. Incidencias verifica el JWT compartiendo `JWT_SECRET`.
-- **Inventario relacional:** la API de inventario crea las tablas SQLModel durante el startup (prototipo, sin migraciones aún), aplica restricciones de dominio en modelos y calcula stock bajo demanda. Las salidas solicitan bloqueo de la fila del ingrediente con `SELECT ... FOR UPDATE` antes de comprobar stock; la efectividad de ese bloqueo depende del motor PostgreSQL y requiere validación de concurrencia en un entorno real.
-- **Pruebas de autenticación:** la suite pytest de `api-auth` cubre los endpoints de salud, registro, login, identidad actual, perfiles, gestión de usuarios, permisos y ciclo de contraseñas, además de rollback de creación. El cliente TypeScript cubre llamadas API, almacenamiento de sesión, errores de red/JSON, invalidación de sesión y destinos de navegación. Son pruebas unitarias de lógica (no pruebas de transporte HTTP). La guía común está en `TESTING.md`.
-- **Pruebas de cliente y launcher:** Jest incluye navegación/guard compartidos, cabeceras Bearer y payload/historial de inventory client, además de los estados de stock. `scripts/backoffice.test.mjs` verifica cinco APIs y seis UIs (once procesos); la prueba de ciclo de vida es opcional vía `BACKOFFICE_LIFECYCLE=1`.
-- **Restablecimiento de contraseña integrado:** `api-auth` implementa tres endpoints para el ciclo completo de restablecimiento: `/auth/forgot-password` (solicitud con envío de email transaccional mediante **Resend**), `/auth/reset-password` (canjeo de token con hash SHA-256 y expiración de 30 minutos por entorno), y `/auth/change-password` (cambio desde sesión activa). Los tokens se persisten en una tabla TinyDB `reset_tokens` con campos `token_hash`, `user_id`, `expires_at` y `used`. Las contraseñas nuevas se hashean con bcrypt. La variable `RESEND_API_KEY` es necesaria solo si se desea enviar correos; sin ella el servicio responde igual pero registra una advertencia en los logs.
-- **Propuesta, aún no asumida como implementada:** `docs/ARCHITECTURE_PROPOSAL.md` recomienda una API central FastAPI en capas, con routers, servicios, repositorios, modelos y dominios para locales, ventas, proveedores, clientes, personal y formación. También propone SQLAlchemy, PostgreSQL, migraciones, telemetría y WebSockets; esos elementos deben tratarse como diseño futuro, no como stack confirmado por los manifiestos revisados.
+## Riesgos y criterios de evolución
 
-### Integración de talento
-
-`/talent-pipeline-tracker` usa basePath, rewrites, auth-shared y navegación completa
-entre zonas. Consultas y mutaciones usan `/api/talent/*` desde cliente, después del
-guard; no hay lecturas de candidatos durante SSR. Se conserva el pathname tras login
-y se reconsultan datos tras mutaciones. Build, tipos y lint pasaron; nueve pruebas
-HTTP aisladas y pruebas Node cubren contratos/sesión. Smoke real: UI 200 y proxy
-401 sin token. Playwright bloqueado por libatk ausente; no se validó 4Geeks real
-ni el launcher completo.
-
-## Restricciones y riesgos técnicos identificados
-
-- **Versiones de Python diferentes por servicio:** `api-auth` requiere Python `>=3.14`, mientras `api-suppliers`, `api-incidents` y `api-inventory` requieren `>=3.12`. Los entornos deben respetar la versión de cada servicio; no hay todavía una política común documentada.
-- **Persistencia local no adecuada como base compartida de producción:** los archivos TinyDB están ligados al sistema de archivos de cada servicio. No ofrecen por sí solos una base central para varias instancias y requieren atención específica para concurrencia, copias de seguridad, recuperación y despliegue. La caché de incidencias tampoco sustituye su persistencia ni coordina varias instancias.
-- **Inventario usa Supabase PostgreSQL, pero continúa en etapa de prototipo:** `DATABASE_URL` es obligatoria para el servicio standalone; las tablas se crean al arrancar mediante `create_all`, sin migraciones versionadas. Las pruebas automatizadas sustituyen la base por SQLite y no demuestran por sí mismas conectividad con Supabase. Se verificó manualmente una conexión de solo lectura con `SELECT 1` y TLS activo desde el cliente psycopg; esto no valida permisos de escritura, esquema aplicado ni comportamiento bajo carga.
-- **Integración de datos aún por resolver:** aplicaciones y servicios están separados, y no se observa en sus manifiestos un contrato de API compartido ni una base de datos común. Para ofrecer dashboards integrados será necesario definir contratos, identidad de entidades y estrategia de sincronización.
-- **Versiones frontend no totalmente alineadas:** Next.js no está exactamente en la misma versión en todas las aplicaciones, y la raíz declara TypeScript 6 mientras los paquetes de interfaz declaran TypeScript 5. Conviene fijar una política de versiones y verificar builds reproducibles del workspace.
-- **Configuración sensible requerida:** la autenticación necesita `JWT_SECRET` en el entorno. Debe proveerse mediante un gestor de secretos en despliegues y no incluirse en el repositorio. Adicionalmente, `RESEND_API_KEY` es requerida para el envío de correos de restablecimiento; el servicio funciona sin ella pero registra una advertencia y no envía el email.
-- **Complejidad multinacional del dominio:** datos y reportes deberán tratar explícitamente COP y USD, zonas horarias, idiomas y diferencias legales y laborales entre Colombia y Estados Unidos. No se debe asumir que conversión de moneda, reglas de fechas o políticas son iguales para todos los locales.
-- **Despliegue y operación no unificados:** los manifiestos muestran scripts de desarrollo, build y lint por aplicación, y `scripts/backoffice.mjs` coordina el entorno local, pero no hay una estrategia común de despliegue, observabilidad, migraciones o recuperación. Esas decisiones siguen pendientes de documentar y validar.
-- **Integridad del gestor de incidencias limitada por TinyDB:** no hay transacciones y el bloqueo de escritura es por proceso; una interrupción del seed podría duplicar registros.
-
-## Criterios para decisiones futuras
-
-- Mantener contratos de datos explícitos entre las interfaces y los servicios, con tipos compartidos cuando corresponda; la skill de reposición es un cálculo local por CSV y no está integrada como API ni como flujo de compras.
-- Sustituir la persistencia local por almacenamiento transaccional compartido antes de depender de múltiples instancias o de datos operativos críticos.
-- Acordar versiones soportadas de Python, Node.js, Next.js y TypeScript y fijarlas en los entornos de CI y despliegue.
-- Diseñar los modelos y reportes teniendo en cuenta país, moneda, idioma y zona horaria desde el inicio.
-- Tratar las capacidades de IA, automatización y tiempo real como integraciones de la plataforma, no como sustitutos de fuentes de datos confiables ni de controles de acceso.
+- Compose no aporta por sí solo alta disponibilidad, observabilidad completa, backups/restauración verificados, migraciones, gestión endurecida de secretos ni certificación de seguridad. La guía es `docs/DOCKER_DEPLOYMENT.md`.
+- TinyDB es almacenamiento local, no un datastore compartido para réplicas o datos críticos. Respaldar y probar restauración de TinyDB y PostgreSQL por separado.
+- La arquitectura objetivo de `docs/ARCHITECTURE_PROPOSAL.md` sigue siendo una propuesta. No atribuir al sistema actual integraciones de POS, ventas/telemetría, CRM, HRIS, formación o pedidos digitales.
+- Mantener contratos explícitos, identidad de entidades y criterios multinacionales para moneda, zona horaria, idioma y legislación al evolucionar los módulos.

@@ -1,42 +1,45 @@
 # Carpeta `scripts`
 
-Esta carpeta contiene **scripts auxiliares** del monorepo: automatizaciones de desarrollo, utilidades de mantenimiento, tareas repetitivas (setup, lint, migraciones, generación de datos, etc.) y tooling interno.
+Esta carpeta reúne herramientas para desarrollo, pruebas y mantenimiento del monorepo. Los scripts se ejecutan desde la raíz, salvo que el propio comando indique otra cosa.
 
-- **Propósito principal**: agrupar herramientas de soporte que no pertenecen a una app/agente/pipeline específico, pero facilitan el trabajo del equipo.
-- **Recomendación**: documenta cada script (qué hace, parámetros, requisitos, ejemplos de uso) y procura que sean reproducibles (y seguros) en distintos entornos.
+## Launcher de desarrollo
 
-## Pruebas de navegador con instalacion temporal
-
-`browser-tests.mjs` instala Playwright 1.58.2 y Chromium fuera del repositorio,
-en un directorio temporal exclusivo. Ejecuta `node --test` y elimina la
-instalacion tanto al terminar correctamente como si falla.
-No modifica manifiestos, locks ni las dependencias del workspace.
-
-Requiere Node.js 22+, npm, acceso a los registros de npm y las descargas de
-Playwright, y las bibliotecas del sistema necesarias para Chromium.
-No instala paquetes del sistema operativo ni inicia las aplicaciones.
-
-Con el dashboard iniciado:
+`backoffice.mjs` prepara y coordina los dos procesos de la aplicación integrada: la API FastAPI (`services/api-unified`, puerto 8005) y la plataforma Next.js (`uis/platform`, puerto 3007).
 
 ```bash
-node scripts/browser-tests.mjs
+node scripts/backoffice.mjs setup
+node scripts/backoffice.mjs dev
+node scripts/backoffice.mjs check
+node scripts/backoffice.mjs admin usuario@ejemplo.com
 ```
 
-Se pueden pasar opciones de `node --test` y archivos concretos. Para comprobar
-sesion y tarifas, iniciar dashboard (3000), proveedores (3001) y gestor (3004):
+`setup` instala las dependencias; `dev` inicia la API y la plataforma; `check` comprueba disponibilidad y proxies protegidos sin token; `admin` promueve una cuenta ya registrada y requiere que la API esté detenida. Los puertos 8005 y 3007 deben estar libres para `dev` y la prueba de ciclo de vida real, que es opcional (`BACKOFFICE_LIFECYCLE=1`). El launcher de desarrollo genera y reutiliza un secreto JWT local cuando no se proporciona `JWT_SECRET`.
+
+## Pruebas de la plataforma
+
+`platform.browser.test.mjs` ejecuta pruebas de navegador para la plataforma unificada en 3007. Usa respuestas sintéticas interceptadas y no debe crear datos en bases reales. Inicia la plataforma antes de ejecutarla:
 
 ```bash
-node scripts/browser-tests.mjs scripts/medium-priority.browser.test.mjs
+npm run build:platform
+npm run start -w brasaland-platform
+# En otra terminal
+node scripts/browser-tests.mjs scripts/platform.browser.test.mjs
 ```
 
-Estas pruebas interceptan la API y no crean registros en las bases reales.
-`DASHBOARD_URL` permite cambiar el origen publico (por defecto
-`http://localhost:3000`). Las opciones deben preceder a los archivos:
+`platform-proxy.test.mjs` comprueba el transporte HTTP real del frontend a un servidor API sintético en 8005. Requiere que la plataforma esté iniciada con rewrites locales y que no haya una API real ocupando el puerto. No la ejecutes contra una plataforma conectada a servicios con datos reales:
 
 ```bash
-node scripts/browser-tests.mjs --test-name-pattern='expiration|logout' uis/backoffice/dashboard-backoffice/tests/auth-browser.test.mjs
+node --test scripts/platform-proxy.test.mjs
 ```
 
-El script no elimina evidencias generadas por las pruebas. SIGINT/SIGTERM
-interrumpe el comando activo y ejecuta la limpieza; SIGKILL o una caida del
-sistema no permiten garantizar esa limpieza.
+`PLATFORM_URL` permite cambiar el origen web (por defecto `http://localhost:3007`). El runner instala Playwright 1.58.2 y Chromium en una ubicación temporal; requiere internet y las bibliotecas del sistema necesarias para Chromium. No instala paquetes del sistema ni modifica los manifiestos del workspace.
+
+## Pruebas del launcher
+
+```bash
+node --test scripts/backoffice.test.mjs
+```
+
+La prueba normal verifica la configuración con servicios sintéticos. La prueba de ciclo de vida de la aplicación real es opcional (`BACKOFFICE_LIFECYCLE=1`), inicia la API y platform, usa puertos 3007 y 8005 y escribe bases SQLite/TinyDB temporales. No la ejecutes con esos puertos ocupados ni junto con servicios reales.
+
+Los scripts `baseline-*` corresponden a una evaluación histórica de interfaces separadas; no describen la topología integrada actual. No se conserva en `docs/` el informe de baseline enlazado anteriormente. Para pruebas actuales, usa `platform.browser.test.mjs`, `platform-proxy.test.mjs` y la guía [`TESTING.md`](../TESTING.md).
